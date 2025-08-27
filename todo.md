@@ -16,9 +16,9 @@ Build a Commodore 64 BASIC V2 interpreter in Go using incremental development. E
 Establish project structure and minimal working interpreter.
 
 #### Step 1: Project Bootstrap
-- [ ] **Goal**: Set up Go project structure with basic CLI that can read files
-- [ ] **Demo**: `./basic hello.bas` reads file and shows "Program loaded" message
-- [ ] **Tests**: File reading, error handling for missing files
+- [x] **Goal**: Set up Go project structure with basic CLI that can read files
+- [x] **Demo**: `./basic hello.bas` reads file and shows "Program loaded" message
+- [x] **Tests**: File reading, error handling for missing files
 
 #### Step 2: Minimal Lexer + Parser
 - [ ] **Goal**: Parse simplest BASIC program (line numbers + PRINT literals)
