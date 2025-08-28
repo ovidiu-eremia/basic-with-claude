@@ -5,9 +5,7 @@ package interpreter
 
 import (
 	"fmt"
-	"math"
-	"strconv"
-	
+
 	"basic-interpreter/parser"
 	"basic-interpreter/runtime"
 )
@@ -15,14 +13,14 @@ import (
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
 	runtime   runtime.Runtime
-	variables map[string]string // Variable storage
+	variables map[string]Value // Variable storage using proper Value types
 }
 
 // NewInterpreter creates a new interpreter instance
 func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	return &Interpreter{
 		runtime:   rt,
-		variables: make(map[string]string),
+		variables: make(map[string]Value),
 	}
 }
 
@@ -68,76 +66,58 @@ func (i *Interpreter) executePrintStatement(stmt *parser.PrintStatement) error {
 		return err
 	}
 	
-	return i.runtime.PrintLine(value)
+	return i.runtime.PrintLine(value.ToString())
 }
 
-// evaluateExpression evaluates an expression and returns its string value
-func (i *Interpreter) evaluateExpression(expr parser.Expression) (string, error) {
+// evaluateExpression evaluates an expression and returns its Value
+func (i *Interpreter) evaluateExpression(expr parser.Expression) (Value, error) {
 	switch e := expr.(type) {
 	case *parser.StringLiteral:
-		return e.Value, nil
+		return NewStringValue(e.Value), nil
 	case *parser.NumberLiteral:
-		return e.Value, nil
+		val, err := ParseValue(e.Value)
+		if err != nil {
+			return Value{}, err
+		}
+		return val, nil
 	case *parser.VariableReference:
 		if value, exists := i.variables[e.Name]; exists {
 			return value, nil
 		}
-		return "0", nil // Default value for uninitialized variables
+		return NewNumberValue(0), nil // Default value for uninitialized variables
 	case *parser.BinaryOperation:
 		return i.evaluateBinaryOperation(e)
 	default:
-		return "", fmt.Errorf("unknown expression type")
+		return Value{}, fmt.Errorf("unknown expression type")
 	}
 }
 
 // evaluateBinaryOperation evaluates a binary arithmetic operation
-func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (string, error) {
-	leftStr, err := i.evaluateExpression(expr.Left)
+func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (Value, error) {
+	left, err := i.evaluateExpression(expr.Left)
 	if err != nil {
-		return "", err
+		return Value{}, err
 	}
 	
-	rightStr, err := i.evaluateExpression(expr.Right)
+	right, err := i.evaluateExpression(expr.Right)
 	if err != nil {
-		return "", err
+		return Value{}, err
 	}
 	
-	// Convert to numbers for arithmetic
-	left, err := strconv.ParseFloat(leftStr, 64)
-	if err != nil {
-		return "", fmt.Errorf("invalid number: %s", leftStr)
-	}
-	
-	right, err := strconv.ParseFloat(rightStr, 64)
-	if err != nil {
-		return "", fmt.Errorf("invalid number: %s", rightStr)
-	}
-	
-	var result float64
 	switch expr.Operator {
 	case "+":
-		result = left + right
+		return left.Add(right)
 	case "-":
-		result = left - right
+		return left.Subtract(right)
 	case "*":
-		result = left * right
+		return left.Multiply(right)
 	case "/":
-		if right == 0 {
-			return "", fmt.Errorf("division by zero")
-		}
-		result = left / right
+		return left.Divide(right)
 	case "^":
-		result = math.Pow(left, right)
+		return left.Power(right)
 	default:
-		return "", fmt.Errorf("unknown operator: %s", expr.Operator)
+		return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
 	}
-	
-	// Convert result back to string
-	if result == float64(int64(result)) {
-		// If it's a whole number, return as integer
-		return strconv.FormatInt(int64(result), 10), nil
-	}
-	return strconv.FormatFloat(result, 'g', -1, 64), nil
 }
 
 // executeLetStatement executes a LET statement (variable assignment)

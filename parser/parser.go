@@ -12,7 +12,8 @@ import (
 
 // Parser represents the parser state
 type Parser struct {
-	lexer *lexer.Lexer
+	lexer      *lexer.Lexer
+	precedence *PrecedenceTable
 	
 	currentToken lexer.Token
 	peekToken    lexer.Token
@@ -23,8 +24,9 @@ type Parser struct {
 // New creates a new parser instance
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:  l,
-		errors: []string{},
+		lexer:      l,
+		precedence: NewPrecedenceTable(),
+		errors:     []string{},
 	}
 	
 	// Read two tokens, so currentToken and peekToken are both set
@@ -48,6 +50,22 @@ func (p *Parser) Errors() []string {
 // addError adds an error message
 func (p *Parser) addError(msg string) {
 	p.errors = append(p.errors, msg)
+}
+
+// addErrorf adds a formatted error message with current token context
+func (p *Parser) addErrorf(format string, args ...interface{}) {
+	msg := fmt.Sprintf(format, args...)
+	p.addError(msg)
+}
+
+// addTokenError adds an error message with token type context
+func (p *Parser) addTokenError(expected string, got lexer.TokenType) {
+	p.addErrorf("expected %s, got %s", expected, got)
+}
+
+// addLiteralError adds an error message with token literal context
+func (p *Parser) addLiteralError(prefix string, literal string) {
+	p.addErrorf("%s: %s", prefix, literal)
 }
 
 // skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
@@ -83,14 +101,14 @@ func (p *Parser) ParseProgram() *Program {
 // parseLine parses a single BASIC line
 func (p *Parser) parseLine() *Line {
 	if p.currentToken.Type != lexer.NUMBER {
-		p.addError(fmt.Sprintf("expected line number, got %s", p.currentToken.Type))
+		p.addTokenError("line number", p.currentToken.Type)
 		p.skipToNextLineOrEOF()
 		return nil
 	}
 
 	lineNum, err := strconv.Atoi(p.currentToken.Literal)
 	if err != nil {
-		p.addError(fmt.Sprintf("invalid line number: %s", p.currentToken.Literal))
+		p.addLiteralError("invalid line number", p.currentToken.Literal)
 		p.skipToNextLineOrEOF()
 		return nil
 	}
@@ -129,10 +147,10 @@ func (p *Parser) parseStatement() Statement {
 	case lexer.END:
 		return p.parseEndStatement()
 	case lexer.ILLEGAL:
-		p.addError(fmt.Sprintf("illegal token: %s", p.currentToken.Literal))
+		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
 	default:
-		p.addError(fmt.Sprintf("unknown statement: %s", p.currentToken.Type))
+		p.addTokenError("valid statement", p.currentToken.Type)
 		return nil
 	}
 }
@@ -148,26 +166,6 @@ func (p *Parser) parsePrintStatement() *PrintStatement {
 	return stmt
 }
 
-// Operator precedence levels
-type precedence int
-
-const (
-	_ precedence = iota
-	LOWEST
-	SUM     // +, -
-	PRODUCT // *, /
-	POWER   // ^
-	CALL    // functions (future use)
-)
-
-// precedences maps token types to their precedence levels
-var precedences = map[lexer.TokenType]precedence{
-	lexer.PLUS:     SUM,
-	lexer.MINUS:    SUM,
-	lexer.MULTIPLY: PRODUCT,
-	lexer.DIVIDE:   PRODUCT,
-	lexer.POWER:    POWER,
-}
 
 // parseExpression parses an expression using operator precedence parsing
 func (p *Parser) parseExpression() Expression {
@@ -181,9 +179,9 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 		return nil
 	}
 
-	for p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.peekTokenPrecedence() > minPrec {
+	for p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.precedence.GetPrecedence(p.peekToken.Type) > minPrec {
 		operator := p.peekToken.Literal
-		operatorPrec := p.peekTokenPrecedence()
+		operatorPrec := p.precedence.GetPrecedence(p.peekToken.Type)
 		
 		p.nextToken() // consume the operator
 		p.nextToken() // move to right operand
@@ -216,10 +214,10 @@ func (p *Parser) parsePrimaryExpression() Expression {
 	case lexer.LPAREN:
 		return p.parseGroupedExpression()
 	case lexer.ILLEGAL:
-		p.addError(fmt.Sprintf("illegal token in expression: %s", p.currentToken.Literal))
+		p.addLiteralError("illegal token in expression", p.currentToken.Literal)
 		return nil
 	default:
-		p.addError(fmt.Sprintf("unexpected token in expression: %s", p.currentToken.Type))
+		p.addTokenError("valid expression", p.currentToken.Type)
 		return nil
 	}
 }
@@ -242,13 +240,6 @@ func (p *Parser) parseGroupedExpression() Expression {
 	return expr
 }
 
-// peekTokenPrecedence returns the precedence of the peek token
-func (p *Parser) peekTokenPrecedence() precedence {
-	if prec, ok := precedences[p.peekToken.Type]; ok {
-		return prec
-	}
-	return LOWEST
-}
 
 // parseEndStatement parses an END statement
 func (p *Parser) parseEndStatement() *EndStatement {
@@ -297,7 +288,7 @@ func (p *Parser) parseAssignment() *LetStatement {
 	stmt := &LetStatement{Line: p.currentToken.Line}
 	
 	if p.currentToken.Type != lexer.IDENT {
-		p.addError(fmt.Sprintf("expected variable name, got %s", p.currentToken.Type))
+		p.addTokenError("variable name", p.currentToken.Type)
 		return nil
 	}
 	
@@ -305,7 +296,7 @@ func (p *Parser) parseAssignment() *LetStatement {
 	p.nextToken() // consume variable name
 	
 	if p.currentToken.Type != lexer.ASSIGN {
-		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.currentToken.Type))
+		p.addTokenError("'=' after variable name", p.currentToken.Type)
 		return nil
 	}
 	

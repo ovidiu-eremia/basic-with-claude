@@ -65,6 +65,13 @@ func (l *Lexer) createToken(tokenType TokenType, literal string) Token {
 	return Token{Type: tokenType, Literal: literal, Line: l.line}
 }
 
+// createSingleCharToken creates a token for single-character operators and advances position
+func (l *Lexer) createSingleCharToken(tokenType TokenType) Token {
+	tok := l.createToken(tokenType, string(l.currentChar))
+	l.readChar()
+	return tok
+}
+
 // readChar reads the next character and advances the position
 func (l *Lexer) readChar() {
 	if l.nextPosition >= len(l.input) {
@@ -82,37 +89,21 @@ func (l *Lexer) NextToken() Token {
 
 	switch l.currentChar {
 	case '=':
-		tok := l.createToken(ASSIGN, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(ASSIGN)
 	case '+':
-		tok := l.createToken(PLUS, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(PLUS)
 	case '-':
-		tok := l.createToken(MINUS, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(MINUS)
 	case '*':
-		tok := l.createToken(MULTIPLY, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(MULTIPLY)
 	case '/':
-		tok := l.createToken(DIVIDE, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(DIVIDE)
 	case '^':
-		tok := l.createToken(POWER, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(POWER)
 	case '(':
-		tok := l.createToken(LPAREN, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(LPAREN)
 	case ')':
-		tok := l.createToken(RPAREN, string(l.currentChar))
-		l.readChar()
-		return tok
+		return l.createSingleCharToken(RPAREN)
 	case '"':
 		if literal, terminated := l.readString(); terminated {
 			return l.createToken(STRING, literal)
@@ -129,10 +120,10 @@ func (l *Lexer) NextToken() Token {
 	default:
 		if isLetter(l.currentChar) {
 			literal := l.readIdentifier()
-			return Token{Type: lookupIdent(literal), Literal: literal, Line: l.line}
+			return l.createToken(lookupIdent(literal), literal)
 		} else if isDigit(l.currentChar) {
 			literal := l.readNumber()
-			return Token{Type: NUMBER, Literal: literal, Line: l.line}
+			return l.createToken(NUMBER, literal)
 		} else {
 			tok := l.createToken(ILLEGAL, string(l.currentChar))
 			l.readChar()
