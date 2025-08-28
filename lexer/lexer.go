@@ -35,12 +35,12 @@ type Lexer struct {
 
 // New creates a new lexer instance
 func New(input string) *Lexer {
-	l := &Lexer{
+	lexer := &Lexer{
 		input: input,
 		line:  1,
 	}
-	l.readChar()
-	return l
+	lexer.readChar()
+	return lexer
 }
 
 // readChar reads the next character and advances the position
@@ -62,10 +62,11 @@ func (l *Lexer) NextToken() Token {
 
 	switch l.ch {
 	case '"':
-		tok.Type = STRING
-		tok.Literal = l.readString()
 		tok.Line = l.line
-		if tok.Literal == "ILLEGAL" {
+		if literal, ok := l.readString(); ok {
+			tok.Type = STRING
+			tok.Literal = literal
+		} else {
 			tok.Type = ILLEGAL
 			tok.Literal = "unterminated string"
 		}
@@ -104,8 +105,8 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
-// readString reads a string literal
-func (l *Lexer) readString() string {
+// readString reads a string literal, returns (content, success)
+func (l *Lexer) readString() (string, bool) {
 	position := l.position + 1
 	for {
 		l.readChar()
@@ -115,12 +116,12 @@ func (l *Lexer) readString() string {
 	}
 	
 	if l.ch == 0 {
-		return "ILLEGAL" // Unterminated string
+		return "", false // Unterminated string
 	}
 	
 	result := l.input[position:l.position]
 	l.readChar() // Skip closing quote
-	return result
+	return result, true
 }
 
 // readIdentifier reads an identifier/keyword

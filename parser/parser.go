@@ -12,7 +12,7 @@ import (
 
 // Parser represents the parser state
 type Parser struct {
-	l *lexer.Lexer
+	lexer *lexer.Lexer
 	
 	curToken  lexer.Token
 	peekToken lexer.Token
@@ -23,7 +23,7 @@ type Parser struct {
 // New creates a new parser instance
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		l:      l,
+		lexer:  l,
 		errors: []string{},
 	}
 	
@@ -37,7 +37,7 @@ func New(l *lexer.Lexer) *Parser {
 // nextToken advances both curToken and peekToken
 func (p *Parser) nextToken() {
 	p.curToken = p.peekToken
-	p.peekToken = p.l.NextToken()
+	p.peekToken = p.lexer.NextToken()
 }
 
 // Errors returns parsing errors
@@ -48,6 +48,13 @@ func (p *Parser) Errors() []string {
 // addError adds an error message
 func (p *Parser) addError(msg string) {
 	p.errors = append(p.errors, msg)
+}
+
+// skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
+func (p *Parser) skipToNextLineOrEOF() {
+	for p.curToken.Type != lexer.NEWLINE && p.curToken.Type != lexer.EOF {
+		p.nextToken()
+	}
 }
 
 // ParseProgram parses the entire program
@@ -77,27 +84,21 @@ func (p *Parser) ParseProgram() *Program {
 func (p *Parser) parseLine() *Line {
 	if p.curToken.Type != lexer.NUMBER {
 		p.addError(fmt.Sprintf("expected line number, got %s", p.curToken.Type))
-		// Skip to next line or EOF to recover from error
-		for p.curToken.Type != lexer.NEWLINE && p.curToken.Type != lexer.EOF {
-			p.nextToken()
-		}
+		p.skipToNextLineOrEOF()
 		return nil
 	}
 
 	lineNum, err := strconv.Atoi(p.curToken.Literal)
 	if err != nil {
 		p.addError(fmt.Sprintf("invalid line number: %s", p.curToken.Literal))
-		// Skip to next line or EOF to recover from error
-		for p.curToken.Type != lexer.NEWLINE && p.curToken.Type != lexer.EOF {
-			p.nextToken()
-		}
+		p.skipToNextLineOrEOF()
 		return nil
 	}
 
 	line := &Line{
 		Number:     lineNum,
 		Statements: []Statement{},
-		Line:       p.curToken.Line,
+		SourceLine: p.curToken.Line,
 	}
 
 	p.nextToken() // consume line number

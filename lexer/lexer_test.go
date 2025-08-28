@@ -6,6 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// assertToken is a helper function to reduce test boilerplate
+func assertToken(t *testing.T, expected, actual Token, index int) {
+	t.Helper()
+	assert.Equal(t, expected.Type, actual.Type, "Token %d type mismatch", index)
+	assert.Equal(t, expected.Literal, actual.Literal, "Token %d literal mismatch", index)
+	assert.Equal(t, expected.Line, actual.Line, "Token %d line mismatch", index)
+}
+
 func TestLexer_NextToken(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -96,9 +104,7 @@ func TestLexer_NextToken(t *testing.T) {
 
 			for i, expectedToken := range tt.expected {
 				token := lexer.NextToken()
-				assert.Equal(t, expectedToken.Type, token.Type, "Token %d type mismatch", i)
-				assert.Equal(t, expectedToken.Literal, token.Literal, "Token %d literal mismatch", i)
-				assert.Equal(t, expectedToken.Line, token.Line, "Token %d line mismatch", i)
+				assertToken(t, expectedToken, token, i)
 			}
 		})
 	}

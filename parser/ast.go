@@ -27,7 +27,7 @@ type Program struct {
 
 func (p *Program) GetLineNumber() int {
 	if len(p.Lines) > 0 {
-		return p.Lines[0].Line
+		return p.Lines[0].SourceLine
 	}
 	return 0
 }
@@ -36,10 +36,10 @@ func (p *Program) GetLineNumber() int {
 type Line struct {
 	Number     int         // BASIC line number (10, 20, etc.)
 	Statements []Statement // Statements on this line
-	Line       int         // Source line number for error reporting
+	SourceLine int         // Source line number for error reporting
 }
 
-func (l *Line) GetLineNumber() int { return l.Line }
+func (l *Line) GetLineNumber() int { return l.SourceLine }
 
 // PrintStatement represents a PRINT statement
 type PrintStatement struct {
