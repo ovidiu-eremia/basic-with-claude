@@ -13,8 +13,8 @@ type Interpreter struct {
 	runtime runtime.Runtime
 }
 
-// New creates a new interpreter instance
-func New(rt runtime.Runtime) *Interpreter {
+// NewInterpreter creates a new interpreter instance
+func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	return &Interpreter{
 		runtime: rt,
 	}

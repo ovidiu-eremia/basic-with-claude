@@ -100,7 +100,7 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
-			interpreter := New(testRuntime)
+			interpreter := NewInterpreter(testRuntime)
 			
 			err := interpreter.Execute(tt.program)
 			require.NoError(t, err)
@@ -113,7 +113,7 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 
 func TestInterpreter_ExecuteWithEndStatement(t *testing.T) {
 	testRuntime := runtime.NewTestRuntime()
-	interpreter := New(testRuntime)
+	interpreter := NewInterpreter(testRuntime)
 	
 	program := &parser.Program{
 		Lines: []*parser.Line{
@@ -163,7 +163,7 @@ func TestInterpreter_ExecuteWithEndStatement(t *testing.T) {
 
 func TestInterpreter_EmptyProgram(t *testing.T) {
 	testRuntime := runtime.NewTestRuntime()
-	interpreter := New(testRuntime)
+	interpreter := NewInterpreter(testRuntime)
 	
 	program := &parser.Program{Lines: []*parser.Line{}}
 	

@@ -25,50 +25,50 @@ func NewTestRuntime() *TestRuntime {
 }
 
 // Print captures output without a newline
-func (tr *TestRuntime) Print(value string) error {
-	tr.outputBuffer = append(tr.outputBuffer, value)
+func (test *TestRuntime) Print(value string) error {
+	test.outputBuffer = append(test.outputBuffer, value)
 	return nil
 }
 
 // PrintLine captures output with a newline
-func (tr *TestRuntime) PrintLine(value string) error {
-	tr.outputBuffer = append(tr.outputBuffer, value+"\n")
+func (test *TestRuntime) PrintLine(value string) error {
+	test.outputBuffer = append(test.outputBuffer, value+"\n")
 	return nil
 }
 
 // Input returns scripted input from the queue
-func (tr *TestRuntime) Input(prompt string) (string, error) {
+func (test *TestRuntime) Input(prompt string) (string, error) {
 	if prompt != "" {
-		tr.outputBuffer = append(tr.outputBuffer, prompt)
+		test.outputBuffer = append(test.outputBuffer, prompt)
 	}
 	
-	if tr.inputIndex >= len(tr.inputQueue) {
+	if test.inputIndex >= len(test.inputQueue) {
 		return "", fmt.Errorf("no more input available in test queue")
 	}
 	
-	result := tr.inputQueue[tr.inputIndex]
-	tr.inputIndex++
+	result := test.inputQueue[test.inputIndex]
+	test.inputIndex++
 	return result, nil
 }
 
 // Clear clears the output buffer
-func (tr *TestRuntime) Clear() error {
-	tr.outputBuffer = make([]string, 0)
+func (test *TestRuntime) Clear() error {
+	test.outputBuffer = make([]string, 0)
 	return nil
 }
 
 // GetOutput returns all captured output
-func (tr *TestRuntime) GetOutput() []string {
-	return tr.outputBuffer
+func (test *TestRuntime) GetOutput() []string {
+	return test.outputBuffer
 }
 
 // SetInput sets the input queue for testing
-func (tr *TestRuntime) SetInput(inputs []string) {
-	tr.inputQueue = inputs
-	tr.inputIndex = 0
+func (test *TestRuntime) SetInput(inputs []string) {
+	test.inputQueue = inputs
+	test.inputIndex = 0
 }
 
 // ResetOutput clears the output buffer for testing
-func (tr *TestRuntime) ResetOutput() {
-	tr.outputBuffer = make([]string, 0)
+func (test *TestRuntime) ResetOutput() {
+	test.outputBuffer = make([]string, 0)
 }
