@@ -21,9 +21,9 @@ Establish project structure and minimal working interpreter.
 - [x] **Tests**: File reading, error handling for missing files
 
 #### Step 2: Minimal Lexer + Parser
-- [ ] **Goal**: Parse simplest BASIC program (line numbers + PRINT literals)
-- [ ] **Demo**: Parse and display `10 PRINT "HELLO"` as structured data
-- [ ] **Tests**: Token recognition, line number parsing, string literal parsing
+- [x] **Goal**: Parse simplest BASIC program (line numbers + PRINT literals)
+- [x] **Demo**: Parse and display `10 PRINT "HELLO"` as structured data
+- [x] **Tests**: Token recognition, line number parsing, string literal parsing
 
 #### Step 3: Minimal Interpreter + Runtime
 - [ ] **Goal**: Execute PRINT statements with string literals

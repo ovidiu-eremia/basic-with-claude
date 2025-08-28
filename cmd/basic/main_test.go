@@ -63,12 +63,3 @@ func TestReadBasicFilePermissionDenied(t *testing.T) {
 	}
 }
 
-func TestFormatSuccessMessage(t *testing.T) {
-	filename := "test.bas"
-	expected := "Program loaded: test.bas"
-	
-	result := formatSuccessMessage(filename)
-	if result != expected {
-		t.Errorf("formatSuccessMessage(%q) = %q, want %q", filename, result, expected)
-	}
-}

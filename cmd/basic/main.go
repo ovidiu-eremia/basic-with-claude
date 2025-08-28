@@ -6,6 +6,9 @@ package main
 import (
 	"fmt"
 	"os"
+
+	"basic-interpreter/lexer"
+	"basic-interpreter/parser"
 )
 
 func main() {
@@ -22,12 +25,24 @@ func main() {
 		os.Exit(1)
 	}
 	
-	// For now, just print success message
-	// Later steps will parse and execute the content
-	fmt.Println(formatSuccessMessage(filename))
+	// Parse the BASIC program
+	l := lexer.New(content)
+	p := parser.New(l)
+	program := p.ParseProgram()
 	
-	// Store content for future use (will be used in later steps)
-	_ = content
+	// Check for parsing errors
+	if errors := p.Errors(); len(errors) > 0 {
+		fmt.Fprintf(os.Stderr, "Parsing errors:\n")
+		for _, err := range errors {
+			fmt.Fprintf(os.Stderr, "  %s\n", err)
+		}
+		os.Exit(1)
+	}
+	
+	// Display parsed structure
+	fmt.Printf("Program loaded: %s\n", filename)
+	fmt.Printf("Parsed %d lines:\n\n", len(program.Lines))
+	displayParsedProgram(program)
 }
 
 // readBasicFile reads the contents of a BASIC program file
@@ -39,7 +54,26 @@ func readBasicFile(filename string) (string, error) {
 	return string(content), nil
 }
 
-// formatSuccessMessage creates a standard success message for file loading
-func formatSuccessMessage(filename string) string {
-	return fmt.Sprintf("Program loaded: %s", filename)
+// displayParsedProgram displays the parsed AST structure for debugging
+func displayParsedProgram(program *parser.Program) {
+	for _, line := range program.Lines {
+		fmt.Printf("Line %d:\n", line.Number)
+		for _, stmt := range line.Statements {
+			switch s := stmt.(type) {
+			case *parser.PrintStatement:
+				fmt.Printf("  PRINT ")
+				switch expr := s.Expression.(type) {
+				case *parser.StringLiteral:
+					fmt.Printf("string: %q\n", expr.Value)
+				default:
+					fmt.Printf("unknown expression type\n")
+				}
+			case *parser.EndStatement:
+				fmt.Printf("  END\n")
+			default:
+				fmt.Printf("  unknown statement type\n")
+			}
+		}
+		fmt.Println()
+	}
 }

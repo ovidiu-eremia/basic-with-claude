@@ -87,3 +87,6 @@ type Node interface {
 - **Variable names**: Remember 2-character limit when implementing symbol table
 - **String concatenation**: Uses `+` operator (not `&` like some BASIC variants)
 - **Runtime interface**: All I/O must go through interface, never direct console access
+- use stretchr/testify in all tests
+- prefer tabular tests
+- after writing a test, we want to make just enough production code to see the tests fail.  Let's make sure they fail for the right reason, not for compilation errors

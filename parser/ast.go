@@ -1,0 +1,68 @@
+// ABOUTME: Abstract Syntax Tree node definitions for BASIC language
+// ABOUTME: Defines the structure of parsed BASIC programs as tree nodes
+
+package parser
+
+// Node represents any node in the AST
+type Node interface {
+	GetLineNumber() int
+}
+
+// Statement represents any statement node
+type Statement interface {
+	Node
+	statementNode()
+}
+
+// Expression represents any expression node
+type Expression interface {
+	Node
+	expressionNode()
+}
+
+// Program represents the root of the AST - a complete BASIC program
+type Program struct {
+	Lines []*Line
+}
+
+func (p *Program) GetLineNumber() int {
+	if len(p.Lines) > 0 {
+		return p.Lines[0].Line
+	}
+	return 0
+}
+
+// Line represents a single line in a BASIC program
+type Line struct {
+	Number     int         // BASIC line number (10, 20, etc.)
+	Statements []Statement // Statements on this line
+	Line       int         // Source line number for error reporting
+}
+
+func (l *Line) GetLineNumber() int { return l.Line }
+
+// PrintStatement represents a PRINT statement
+type PrintStatement struct {
+	Expression Expression // What to print
+	Line       int        // Source line number
+}
+
+func (ps *PrintStatement) statementNode()  {}
+func (ps *PrintStatement) GetLineNumber() int { return ps.Line }
+
+// StringLiteral represents a string literal expression
+type StringLiteral struct {
+	Value string // The string value (without quotes)
+	Line  int    // Source line number
+}
+
+func (sl *StringLiteral) expressionNode() {}
+func (sl *StringLiteral) GetLineNumber() int { return sl.Line }
+
+// EndStatement represents an END statement
+type EndStatement struct {
+	Line int // Source line number
+}
+
+func (es *EndStatement) statementNode()  {}
+func (es *EndStatement) GetLineNumber() int { return es.Line }
