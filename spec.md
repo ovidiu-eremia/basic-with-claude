@@ -124,11 +124,8 @@ A BASIC language interpreter written in Go that implements a subset of Commodore
 - **String Length**: Maximum 255 characters
 - **Array Dimensions**: As per C64 BASIC V2 limits
 
-## Implementation Notes
-1. Parser should handle traditional BASIC line number format
-2. Tokenization not required (plain text interpretation)
-3. Case-insensitive keywords
-4. Variables are global scope
-5. Implicit variable declaration (no DIM needed for simple variables)
-6. Numeric variables initialized to 0, strings to empty string
-7. Comments (REM statements) should be preserved during execution
+## Language Notes
+1. Case-insensitive keywords
+2. Variables are global scope
+3. Implicit variable declaration (no DIM needed for simple variables)
+4. Numeric variables initialized to 0, strings to empty string

@@ -17,18 +17,6 @@ Before implementing ANY step, you MUST read these files in this order:
 5. Refactor if needed
 6. Repeat
 
-### TDD Insights from Experience
-- **Lexer tests**: Test edge cases like unterminated strings, empty input
-- **Parser tests**: Use AST comparison for clear failure messages
-- **Interpreter tests**: TestRuntime captures output for verification
-- **Acceptance tests**: End-to-end .bas file execution prevents regressions
-- **Refactoring**: Comprehensive tests enable confident code improvements
-
-## Testing Standards
-- ALWAYS use `github.com/stretchr/testify/assert` and `require`
-- ALWAYS use tabular tests with `tests := []struct{...}`
-- Test file naming: `*_test.go`
-- Test function naming: `TestComponent_Method`
 
 ## Implementation Rules
 - NEVER implement features beyond current step scope
@@ -77,34 +65,20 @@ This is a BASIC interpreter written in Go implementing Commodore 64 BASIC V2 sub
 
 ## Development Commands
 
-### Basic Go Commands
 ```bash
-# Initialize Go module (if not done)
-go mod init basic-interpreter
-
-# Build the interpreter
+# Run tests and build
+go test ./...
 go build ./cmd/basic
 
-# Run tests
-go test ./...
-
-# Run specific package tests
+# Run specific tests  
 go test ./lexer
 go test ./parser
 go test ./interpreter
-
-# Run acceptance tests
 go test ./acceptance
 
-# Run with race detection
-go test -race ./...
-
-# Build and run a BASIC program
+# Run BASIC program
 go run ./cmd/basic program.bas
 ```
-
-### TDD Development Workflow
-See `implementation-strategy.md` lines 163-169 for the complete per-milestone TDD process.
 
 ## Current Implementation Status
 
@@ -118,9 +92,9 @@ See `implementation-strategy.md` lines 163-169 for the complete per-milestone TD
 ## Essential Implementation Patterns
 
 ### Quick Reference Patterns
-- **AST Node Interface**: See `design.md` lines 37-41 for complete interface definition
-- **Error Handling Rules**: See `design.md` lines 156-175 for comprehensive error strategy
-- **Value System**: See `implementation-strategy.md` lines 139-152 for Value types
+- **AST Node Interface**: See `design.md` for complete interface definition
+- **Error Handling Rules**: See `design.md` for comprehensive error strategy  
+- **Value System**: See `design.md` for Value types and variable storage
 
 ### Key Constraints
 - Variable names: 2 significant characters max (C64 compatible)

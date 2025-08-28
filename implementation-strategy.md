@@ -99,8 +99,8 @@ Each milestone follows this pattern:
 
 ### Error Handling Philosophy
 - **Implement proper errors from the start**: No panics or "not implemented"
-- **Only parse what we support**: Parser rejects unsupported syntax with clear errors
-- **C64-style error messages**: "?SYNTAX ERROR IN 10" format
+- **Only parse what we support**: Parser rejects unsupported syntax with clear errors  
+- **C64-style error messages**: See `design.md` for complete error handling strategy
 - **Graceful degradation**: Unknown keywords produce syntax errors, not crashes
 
 ## Implementation Principles
@@ -112,44 +112,10 @@ Each milestone follows this pattern:
 4. **No Premature Abstraction**: Build what's needed for current milestone
 
 ### AST Design
-```go
-type Node interface {
-    Execute(interpreter *Interpreter) error
-    GetLineNumber() int
-}
-
-type Program struct {
-    Lines []*Line
-}
-
-type Line struct {
-    Number     int
-    Statements []Statement
-}
-
-type Statement interface {
-    Node
-}
-
-type Expression interface {
-    Evaluate(interpreter *Interpreter) (Value, error)
-}
-```
+See `design.md` for complete AST structure and interface definitions.
 
 ### Value System
-```go
-type ValueType int
-const (
-    NumberType ValueType = iota
-    StringType
-)
-
-type Value struct {
-    Type   ValueType
-    Number float64
-    String string
-}
-```
+See `design.md` for detailed Value types and variable storage implementation.
 
 ### Execution Model
 1. **Tree-walking interpreter**: Direct AST execution
