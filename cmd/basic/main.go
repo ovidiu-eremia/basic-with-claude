@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"os"
 
+	"basic-interpreter/interpreter"
 	"basic-interpreter/lexer"
 	"basic-interpreter/parser"
+	"basic-interpreter/runtime"
 )
 
 func main() {
@@ -39,10 +41,21 @@ func main() {
 		os.Exit(1)
 	}
 	
-	// Display parsed structure
+	// Execute the program
 	fmt.Printf("Program loaded: %s\n", filename)
-	fmt.Printf("Parsed %d lines:\n\n", len(program.Lines))
-	displayParsedProgram(program)
+	fmt.Println("Executing program:")
+	fmt.Println()
+	
+	// Create runtime and interpreter
+	rt := runtime.NewStandardRuntime()
+	interp := interpreter.New(rt)
+	
+	// Execute the program
+	err = interp.Execute(program)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Runtime error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 // readBasicFile reads the contents of a BASIC program file
