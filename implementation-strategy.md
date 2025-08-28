@@ -114,7 +114,7 @@ Each milestone follows this pattern:
 ### AST Design
 ```go
 type Node interface {
-    Execute(interp *Interpreter) error
+    Execute(interpreter *Interpreter) error
     GetLineNumber() int
 }
 
@@ -132,7 +132,7 @@ type Statement interface {
 }
 
 type Expression interface {
-    Evaluate(interp *Interpreter) (Value, error)
+    Evaluate(interpreter *Interpreter) (Value, error)
 }
 ```
 

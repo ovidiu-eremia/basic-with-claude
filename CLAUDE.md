@@ -2,6 +2,38 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# MANDATORY: Read These Files FIRST
+Before implementing ANY step, you MUST read these files in this order:
+1. `spec.md` - Complete BASIC language specification
+2. `design.md` - Architecture and component design
+3. `implementation-strategy.md` - Development approach and milestones
+4. `todo.md` - Current task list
+
+## TDD Workflow (STRICTLY FOLLOW THIS)
+1. Write failing test first
+2. Write MINIMAL code to make test compile (but still fail for right reasons)
+3. Verify test fails for expected reasons, not compilation errors
+4. Implement just enough to make test pass
+5. Refactor if needed
+6. Repeat
+
+## Testing Standards
+- ALWAYS use `github.com/stretchr/testify/assert` and `require`
+- ALWAYS use tabular tests with `tests := []struct{...}`
+- Test file naming: `*_test.go`
+- Test function naming: `TestComponent_Method`
+
+## Implementation Rules
+- NEVER implement features beyond current step scope
+- If demo files need unsupported features, update the demo file, don't add features
+- NEVER use infinite loops - always advance tokens/iterators
+- Parser infinite loops: ensure `nextToken()` is called in all code paths
+
+## Common Go Pitfalls to Avoid
+- Parser loops: always advance position in loops
+- Token advancement: check both `curToken` and `peekToken` progression
+- Error recovery: skip to safe tokens (NEWLINE, EOF) when parsing fails
+
 ## Project Overview
 
 This is a BASIC interpreter written in Go implementing Commodore 64 BASIC V2 subset. Uses lexer → parser → AST → tree-walking interpreter architecture.
@@ -48,30 +80,19 @@ go run ./cmd/basic program.bas
 ```
 
 ### TDD Development Workflow
-1. Write acceptance test (.bas file with expected output)
-2. Extend lexer/parser/interpreter incrementally
-3. Run tests until green
-4. Refactor with test safety net
+See `implementation-strategy.md` lines 163-169 for the complete per-milestone TDD process.
 
 ## Current Implementation Status
 
-**Project Status**: Planning phase - no Go code implemented yet
-**Next Milestone**: Initialize Go module and implement minimal interpreter (PRINT, variables, RUN)
+**Project Status**: Step 2 complete - Lexer and parser implemented with comprehensive tests
+**Next Milestone**: Step 3 - Implement minimal interpreter and runtime for executing PRINT statements
 
 ## Essential Implementation Patterns
 
-### AST Node Interface (Quick Reference)
-```go
-type Node interface {
-    Execute(interpreter *Interpreter) error
-    GetLineNumber() int  // For error reporting and GOTO targets
-}
-```
-
-### Error Handling Rules
-- Always return errors, never panic
-- Include line numbers: "?SYNTAX ERROR IN 10" 
-- Only parse implemented syntax (reject unsupported with clear errors)
+### Quick Reference Patterns
+- **AST Node Interface**: See `design.md` lines 37-41 for complete interface definition
+- **Error Handling Rules**: See `design.md` lines 156-175 for comprehensive error strategy
+- **Value System**: See `implementation-strategy.md` lines 139-152 for Value types
 
 ### Key Constraints
 - Variable names: 2 significant characters max (C64 compatible)
@@ -87,6 +108,3 @@ type Node interface {
 - **Variable names**: Remember 2-character limit when implementing symbol table
 - **String concatenation**: Uses `+` operator (not `&` like some BASIC variants)
 - **Runtime interface**: All I/O must go through interface, never direct console access
-- use stretchr/testify in all tests
-- prefer tabular tests
-- after writing a test, we want to make just enough production code to see the tests fail.  Let's make sure they fail for the right reason, not for compilation errors

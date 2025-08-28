@@ -220,6 +220,7 @@ type RuntimeEnvironment interface {
     Print(value string) error
     PrintLine(value string) error
     Input(prompt string) (string, error)
+    Clear() error
     // Additional I/O methods as needed
 }
 ```
