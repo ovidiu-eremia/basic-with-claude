@@ -140,10 +140,9 @@ func (p *Parser) parseStatement() Statement {
 	case lexer.PRINT:
 		return p.parsePrintStatement()
 	case lexer.LET:
-		return p.parseLetStatement()
+		return p.parseAssignmentStatement(true) // LET assignment
 	case lexer.IDENT:
-		// Assignment without LET keyword
-		return p.parseAssignmentStatement()
+		return p.parseAssignmentStatement(false) // Direct assignment
 	case lexer.END:
 		return p.parseEndStatement()
 	case lexer.ILLEGAL:
@@ -272,18 +271,15 @@ func (p *Parser) parseVariableReference() *VariableReference {
 	}
 }
 
-// parseLetStatement parses a LET statement
-func (p *Parser) parseLetStatement() *LetStatement {
-	p.nextToken() // consume LET
+// parseAssignmentStatement parses variable assignment (with or without LET keyword)
+func (p *Parser) parseAssignmentStatement(hasLet bool) *LetStatement {
+	if hasLet {
+		p.nextToken() // consume LET token
+	}
 	return p.parseAssignment()
 }
 
-// parseAssignmentStatement parses an assignment statement without LET
-func (p *Parser) parseAssignmentStatement() *LetStatement {
-	return p.parseAssignment()
-}
-
-// parseAssignment parses variable assignment (with or without LET keyword)
+// parseAssignment parses variable assignment core logic
 func (p *Parser) parseAssignment() *LetStatement {
 	stmt := &LetStatement{Line: p.currentToken.Line}
 	

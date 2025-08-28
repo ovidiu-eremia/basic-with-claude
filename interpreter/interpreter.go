@@ -10,6 +10,15 @@ import (
 	"basic-interpreter/runtime"
 )
 
+// binaryOperations maps operator strings to their corresponding Value methods
+var binaryOperations = map[string]func(Value, Value) (Value, error){
+	"+": Value.Add,
+	"-": Value.Subtract,
+	"*": Value.Multiply,
+	"/": Value.Divide,
+	"^": Value.Power,
+}
+
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
 	runtime   runtime.Runtime
@@ -104,20 +113,11 @@ func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (Val
 		return Value{}, err
 	}
 	
-	switch expr.Operator {
-	case "+":
-		return left.Add(right)
-	case "-":
-		return left.Subtract(right)
-	case "*":
-		return left.Multiply(right)
-	case "/":
-		return left.Divide(right)
-	case "^":
-		return left.Power(right)
-	default:
-		return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
+	if operation, exists := binaryOperations[expr.Operator]; exists {
+		return operation(left, right)
 	}
+	
+	return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
 }
 
 // executeLetStatement executes a LET statement (variable assignment)

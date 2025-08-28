@@ -34,6 +34,15 @@ var keywords = map[string]TokenType{
 	"END":   END,
 }
 
+// Token type categories for validation and precedence checking
+var (
+	ArithmeticOperators = []TokenType{PLUS, MINUS, MULTIPLY, DIVIDE, POWER}
+	Keywords            = []TokenType{PRINT, LET, END}
+	Literals            = []TokenType{NUMBER, STRING}
+	Delimiters          = []TokenType{LPAREN, RPAREN}
+	SpecialTokens       = []TokenType{ILLEGAL, EOF, NEWLINE}
+)
+
 // Token represents a single token with its type, literal value, and line number
 type Token struct {
 	Type    TokenType
