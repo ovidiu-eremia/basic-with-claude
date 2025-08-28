@@ -20,6 +20,13 @@ const (
 	NEWLINE TokenType = "NEWLINE"
 )
 
+// keywords maps BASIC keywords to their token types
+var keywords = map[string]TokenType{
+	"PRINT": PRINT,
+	"LET":   LET,
+	"END":   END,
+}
+
 // Token represents a single token with its type, literal value, and line number
 type Token struct {
 	Type    TokenType
@@ -29,11 +36,11 @@ type Token struct {
 
 // Lexer represents the lexical analyzer
 type Lexer struct {
-	input        string
-	position     int  // current position in input (points to current char)
-	readPosition int  // current reading position in input (after current char)
-	ch           byte // current char under examination
-	line         int  // current line number
+	input           string
+	currentPosition int  // current position in input (points to current char)
+	nextPosition    int  // current reading position in input (after current char)
+	currentChar     byte // current char under examination
+	line            int  // current line number
 }
 
 // New creates a new lexer instance
@@ -46,110 +53,105 @@ func New(input string) *Lexer {
 	return lexer
 }
 
+// createToken creates a token with the current line number
+func (l *Lexer) createToken(tokenType TokenType, literal string) Token {
+	return Token{Type: tokenType, Literal: literal, Line: l.line}
+}
+
 // readChar reads the next character and advances the position
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0 // ASCII NUL represents "EOF"
+	if l.nextPosition >= len(l.input) {
+		l.currentChar = 0 // ASCII NUL represents "EOF"
 	} else {
-		l.ch = l.input[l.readPosition]
+		l.currentChar = l.input[l.nextPosition]
 	}
-	l.position = l.readPosition
-	l.readPosition++
+	l.currentPosition = l.nextPosition
+	l.nextPosition++
 }
 
 // NextToken scans and returns the next token
 func (l *Lexer) NextToken() Token {
-	var tok Token
-
 	l.skipWhitespace()
 
-	switch l.ch {
+	switch l.currentChar {
 	case '=':
-		tok = Token{Type: ASSIGN, Literal: string(l.ch), Line: l.line}
+		tok := l.createToken(ASSIGN, string(l.currentChar))
 		l.readChar()
+		return tok
 	case '"':
-		tok.Line = l.line
-		if literal, ok := l.readString(); ok {
-			tok.Type = STRING
-			tok.Literal = literal
+		if literal, terminated := l.readString(); terminated {
+			return l.createToken(STRING, literal)
 		} else {
-			tok.Type = ILLEGAL
-			tok.Literal = "unterminated string"
+			return l.createToken(ILLEGAL, "unterminated string")
 		}
 	case '\n':
-		tok = Token{Type: NEWLINE, Literal: string(l.ch), Line: l.line}
+		tok := l.createToken(NEWLINE, string(l.currentChar))
 		l.line++
 		l.readChar()
+		return tok
 	case 0:
-		tok.Literal = ""
-		tok.Type = EOF
-		tok.Line = l.line
+		return l.createToken(EOF, "")
 	default:
-		if isLetter(l.ch) {
-			tok.Line = l.line
-			tok.Literal = l.readIdentifier()
-			tok.Type = lookupIdent(tok.Literal)
-			return tok
-		} else if isDigit(l.ch) {
-			tok.Type = NUMBER
-			tok.Literal = l.readNumber()
-			tok.Line = l.line
-			return tok
+		if isLetter(l.currentChar) {
+			literal := l.readIdentifier()
+			return Token{Type: lookupIdent(literal), Literal: literal, Line: l.line}
+		} else if isDigit(l.currentChar) {
+			literal := l.readNumber()
+			return Token{Type: NUMBER, Literal: literal, Line: l.line}
 		} else {
-			tok = Token{Type: ILLEGAL, Literal: string(l.ch), Line: l.line}
+			tok := l.createToken(ILLEGAL, string(l.currentChar))
+			l.readChar()
+			return tok
 		}
-		l.readChar()
 	}
-
-	return tok
 }
 
 // skipWhitespace skips whitespace characters except newlines
 func (l *Lexer) skipWhitespace() {
-	for l.ch == ' ' || l.ch == '\t' || l.ch == '\r' {
+	for l.currentChar == ' ' || l.currentChar == '\t' || l.currentChar == '\r' {
 		l.readChar()
 	}
 }
 
-// readString reads a string literal, returns (content, success)
-func (l *Lexer) readString() (string, bool) {
-	position := l.position + 1
+// readString reads a string literal, returns (content, terminated)
+func (l *Lexer) readString() (content string, terminated bool) {
+	position := l.currentPosition + 1
 	for {
 		l.readChar()
-		if l.ch == '"' || l.ch == 0 {
+		if l.currentChar == '"' || l.currentChar == 0 {
 			break
 		}
 	}
 	
-	if l.ch == 0 {
+	if l.currentChar == 0 {
 		return "", false // Unterminated string
 	}
 	
-	result := l.input[position:l.position]
+	result := l.input[position:l.currentPosition]
 	l.readChar() // Skip closing quote
 	return result, true
 }
 
 // readIdentifier reads an identifier/keyword
 func (l *Lexer) readIdentifier() string {
-	position := l.position
-	for isLetter(l.ch) || isDigit(l.ch) {
+	position := l.currentPosition
+	for isLetter(l.currentChar) || isDigit(l.currentChar) {
 		l.readChar()
 	}
 	// Handle string variables ending with $
-	if l.ch == '$' {
+	if l.currentChar == '$' {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.currentPosition]
 }
 
 // readNumber reads a numeric literal
 func (l *Lexer) readNumber() string {
-	position := l.position
-	for isDigit(l.ch) {
+	position := l.currentPosition
+	for isDigit(l.currentChar) {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.currentPosition]
 }
 
 // isLetter checks if character is a letter
@@ -164,12 +166,6 @@ func isDigit(ch byte) bool {
 
 // lookupIdent checks if identifier is a keyword
 func lookupIdent(ident string) TokenType {
-	keywords := map[string]TokenType{
-		"PRINT": PRINT,
-		"LET":   LET,
-		"END":   END,
-	}
-	
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}

@@ -14,8 +14,8 @@ import (
 type Parser struct {
 	lexer *lexer.Lexer
 	
-	curToken  lexer.Token
-	peekToken lexer.Token
+	currentToken lexer.Token
+	peekToken    lexer.Token
 	
 	errors []string
 }
@@ -27,16 +27,16 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 	
-	// Read two tokens, so curToken and peekToken are both set
+	// Read two tokens, so currentToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
 	
 	return p
 }
 
-// nextToken advances both curToken and peekToken
+// nextToken advances both currentToken and peekToken
 func (p *Parser) nextToken() {
-	p.curToken = p.peekToken
+	p.currentToken = p.peekToken
 	p.peekToken = p.lexer.NextToken()
 }
 
@@ -52,7 +52,7 @@ func (p *Parser) addError(msg string) {
 
 // skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
 func (p *Parser) skipToNextLineOrEOF() {
-	for p.curToken.Type != lexer.NEWLINE && p.curToken.Type != lexer.EOF {
+	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
 		p.nextToken()
 	}
 }
@@ -62,9 +62,9 @@ func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
 	program.Lines = []*Line{}
 
-	for p.curToken.Type != lexer.EOF {
+	for p.currentToken.Type != lexer.EOF {
 		// Skip newlines
-		if p.curToken.Type == lexer.NEWLINE {
+		if p.currentToken.Type == lexer.NEWLINE {
 			p.nextToken()
 			continue
 		}
@@ -82,15 +82,15 @@ func (p *Parser) ParseProgram() *Program {
 
 // parseLine parses a single BASIC line
 func (p *Parser) parseLine() *Line {
-	if p.curToken.Type != lexer.NUMBER {
-		p.addError(fmt.Sprintf("expected line number, got %s", p.curToken.Type))
+	if p.currentToken.Type != lexer.NUMBER {
+		p.addError(fmt.Sprintf("expected line number, got %s", p.currentToken.Type))
 		p.skipToNextLineOrEOF()
 		return nil
 	}
 
-	lineNum, err := strconv.Atoi(p.curToken.Literal)
+	lineNum, err := strconv.Atoi(p.currentToken.Literal)
 	if err != nil {
-		p.addError(fmt.Sprintf("invalid line number: %s", p.curToken.Literal))
+		p.addError(fmt.Sprintf("invalid line number: %s", p.currentToken.Literal))
 		p.skipToNextLineOrEOF()
 		return nil
 	}
@@ -98,13 +98,13 @@ func (p *Parser) parseLine() *Line {
 	line := &Line{
 		Number:     lineNum,
 		Statements: []Statement{},
-		SourceLine: p.curToken.Line,
+		SourceLine: p.currentToken.Line,
 	}
 
 	p.nextToken() // consume line number
 
 	// Parse statements on this line
-	for p.curToken.Type != lexer.NEWLINE && p.curToken.Type != lexer.EOF {
+	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			line.Statements = append(line.Statements, stmt)
@@ -118,7 +118,7 @@ func (p *Parser) parseLine() *Line {
 
 // parseStatement parses a statement
 func (p *Parser) parseStatement() Statement {
-	switch p.curToken.Type {
+	switch p.currentToken.Type {
 	case lexer.PRINT:
 		return p.parsePrintStatement()
 	case lexer.LET:
@@ -129,17 +129,17 @@ func (p *Parser) parseStatement() Statement {
 	case lexer.END:
 		return p.parseEndStatement()
 	case lexer.ILLEGAL:
-		p.addError(fmt.Sprintf("illegal token: %s", p.curToken.Literal))
+		p.addError(fmt.Sprintf("illegal token: %s", p.currentToken.Literal))
 		return nil
 	default:
-		p.addError(fmt.Sprintf("unknown statement: %s", p.curToken.Type))
+		p.addError(fmt.Sprintf("unknown statement: %s", p.currentToken.Type))
 		return nil
 	}
 }
 
 // parsePrintStatement parses a PRINT statement
 func (p *Parser) parsePrintStatement() *PrintStatement {
-	stmt := &PrintStatement{Line: p.curToken.Line}
+	stmt := &PrintStatement{Line: p.currentToken.Line}
 
 	p.nextToken() // consume PRINT
 
@@ -150,7 +150,7 @@ func (p *Parser) parsePrintStatement() *PrintStatement {
 
 // parseExpression parses an expression
 func (p *Parser) parseExpression() Expression {
-	switch p.curToken.Type {
+	switch p.currentToken.Type {
 	case lexer.STRING:
 		return p.parseStringLiteral()
 	case lexer.NUMBER:
@@ -158,10 +158,10 @@ func (p *Parser) parseExpression() Expression {
 	case lexer.IDENT:
 		return p.parseVariableReference()
 	case lexer.ILLEGAL:
-		p.addError(fmt.Sprintf("illegal token in expression: %s", p.curToken.Literal))
+		p.addError(fmt.Sprintf("illegal token in expression: %s", p.currentToken.Literal))
 		return nil
 	default:
-		p.addError(fmt.Sprintf("unexpected token in expression: %s", p.curToken.Type))
+		p.addError(fmt.Sprintf("unexpected token in expression: %s", p.currentToken.Type))
 		return nil
 	}
 }
@@ -169,69 +169,59 @@ func (p *Parser) parseExpression() Expression {
 // parseEndStatement parses an END statement
 func (p *Parser) parseEndStatement() *EndStatement {
 	return &EndStatement{
-		Line: p.curToken.Line,
+		Line: p.currentToken.Line,
 	}
 }
 
 // parseStringLiteral parses a string literal
 func (p *Parser) parseStringLiteral() *StringLiteral {
 	return &StringLiteral{
-		Value: p.curToken.Literal,
-		Line:  p.curToken.Line,
+		Value: p.currentToken.Literal,
+		Line:  p.currentToken.Line,
 	}
 }
 
 // parseNumberLiteral parses a number literal
 func (p *Parser) parseNumberLiteral() *NumberLiteral {
 	return &NumberLiteral{
-		Value: p.curToken.Literal,
-		Line:  p.curToken.Line,
+		Value: p.currentToken.Literal,
+		Line:  p.currentToken.Line,
 	}
 }
 
 // parseVariableReference parses a variable reference
 func (p *Parser) parseVariableReference() *VariableReference {
 	return &VariableReference{
-		Name: p.curToken.Literal,
-		Line: p.curToken.Line,
+		Name: p.currentToken.Literal,
+		Line: p.currentToken.Line,
 	}
 }
 
 // parseLetStatement parses a LET statement
 func (p *Parser) parseLetStatement() *LetStatement {
-	stmt := &LetStatement{Line: p.curToken.Line}
-	
 	p.nextToken() // consume LET
-	
-	if p.curToken.Type != lexer.IDENT {
-		p.addError(fmt.Sprintf("expected variable name after LET, got %s", p.curToken.Type))
-		return nil
-	}
-	
-	stmt.Variable = p.curToken.Literal
-	p.nextToken() // consume variable name
-	
-	if p.curToken.Type != lexer.ASSIGN {
-		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.curToken.Type))
-		return nil
-	}
-	
-	p.nextToken() // consume '='
-	
-	stmt.Expression = p.parseExpression()
-	
-	return stmt
+	return p.parseAssignment()
 }
 
 // parseAssignmentStatement parses an assignment statement without LET
 func (p *Parser) parseAssignmentStatement() *LetStatement {
-	stmt := &LetStatement{Line: p.curToken.Line}
+	return p.parseAssignment()
+}
+
+// parseAssignment parses variable assignment (with or without LET keyword)
+func (p *Parser) parseAssignment() *LetStatement {
+	stmt := &LetStatement{Line: p.currentToken.Line}
 	
-	stmt.Variable = p.curToken.Literal
+	if p.currentToken.Type != lexer.IDENT {
+		p.addError(fmt.Sprintf("expected variable name, got %s", p.currentToken.Type))
+		return nil
+	}
+	
+	stmt.Variable = p.currentToken.Literal
 	p.nextToken() // consume variable name
 	
-	if p.curToken.Type != lexer.ASSIGN {
-		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.curToken.Type))
+	if p.currentToken.Type != lexer.ASSIGN {
+		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.currentToken.Type))
 		return nil
 	}
 	

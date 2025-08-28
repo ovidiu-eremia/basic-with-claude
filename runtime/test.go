@@ -67,8 +67,3 @@ func (test *TestRuntime) SetInput(inputs []string) {
 	test.inputQueue = inputs
 	test.inputIndex = 0
 }
-
-// ResetOutput clears the output buffer for testing
-func (test *TestRuntime) ResetOutput() {
-	test.outputBuffer = make([]string, 0)
-}
