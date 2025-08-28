@@ -86,8 +86,8 @@ func (v Value) IsString() bool {
 	return v.Type == StringType
 }
 
-// Add performs addition on two values
-func (v Value) Add(other Value) (Value, error) {
+// binaryArithmeticOp performs a binary arithmetic operation on two values
+func (v Value) binaryArithmeticOp(other Value, operation func(float64, float64) float64) (Value, error) {
 	left, err := v.ToNumber()
 	if err != nil {
 		return Value{}, err
@@ -96,33 +96,28 @@ func (v Value) Add(other Value) (Value, error) {
 	if err != nil {
 		return Value{}, err
 	}
-	return NewNumberValue(left + right), nil
+	return NewNumberValue(operation(left, right)), nil
+}
+
+// Add performs addition on two values
+func (v Value) Add(other Value) (Value, error) {
+	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
+		return left + right
+	})
 }
 
 // Subtract performs subtraction on two values
 func (v Value) Subtract(other Value) (Value, error) {
-	left, err := v.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	right, err := other.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	return NewNumberValue(left - right), nil
+	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
+		return left - right
+	})
 }
 
 // Multiply performs multiplication on two values
 func (v Value) Multiply(other Value) (Value, error) {
-	left, err := v.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	right, err := other.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	return NewNumberValue(left * right), nil
+	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
+		return left * right
+	})
 }
 
 // Divide performs division on two values
@@ -143,13 +138,7 @@ func (v Value) Divide(other Value) (Value, error) {
 
 // Power performs exponentiation on two values
 func (v Value) Power(other Value) (Value, error) {
-	left, err := v.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	right, err := other.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	return NewNumberValue(math.Pow(left, right)), nil
+	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
+		return math.Pow(left, right)
+	})
 }
