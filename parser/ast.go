@@ -66,3 +66,31 @@ type EndStatement struct {
 
 func (es *EndStatement) statementNode()  {}
 func (es *EndStatement) GetLineNumber() int { return es.Line }
+
+// LetStatement represents a LET assignment statement
+type LetStatement struct {
+	Variable   string     // Variable name
+	Expression Expression // Value to assign
+	Line       int        // Source line number
+}
+
+func (ls *LetStatement) statementNode()  {}
+func (ls *LetStatement) GetLineNumber() int { return ls.Line }
+
+// VariableReference represents a variable reference in an expression
+type VariableReference struct {
+	Name string // Variable name
+	Line int    // Source line number
+}
+
+func (vr *VariableReference) expressionNode() {}
+func (vr *VariableReference) GetLineNumber() int { return vr.Line }
+
+// NumberLiteral represents a numeric literal expression
+type NumberLiteral struct {
+	Value string // The numeric value as string
+	Line  int    // Source line number
+}
+
+func (nl *NumberLiteral) expressionNode() {}
+func (nl *NumberLiteral) GetLineNumber() int { return nl.Line }

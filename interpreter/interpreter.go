@@ -10,13 +10,15 @@ import (
 
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
-	runtime runtime.Runtime
+	runtime   runtime.Runtime
+	variables map[string]string // Variable storage
 }
 
 // NewInterpreter creates a new interpreter instance
 func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	return &Interpreter{
-		runtime: rt,
+		runtime:   rt,
+		variables: make(map[string]string),
 	}
 }
 
@@ -44,6 +46,8 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 	switch s := stmt.(type) {
 	case *parser.PrintStatement:
 		return i.executePrintStatement(s)
+	case *parser.LetStatement:
+		return i.executeLetStatement(s)
 	case *parser.EndStatement:
 		// END statement - just return, handled in Execute
 		return nil
@@ -68,7 +72,25 @@ func (i *Interpreter) evaluateExpression(expr parser.Expression) (string, error)
 	switch e := expr.(type) {
 	case *parser.StringLiteral:
 		return e.Value, nil
+	case *parser.NumberLiteral:
+		return e.Value, nil
+	case *parser.VariableReference:
+		if value, exists := i.variables[e.Name]; exists {
+			return value, nil
+		}
+		return "0", nil // Default value for uninitialized variables
 	default:
 		return "", nil
 	}
+}
+
+// executeLetStatement executes a LET statement (variable assignment)
+func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
+	value, err := i.evaluateExpression(stmt.Expression)
+	if err != nil {
+		return err
+	}
+	
+	i.variables[stmt.Variable] = value
+	return nil
 }

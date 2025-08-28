@@ -12,7 +12,10 @@ const (
 	EOF     TokenType = "EOF"
 	NUMBER  TokenType = "NUMBER"
 	STRING  TokenType = "STRING"
+	IDENT   TokenType = "IDENT"
+	ASSIGN  TokenType = "="
 	PRINT   TokenType = "PRINT"
+	LET     TokenType = "LET"
 	END     TokenType = "END"
 	NEWLINE TokenType = "NEWLINE"
 )
@@ -61,6 +64,9 @@ func (l *Lexer) NextToken() Token {
 	l.skipWhitespace()
 
 	switch l.ch {
+	case '=':
+		tok = Token{Type: ASSIGN, Literal: string(l.ch), Line: l.line}
+		l.readChar()
 	case '"':
 		tok.Line = l.line
 		if literal, ok := l.readString(); ok {
@@ -127,7 +133,7 @@ func (l *Lexer) readString() (string, bool) {
 // readIdentifier reads an identifier/keyword
 func (l *Lexer) readIdentifier() string {
 	position := l.position
-	for isLetter(l.ch) {
+	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
 	return l.input[position:l.position]
@@ -156,11 +162,12 @@ func isDigit(ch byte) bool {
 func lookupIdent(ident string) TokenType {
 	keywords := map[string]TokenType{
 		"PRINT": PRINT,
+		"LET":   LET,
 		"END":   END,
 	}
 	
 	if tok, ok := keywords[ident]; ok {
 		return tok
 	}
-	return ILLEGAL // For now, any non-keyword identifier is illegal in Step 2
+	return IDENT // Non-keyword identifiers are now valid variable names
 }

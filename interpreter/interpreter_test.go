@@ -173,3 +173,157 @@ func TestInterpreter_EmptyProgram(t *testing.T) {
 	output := testRuntime.GetOutput()
 	assert.Len(t, output, 0)
 }
+
+func TestInterpreter_VariableAssignment(t *testing.T) {
+	tests := []struct {
+		name           string
+		program        *parser.Program
+		expectedOutput []string
+	}{
+		{
+			name: "LET assignment and PRINT",
+			program: &parser.Program{
+				Lines: []*parser.Line{
+					{
+						Number: 10,
+						Statements: []parser.Statement{
+							&parser.LetStatement{
+								Variable: "A",
+								Expression: &parser.NumberLiteral{
+									Value: "42",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.VariableReference{
+									Name: "A",
+									Line: 2,
+								},
+								Line: 2,
+							},
+						},
+						SourceLine: 2,
+					},
+				},
+			},
+			expectedOutput: []string{"42\n"},
+		},
+		{
+			name: "assignment without LET",
+			program: &parser.Program{
+				Lines: []*parser.Line{
+					{
+						Number: 10,
+						Statements: []parser.Statement{
+							&parser.LetStatement{
+								Variable: "X",
+								Expression: &parser.NumberLiteral{
+									Value: "123",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.VariableReference{
+									Name: "X",
+									Line: 2,
+								},
+								Line: 2,
+							},
+						},
+						SourceLine: 2,
+					},
+				},
+			},
+			expectedOutput: []string{"123\n"},
+		},
+		{
+			name: "multiple variables",
+			program: &parser.Program{
+				Lines: []*parser.Line{
+					{
+						Number: 10,
+						Statements: []parser.Statement{
+							&parser.LetStatement{
+								Variable: "A",
+								Expression: &parser.NumberLiteral{
+									Value: "10",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []parser.Statement{
+							&parser.LetStatement{
+								Variable: "B",
+								Expression: &parser.NumberLiteral{
+									Value: "20",
+									Line:  2,
+								},
+								Line: 2,
+							},
+						},
+						SourceLine: 2,
+					},
+					{
+						Number: 30,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.VariableReference{
+									Name: "A",
+									Line: 3,
+								},
+								Line: 3,
+							},
+						},
+						SourceLine: 3,
+					},
+					{
+						Number: 40,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.VariableReference{
+									Name: "B",
+									Line: 4,
+								},
+								Line: 4,
+							},
+						},
+						SourceLine: 4,
+					},
+				},
+			},
+			expectedOutput: []string{"10\n", "20\n"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testRuntime := runtime.NewTestRuntime()
+			interpreter := NewInterpreter(testRuntime)
+			
+			err := interpreter.Execute(tt.program)
+			require.NoError(t, err)
+			
+			output := testRuntime.GetOutput()
+			assert.Equal(t, tt.expectedOutput, output)
+		})
+	}
+}

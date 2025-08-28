@@ -121,6 +121,11 @@ func (p *Parser) parseStatement() Statement {
 	switch p.curToken.Type {
 	case lexer.PRINT:
 		return p.parsePrintStatement()
+	case lexer.LET:
+		return p.parseLetStatement()
+	case lexer.IDENT:
+		// Assignment without LET keyword
+		return p.parseAssignmentStatement()
 	case lexer.END:
 		return p.parseEndStatement()
 	case lexer.ILLEGAL:
@@ -148,6 +153,10 @@ func (p *Parser) parseExpression() Expression {
 	switch p.curToken.Type {
 	case lexer.STRING:
 		return p.parseStringLiteral()
+	case lexer.NUMBER:
+		return p.parseNumberLiteral()
+	case lexer.IDENT:
+		return p.parseVariableReference()
 	case lexer.ILLEGAL:
 		p.addError(fmt.Sprintf("illegal token in expression: %s", p.curToken.Literal))
 		return nil
@@ -170,4 +179,65 @@ func (p *Parser) parseStringLiteral() *StringLiteral {
 		Value: p.curToken.Literal,
 		Line:  p.curToken.Line,
 	}
+}
+
+// parseNumberLiteral parses a number literal
+func (p *Parser) parseNumberLiteral() *NumberLiteral {
+	return &NumberLiteral{
+		Value: p.curToken.Literal,
+		Line:  p.curToken.Line,
+	}
+}
+
+// parseVariableReference parses a variable reference
+func (p *Parser) parseVariableReference() *VariableReference {
+	return &VariableReference{
+		Name: p.curToken.Literal,
+		Line: p.curToken.Line,
+	}
+}
+
+// parseLetStatement parses a LET statement
+func (p *Parser) parseLetStatement() *LetStatement {
+	stmt := &LetStatement{Line: p.curToken.Line}
+	
+	p.nextToken() // consume LET
+	
+	if p.curToken.Type != lexer.IDENT {
+		p.addError(fmt.Sprintf("expected variable name after LET, got %s", p.curToken.Type))
+		return nil
+	}
+	
+	stmt.Variable = p.curToken.Literal
+	p.nextToken() // consume variable name
+	
+	if p.curToken.Type != lexer.ASSIGN {
+		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.curToken.Type))
+		return nil
+	}
+	
+	p.nextToken() // consume '='
+	
+	stmt.Expression = p.parseExpression()
+	
+	return stmt
+}
+
+// parseAssignmentStatement parses an assignment statement without LET
+func (p *Parser) parseAssignmentStatement() *LetStatement {
+	stmt := &LetStatement{Line: p.curToken.Line}
+	
+	stmt.Variable = p.curToken.Literal
+	p.nextToken() // consume variable name
+	
+	if p.curToken.Type != lexer.ASSIGN {
+		p.addError(fmt.Sprintf("expected '=' after variable name, got %s", p.curToken.Type))
+		return nil
+	}
+	
+	p.nextToken() // consume '='
+	
+	stmt.Expression = p.parseExpression()
+	
+	return stmt
 }

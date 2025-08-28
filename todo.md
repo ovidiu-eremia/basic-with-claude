@@ -26,17 +26,17 @@ Establish project structure and minimal working interpreter.
 - [x] **Tests**: Token recognition, line number parsing, string literal parsing
 
 #### Step 3: Minimal Interpreter + Runtime
-- [ ] **Goal**: Execute PRINT statements with string literals
-- [ ] **Demo**: `10 PRINT "HELLO WORLD"` outputs "HELLO WORLD"
-- [ ] **Tests**: AST execution, runtime interface, end-to-end program execution
+- [x] **Goal**: Execute PRINT statements with string literals
+- [x] **Demo**: `10 PRINT "HELLO WORLD"` outputs "HELLO WORLD"
+- [x] **Tests**: AST execution, runtime interface, end-to-end program execution
 
 ### Phase 2: Variables and Assignment (Steps 4-6)
 Add variable support and basic assignment.
 
 #### Step 4: Numeric Variables
-- [ ] **Goal**: Support numeric variable assignment and PRINT
-- [ ] **Demo**: `10 LET A = 42` then `20 PRINT A` outputs "42"
-- [ ] **Tests**: Variable storage, assignment parsing, variable evaluation
+- [x] **Goal**: Support numeric variable assignment and PRINT
+- [x] **Demo**: `10 LET A = 42` then `20 PRINT A` outputs "42"
+- [x] **Tests**: Variable storage, assignment parsing, variable evaluation
 
 #### Step 5: String Variables
 - [ ] **Goal**: Support string variable assignment and PRINT
