@@ -41,11 +41,11 @@ func (test *TestRuntime) Input(prompt string) (string, error) {
 	if prompt != "" {
 		test.outputBuffer = append(test.outputBuffer, prompt)
 	}
-	
+
 	if test.inputIndex >= len(test.inputQueue) {
 		return "", fmt.Errorf("no more input available in test queue")
 	}
-	
+
 	result := test.inputQueue[test.inputIndex]
 	test.inputIndex++
 	return result, nil

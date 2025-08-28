@@ -18,19 +18,19 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Usage: %s <filename.bas>\n", os.Args[0])
 		os.Exit(1)
 	}
-	
+
 	filename := os.Args[1]
-	
+
 	content, err := readBasicFile(filename)
 	if err != nil {
 		exitWithError("Error reading file %s: %v", filename, err)
 	}
-	
+
 	// Parse the BASIC program
 	l := lexer.New(content)
 	p := parser.New(l)
 	program := p.ParseProgram()
-	
+
 	// Check for parsing errors
 	if errors := p.Errors(); len(errors) > 0 {
 		fmt.Fprintf(os.Stderr, "Parsing errors:\n")
@@ -39,16 +39,16 @@ func main() {
 		}
 		os.Exit(1)
 	}
-	
+
 	// Execute the program
 	fmt.Printf("Program loaded: %s\n", filename)
 	fmt.Println("Executing program:")
 	fmt.Println()
-	
+
 	// Create runtime and interpreter
 	stdRuntime := runtime.NewStandardRuntime()
 	interp := interpreter.NewInterpreter(stdRuntime)
-	
+
 	// Execute the program
 	err = interp.Execute(program)
 	if err != nil {
@@ -70,4 +70,3 @@ func readBasicFile(filename string) (string, error) {
 	}
 	return string(content), nil
 }
-

@@ -227,12 +227,12 @@ func TestParser_ParseProgram(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			l := lexer.New(tt.input)
 			p := New(l)
-			
+
 			program := p.ParseProgram()
-			
+
 			require.NotNil(t, program, "ParseProgram() returned nil")
 			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
-			
+
 			assert.Equal(t, tt.expected, program)
 		})
 	}
@@ -240,9 +240,9 @@ func TestParser_ParseProgram(t *testing.T) {
 
 func TestParser_ParseErrors(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         string
-		expectError   bool
+		name        string
+		input       string
+		expectError bool
 	}{
 		{
 			name:        "unterminated string",
@@ -265,9 +265,9 @@ func TestParser_ParseErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			l := lexer.New(tt.input)
 			p := New(l)
-			
+
 			program := p.ParseProgram()
-			
+
 			if tt.expectError {
 				assert.True(t, len(p.Errors()) > 0, "Expected parsing errors but got none")
 			} else {
@@ -288,23 +288,23 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 			name:  "simple addition",
 			input: "2 + 3",
 			expected: &BinaryOperation{
-				Left: &NumberLiteral{Value: "2", Line: 1},
+				Left:     &NumberLiteral{Value: "2", Line: 1},
 				Operator: "+",
-				Right: &NumberLiteral{Value: "3", Line: 1},
-				Line: 1,
+				Right:    &NumberLiteral{Value: "3", Line: 1},
+				Line:     1,
 			},
 		},
 		{
 			name:  "precedence: multiplication over addition",
 			input: "2 + 3 * 4",
 			expected: &BinaryOperation{
-				Left: &NumberLiteral{Value: "2", Line: 1},
+				Left:     &NumberLiteral{Value: "2", Line: 1},
 				Operator: "+",
 				Right: &BinaryOperation{
-					Left: &NumberLiteral{Value: "3", Line: 1},
+					Left:     &NumberLiteral{Value: "3", Line: 1},
 					Operator: "*",
-					Right: &NumberLiteral{Value: "4", Line: 1},
-					Line: 1,
+					Right:    &NumberLiteral{Value: "4", Line: 1},
+					Line:     1,
 				},
 				Line: 1,
 			},
@@ -314,24 +314,24 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 			input: "(2 + 3) * 4",
 			expected: &BinaryOperation{
 				Left: &BinaryOperation{
-					Left: &NumberLiteral{Value: "2", Line: 1},
+					Left:     &NumberLiteral{Value: "2", Line: 1},
 					Operator: "+",
-					Right: &NumberLiteral{Value: "3", Line: 1},
-					Line: 1,
+					Right:    &NumberLiteral{Value: "3", Line: 1},
+					Line:     1,
 				},
 				Operator: "*",
-				Right: &NumberLiteral{Value: "4", Line: 1},
-				Line: 1,
+				Right:    &NumberLiteral{Value: "4", Line: 1},
+				Line:     1,
 			},
 		},
 		{
 			name:  "variables in expressions",
 			input: "A + B",
 			expected: &BinaryOperation{
-				Left: &VariableReference{Name: "A", Line: 1},
+				Left:     &VariableReference{Name: "A", Line: 1},
 				Operator: "+",
-				Right: &VariableReference{Name: "B", Line: 1},
-				Line: 1,
+				Right:    &VariableReference{Name: "B", Line: 1},
+				Line:     1,
 			},
 		},
 	}
@@ -340,9 +340,9 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			l := lexer.New(tt.input)
 			p := New(l)
-			
+
 			expr := p.parseExpression()
-			
+
 			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
 			assert.Equal(t, tt.expected, expr)
 		})

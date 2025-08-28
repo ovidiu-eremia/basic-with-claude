@@ -39,12 +39,12 @@ func (std *StandardRuntime) Input(prompt string) (string, error) {
 	if prompt != "" {
 		fmt.Print(prompt)
 	}
-	
+
 	line, err := std.reader.ReadString('\n')
 	if err != nil {
 		return "", err
 	}
-	
+
 	return strings.TrimSpace(line), nil
 }
 

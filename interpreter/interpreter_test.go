@@ -67,10 +67,10 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
 			interpreter := NewInterpreter(testRuntime)
-			
+
 			err := interpreter.Execute(tt.program)
 			require.NoError(t, err)
-			
+
 			output := testRuntime.GetOutput()
 			assert.Equal(t, tt.expectedOutput, output)
 		})
@@ -124,10 +124,10 @@ func TestInterpreter_NumericVariables(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
 			interpreter := NewInterpreter(testRuntime)
-			
+
 			err := interpreter.Execute(tt.program)
 			require.NoError(t, err)
-			
+
 			output := testRuntime.GetOutput()
 			assert.Equal(t, tt.expectedOutput, output)
 		})
@@ -181,10 +181,10 @@ func TestInterpreter_StringVariables(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
 			interpreter := NewInterpreter(testRuntime)
-			
+
 			err := interpreter.Execute(tt.program)
 			require.NoError(t, err)
-			
+
 			output := testRuntime.GetOutput()
 			assert.Equal(t, tt.expectedOutput, output)
 		})
@@ -206,10 +206,10 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.NumberLiteral{Value: "2", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "2", Line: 1},
 									Operator: "+",
-									Right: &parser.NumberLiteral{Value: "3", Line: 1},
-									Line: 1,
+									Right:    &parser.NumberLiteral{Value: "3", Line: 1},
+									Line:     1,
 								},
 								Line: 1,
 							},
@@ -229,13 +229,13 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.NumberLiteral{Value: "2", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "2", Line: 1},
 									Operator: "+",
 									Right: &parser.BinaryOperation{
-										Left: &parser.NumberLiteral{Value: "3", Line: 1},
+										Left:     &parser.NumberLiteral{Value: "3", Line: 1},
 										Operator: "*",
-										Right: &parser.NumberLiteral{Value: "4", Line: 1},
-										Line: 1,
+										Right:    &parser.NumberLiteral{Value: "4", Line: 1},
+										Line:     1,
 									},
 									Line: 1,
 								},
@@ -256,9 +256,9 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Number: 10,
 						Statements: []parser.Statement{
 							&parser.LetStatement{
-								Variable: "A",
+								Variable:   "A",
 								Expression: &parser.NumberLiteral{Value: "5", Line: 1},
-								Line: 1,
+								Line:       1,
 							},
 						},
 						SourceLine: 1,
@@ -267,9 +267,9 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Number: 20,
 						Statements: []parser.Statement{
 							&parser.LetStatement{
-								Variable: "B",
+								Variable:   "B",
 								Expression: &parser.NumberLiteral{Value: "3", Line: 2},
-								Line: 2,
+								Line:       2,
 							},
 						},
 						SourceLine: 2,
@@ -279,13 +279,13 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.VariableReference{Name: "A", Line: 3},
+									Left:     &parser.VariableReference{Name: "A", Line: 3},
 									Operator: "*",
 									Right: &parser.BinaryOperation{
-										Left: &parser.VariableReference{Name: "B", Line: 3},
+										Left:     &parser.VariableReference{Name: "B", Line: 3},
 										Operator: "+",
-										Right: &parser.NumberLiteral{Value: "1", Line: 3},
-										Line: 3,
+										Right:    &parser.NumberLiteral{Value: "1", Line: 3},
+										Line:     3,
 									},
 									Line: 3,
 								},
@@ -307,10 +307,10 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.NumberLiteral{Value: "10", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "10", Line: 1},
 									Operator: "/",
-									Right: &parser.NumberLiteral{Value: "2", Line: 1},
-									Line: 1,
+									Right:    &parser.NumberLiteral{Value: "2", Line: 1},
+									Line:     1,
 								},
 								Line: 1,
 							},
@@ -322,10 +322,10 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.NumberLiteral{Value: "2", Line: 2},
+									Left:     &parser.NumberLiteral{Value: "2", Line: 2},
 									Operator: "^",
-									Right: &parser.NumberLiteral{Value: "3", Line: 2},
-									Line: 2,
+									Right:    &parser.NumberLiteral{Value: "3", Line: 2},
+									Line:     2,
 								},
 								Line: 2,
 							},
@@ -342,10 +342,10 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
 			interpreter := NewInterpreter(testRuntime)
-			
+
 			err := interpreter.Execute(tt.program)
 			require.NoError(t, err)
-			
+
 			output := testRuntime.GetOutput()
 			assert.Equal(t, tt.expectedOutput, output)
 		})
@@ -367,10 +367,10 @@ func TestInterpreter_ArithmeticErrors(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left: &parser.NumberLiteral{Value: "10", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "10", Line: 1},
 									Operator: "/",
-									Right: &parser.NumberLiteral{Value: "0", Line: 1},
-									Line: 1,
+									Right:    &parser.NumberLiteral{Value: "0", Line: 1},
+									Line:     1,
 								},
 								Line: 1,
 							},
@@ -387,9 +387,9 @@ func TestInterpreter_ArithmeticErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			testRuntime := runtime.NewTestRuntime()
 			interpreter := NewInterpreter(testRuntime)
-			
+
 			err := interpreter.Execute(tt.program)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {

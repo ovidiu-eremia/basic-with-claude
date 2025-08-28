@@ -86,7 +86,7 @@ func TestValue_ToNumber(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := tt.value.ToNumber()
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {

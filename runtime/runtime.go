@@ -8,13 +8,13 @@ package runtime
 type Runtime interface {
 	// Print outputs a string without a newline
 	Print(value string) error
-	
+
 	// PrintLine outputs a string with a newline
 	PrintLine(value string) error
-	
+
 	// Input prompts for user input and returns the entered string
 	Input(prompt string) (string, error)
-	
+
 	// Clear clears the output (if supported by the runtime)
 	Clear() error
 }

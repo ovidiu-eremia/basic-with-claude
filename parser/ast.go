@@ -47,7 +47,7 @@ type PrintStatement struct {
 	Line       int        // Source line number
 }
 
-func (ps *PrintStatement) statementNode()  {}
+func (ps *PrintStatement) statementNode()     {}
 func (ps *PrintStatement) GetLineNumber() int { return ps.Line }
 
 // StringLiteral represents a string literal expression
@@ -56,7 +56,7 @@ type StringLiteral struct {
 	Line  int    // Source line number
 }
 
-func (sl *StringLiteral) expressionNode() {}
+func (sl *StringLiteral) expressionNode()    {}
 func (sl *StringLiteral) GetLineNumber() int { return sl.Line }
 
 // EndStatement represents an END statement
@@ -64,7 +64,7 @@ type EndStatement struct {
 	Line int // Source line number
 }
 
-func (es *EndStatement) statementNode()  {}
+func (es *EndStatement) statementNode()     {}
 func (es *EndStatement) GetLineNumber() int { return es.Line }
 
 // LetStatement represents a LET assignment statement
@@ -74,7 +74,7 @@ type LetStatement struct {
 	Line       int        // Source line number
 }
 
-func (ls *LetStatement) statementNode()  {}
+func (ls *LetStatement) statementNode()     {}
 func (ls *LetStatement) GetLineNumber() int { return ls.Line }
 
 // VariableReference represents a variable reference in an expression
@@ -83,7 +83,7 @@ type VariableReference struct {
 	Line int    // Source line number
 }
 
-func (vr *VariableReference) expressionNode() {}
+func (vr *VariableReference) expressionNode()    {}
 func (vr *VariableReference) GetLineNumber() int { return vr.Line }
 
 // NumberLiteral represents a numeric literal expression
@@ -92,7 +92,7 @@ type NumberLiteral struct {
 	Line  int    // Source line number
 }
 
-func (nl *NumberLiteral) expressionNode() {}
+func (nl *NumberLiteral) expressionNode()    {}
 func (nl *NumberLiteral) GetLineNumber() int { return nl.Line }
 
 // BinaryOperation represents a binary arithmetic operation
@@ -103,5 +103,5 @@ type BinaryOperation struct {
 	Line     int        // Source line number
 }
 
-func (bo *BinaryOperation) expressionNode() {}
+func (bo *BinaryOperation) expressionNode()    {}
 func (bo *BinaryOperation) GetLineNumber() int { return bo.Line }

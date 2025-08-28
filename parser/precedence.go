@@ -42,9 +42,3 @@ func (pt *PrecedenceTable) GetPrecedence(tokenType lexer.TokenType) precedence {
 	}
 	return LOWEST
 }
-
-// IsOperator returns true if the token type is an arithmetic operator
-func (pt *PrecedenceTable) IsOperator(tokenType lexer.TokenType) bool {
-	_, ok := pt.precedences[tokenType]
-	return ok
-}

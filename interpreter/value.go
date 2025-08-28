@@ -99,6 +99,23 @@ func (v Value) binaryArithmeticOp(other Value, operation func(float64, float64) 
 	return NewNumberValue(operation(left, right)), nil
 }
 
+// binaryArithmeticOpWithError performs a binary arithmetic operation that can return an error
+func (v Value) binaryArithmeticOpWithError(other Value, operation func(float64, float64) (float64, error)) (Value, error) {
+	left, err := v.ToNumber()
+	if err != nil {
+		return Value{}, err
+	}
+	right, err := other.ToNumber()
+	if err != nil {
+		return Value{}, err
+	}
+	result, err := operation(left, right)
+	if err != nil {
+		return Value{}, err
+	}
+	return NewNumberValue(result), nil
+}
+
 // Add performs addition on two values
 func (v Value) Add(other Value) (Value, error) {
 	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
@@ -122,18 +139,12 @@ func (v Value) Multiply(other Value) (Value, error) {
 
 // Divide performs division on two values
 func (v Value) Divide(other Value) (Value, error) {
-	left, err := v.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	right, err := other.ToNumber()
-	if err != nil {
-		return Value{}, err
-	}
-	if right == 0 {
-		return Value{}, fmt.Errorf("division by zero")
-	}
-	return NewNumberValue(left / right), nil
+	return v.binaryArithmeticOpWithError(other, func(left, right float64) (float64, error) {
+		if right == 0 {
+			return 0, fmt.Errorf("division by zero")
+		}
+		return left / right, nil
+	})
 }
 
 // Power performs exponentiation on two values

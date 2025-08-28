@@ -6,9 +6,21 @@ package interpreter
 import (
 	"fmt"
 
+	"basic-interpreter/lexer"
 	"basic-interpreter/parser"
 	"basic-interpreter/runtime"
 )
+
+// RuntimeError represents an error that occurred during program execution
+type RuntimeError struct {
+	Message  string
+	Position lexer.Position
+}
+
+// Error implements the error interface
+func (re *RuntimeError) Error() string {
+	return fmt.Sprintf("runtime error at line %d, column %d: %s", re.Position.Line, re.Position.Column, re.Message)
+}
 
 // binaryOperations maps operator strings to their corresponding Value methods
 var binaryOperations = map[string]func(Value, Value) (Value, error){
@@ -42,7 +54,7 @@ func (i *Interpreter) Execute(program *parser.Program) error {
 			if err != nil {
 				return err
 			}
-			
+
 			// Check if this is an END statement - stop execution
 			if _, isEnd := stmt.(*parser.EndStatement); isEnd {
 				return nil
@@ -74,7 +86,7 @@ func (i *Interpreter) executePrintStatement(stmt *parser.PrintStatement) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return i.runtime.PrintLine(value.ToString())
 }
 
@@ -107,16 +119,16 @@ func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (Val
 	if err != nil {
 		return Value{}, err
 	}
-	
+
 	right, err := i.evaluateExpression(expr.Right)
 	if err != nil {
 		return Value{}, err
 	}
-	
+
 	if operation, exists := binaryOperations[expr.Operator]; exists {
 		return operation(left, right)
 	}
-	
+
 	return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
 }
 
@@ -126,7 +138,7 @@ func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
 	if err != nil {
 		return err
 	}
-	
+
 	i.variables[stmt.Variable] = value
 	return nil
 }
