@@ -156,6 +156,71 @@ func TestParser_ParseProgram(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "string variable assignment with LET",
+			input: `10 LET A$ = "HELLO"`,
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&LetStatement{
+								Variable: "A$",
+								Expression: &StringLiteral{
+									Value: "HELLO",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
+		{
+			name:  "string variable assignment without LET",
+			input: `10 NAME$ = "JOHN DOE"`,
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&LetStatement{
+								Variable: "NAME$",
+								Expression: &StringLiteral{
+									Value: "JOHN DOE",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
+		{
+			name:  "PRINT string variable",
+			input: `10 PRINT A$`,
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &VariableReference{
+									Name: "A$",
+									Line: 1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {

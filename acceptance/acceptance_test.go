@@ -70,6 +70,13 @@ func TestAcceptance_ExecutionOrder(t *testing.T) {
 	assert.Equal(t, "HELLO WORLD\n", output[0], "Output should match expected string")
 }
 
+func TestAcceptance_StringVariables(t *testing.T) {
+	output := executeBasicFile(t, "../test_strings.bas")
+	
+	expected := []string{"HELLO\n", "WORLD\n"}
+	assert.Equal(t, expected, output, "String variables program should assign and print string values correctly")
+}
+
 func TestAcceptance_InvalidFile(t *testing.T) {
 	// Test that non-existent files are handled gracefully
 	content := "invalid content"

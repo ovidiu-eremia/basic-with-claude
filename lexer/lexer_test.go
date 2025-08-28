@@ -129,6 +129,28 @@ func TestLexer_NextToken(t *testing.T) {
 				{Type: EOF, Literal: "", Line: 1},
 			},
 		},
+		{
+			name:  "string variable names",
+			input: `A$ = "HELLO"`,
+			expected: []Token{
+				{Type: IDENT, Literal: "A$", Line: 1},
+				{Type: ASSIGN, Literal: "=", Line: 1},
+				{Type: STRING, Literal: "HELLO", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "string variable with LET",
+			input: `10 LET NAME$ = "JOHN"`,
+			expected: []Token{
+				{Type: NUMBER, Literal: "10", Line: 1},
+				{Type: LET, Literal: "LET", Line: 1},
+				{Type: IDENT, Literal: "NAME$", Line: 1},
+				{Type: ASSIGN, Literal: "=", Line: 1},
+				{Type: STRING, Literal: "JOHN", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
 	}
 
 	for _, tt := range tests {

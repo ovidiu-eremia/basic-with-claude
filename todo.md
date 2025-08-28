@@ -39,9 +39,9 @@ Add variable support and basic assignment.
 - [x] **Tests**: Variable storage, assignment parsing, variable evaluation
 
 #### Step 5: String Variables
-- [ ] **Goal**: Support string variable assignment and PRINT
-- [ ] **Demo**: `10 LET A$ = "HELLO"` then `20 PRINT A$` outputs "HELLO"
-- [ ] **Tests**: String variable handling, type distinction, C64 naming rules
+- [x] **Goal**: Support string variable assignment and PRINT
+- [x] **Demo**: `10 LET A$ = "HELLO"` then `20 PRINT A$` outputs "HELLO"
+- [x] **Tests**: String variable handling, type distinction, C64 naming rules
 
 #### Step 6: Arithmetic Expressions
 - [ ] **Goal**: Support basic arithmetic in assignments and PRINT

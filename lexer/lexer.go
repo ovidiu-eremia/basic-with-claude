@@ -136,6 +136,10 @@ func (l *Lexer) readIdentifier() string {
 	for isLetter(l.ch) || isDigit(l.ch) {
 		l.readChar()
 	}
+	// Handle string variables ending with $
+	if l.ch == '$' {
+		l.readChar()
+	}
 	return l.input[position:l.position]
 }
 
