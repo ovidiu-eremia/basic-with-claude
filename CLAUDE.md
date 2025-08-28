@@ -17,6 +17,13 @@ Before implementing ANY step, you MUST read these files in this order:
 5. Refactor if needed
 6. Repeat
 
+### TDD Insights from Experience
+- **Lexer tests**: Test edge cases like unterminated strings, empty input
+- **Parser tests**: Use AST comparison for clear failure messages
+- **Interpreter tests**: TestRuntime captures output for verification
+- **Acceptance tests**: End-to-end .bas file execution prevents regressions
+- **Refactoring**: Comprehensive tests enable confident code improvements
+
 ## Testing Standards
 - ALWAYS use `github.com/stretchr/testify/assert` and `require`
 - ALWAYS use tabular tests with `tests := []struct{...}`
@@ -31,8 +38,25 @@ Before implementing ANY step, you MUST read these files in this order:
 
 ## Common Go Pitfalls to Avoid
 - Parser loops: always advance position in loops
-- Token advancement: check both `curToken` and `peekToken` progression
+- Token advancement: check both `currentToken` and `peekToken` progression
 - Error recovery: skip to safe tokens (NEWLINE, EOF) when parsing fails
+
+## Code Quality Patterns (Learned from Critic Analysis)
+
+### Naming Conventions
+- Use descriptive names over abbreviations: `currentChar` not `ch`, `currentToken` not `curToken`
+- Named return values for clarity: `(content string, terminated bool)` not `(string, bool)`
+- Consistent field naming: avoid conflicts between fields and methods
+
+### Duplication Elimination
+- Extract helper methods for repetitive operations (e.g., `createToken()`)
+- Consolidate similar parsing methods with shared logic
+- Move constants to package level to avoid recreation
+
+### Parser Patterns
+- Unified assignment parsing: handle `LET A = 42` and `A = 42` with shared logic
+- Token creation helpers reduce boilerplate in lexer
+- Clear separation between parsing and validation logic
 
 ## Project Overview
 
@@ -84,8 +108,12 @@ See `implementation-strategy.md` lines 163-169 for the complete per-milestone TD
 
 ## Current Implementation Status
 
-**Project Status**: Step 2 complete - Lexer and parser implemented with comprehensive tests
-**Next Milestone**: Step 3 - Implement minimal interpreter and runtime for executing PRINT statements
+**Project Status**: Step 5 complete - String variables fully implemented and tested
+**Current Features**: Line parsing, PRINT statements, numeric variables, string variables, LET assignments
+**Next Milestone**: Step 6 - Implement arithmetic expressions with proper operator precedence
+**Code Quality**: Recently refactored based on critic analysis - reduced duplication, improved naming
+**Testing**: Comprehensive test suite with unit, integration, and acceptance tests (all passing)
+**Git Hooks**: Pre-commit hook runs full test suite automatically
 
 ## Essential Implementation Patterns
 
@@ -96,9 +124,10 @@ See `implementation-strategy.md` lines 163-169 for the complete per-milestone TD
 
 ### Key Constraints
 - Variable names: 2 significant characters max (C64 compatible)
-- String variables end with $ (A$, NAME$)
+- String variables end with $ (A$, NAME$) - lexer handles this automatically
 - Line numbers: 0-63999
 - I/O must go through Runtime interface for testability
+- Variable storage: Unified `map[string]string` works for both numeric and string variables
 
 ## Common Pitfalls
 

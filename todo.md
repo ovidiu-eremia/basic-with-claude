@@ -1510,4 +1510,23 @@ Each step should be implemented following these principles:
 5. **Clean Code**: Follow Go conventions and maintain code quality
 6. **No Orphaned Code**: Everything implemented gets integrated and used
 
+### Lessons Learned from Steps 1-5
+
+**TDD Success Patterns:**
+- Start with lexer tests for new tokens (e.g., string variable names with $)
+- Parser tests benefit from complete AST structure comparison
+- Interpreter tests use TestRuntime for output verification
+- Acceptance tests with .bas files catch integration issues
+
+**Code Quality Insights:**
+- Unified variable storage (`map[string]string`) works well for BASIC's type system
+- Extract helper methods early (e.g., `createToken()`, `parseAssignment()`)
+- Package-level constants prevent recreation overhead
+- Descriptive field names prevent confusion (`currentToken` vs `curToken`)
+
+**Architecture Validations:**
+- Lexer → Parser → AST → Interpreter flow is clean and testable
+- Runtime interface abstraction enables comprehensive testing
+- Pre-commit hooks with test automation prevent regressions
+
 The prompts are designed to be self-contained while building on previous work, making them suitable for code-generation LLMs working incrementally on this project.
