@@ -4,6 +4,10 @@
 package interpreter
 
 import (
+	"fmt"
+	"math"
+	"strconv"
+	
 	"basic-interpreter/parser"
 	"basic-interpreter/runtime"
 )
@@ -79,9 +83,61 @@ func (i *Interpreter) evaluateExpression(expr parser.Expression) (string, error)
 			return value, nil
 		}
 		return "0", nil // Default value for uninitialized variables
+	case *parser.BinaryOperation:
+		return i.evaluateBinaryOperation(e)
 	default:
-		return "", nil
+		return "", fmt.Errorf("unknown expression type")
 	}
+}
+
+// evaluateBinaryOperation evaluates a binary arithmetic operation
+func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (string, error) {
+	leftStr, err := i.evaluateExpression(expr.Left)
+	if err != nil {
+		return "", err
+	}
+	
+	rightStr, err := i.evaluateExpression(expr.Right)
+	if err != nil {
+		return "", err
+	}
+	
+	// Convert to numbers for arithmetic
+	left, err := strconv.ParseFloat(leftStr, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid number: %s", leftStr)
+	}
+	
+	right, err := strconv.ParseFloat(rightStr, 64)
+	if err != nil {
+		return "", fmt.Errorf("invalid number: %s", rightStr)
+	}
+	
+	var result float64
+	switch expr.Operator {
+	case "+":
+		result = left + right
+	case "-":
+		result = left - right
+	case "*":
+		result = left * right
+	case "/":
+		if right == 0 {
+			return "", fmt.Errorf("division by zero")
+		}
+		result = left / right
+	case "^":
+		result = math.Pow(left, right)
+	default:
+		return "", fmt.Errorf("unknown operator: %s", expr.Operator)
+	}
+	
+	// Convert result back to string
+	if result == float64(int64(result)) {
+		// If it's a whole number, return as integer
+		return strconv.FormatInt(int64(result), 10), nil
+	}
+	return strconv.FormatFloat(result, 'g', -1, 64), nil
 }
 
 // executeLetStatement executes a LET statement (variable assignment)

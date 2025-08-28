@@ -45,6 +45,20 @@ func TestLexer_NextToken(t *testing.T) {
 			},
 		},
 		{
+			name:  "arithmetic operators",
+			input: "+ - * / ^ ( )",
+			expected: []Token{
+				{Type: PLUS, Literal: "+", Line: 1},
+				{Type: MINUS, Literal: "-", Line: 1},
+				{Type: MULTIPLY, Literal: "*", Line: 1},
+				{Type: DIVIDE, Literal: "/", Line: 1},
+				{Type: POWER, Literal: "^", Line: 1},
+				{Type: LPAREN, Literal: "(", Line: 1},
+				{Type: RPAREN, Literal: ")", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
 			name:  "basic program",
 			input: `10 PRINT "HELLO"`,
 			expected: []Token{

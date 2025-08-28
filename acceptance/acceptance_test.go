@@ -77,6 +77,20 @@ func TestAcceptance_StringVariables(t *testing.T) {
 	assert.Equal(t, expected, output, "String variables program should assign and print string values correctly")
 }
 
+func TestAcceptance_ArithmeticExpressions(t *testing.T) {
+	output := executeBasicFile(t, "../test_arithmetic.bas")
+	
+	expected := []string{
+		"14\n",   // 2 + 3 * 4 = 2 + 12 = 14 (precedence test)
+		"20\n",   // (2 + 3) * 4 = 5 * 4 = 20 (parentheses test)
+		"16\n",   // A * B + 1 = 5 * 3 + 1 = 15 + 1 = 16 (variables in expressions)
+		"11\n",   // A + B * 2 = 5 + 3 * 2 = 5 + 6 = 11 (precedence with variables)
+		"5\n",    // 10 / 2 = 5 (division)
+		"8\n",    // 2 ^ 3 = 8 (exponentiation)
+	}
+	assert.Equal(t, expected, output, "Arithmetic expressions should evaluate with correct precedence")
+}
+
 func TestAcceptance_InvalidFile(t *testing.T) {
 	// Test that non-existent files are handled gracefully
 	content := "invalid content"

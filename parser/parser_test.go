@@ -277,3 +277,74 @@ func TestParser_ParseErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestParser_ArithmeticExpressions(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected Expression
+	}{
+		{
+			name:  "simple addition",
+			input: "2 + 3",
+			expected: &BinaryOperation{
+				Left: &NumberLiteral{Value: "2", Line: 1},
+				Operator: "+",
+				Right: &NumberLiteral{Value: "3", Line: 1},
+				Line: 1,
+			},
+		},
+		{
+			name:  "precedence: multiplication over addition",
+			input: "2 + 3 * 4",
+			expected: &BinaryOperation{
+				Left: &NumberLiteral{Value: "2", Line: 1},
+				Operator: "+",
+				Right: &BinaryOperation{
+					Left: &NumberLiteral{Value: "3", Line: 1},
+					Operator: "*",
+					Right: &NumberLiteral{Value: "4", Line: 1},
+					Line: 1,
+				},
+				Line: 1,
+			},
+		},
+		{
+			name:  "parentheses override precedence",
+			input: "(2 + 3) * 4",
+			expected: &BinaryOperation{
+				Left: &BinaryOperation{
+					Left: &NumberLiteral{Value: "2", Line: 1},
+					Operator: "+",
+					Right: &NumberLiteral{Value: "3", Line: 1},
+					Line: 1,
+				},
+				Operator: "*",
+				Right: &NumberLiteral{Value: "4", Line: 1},
+				Line: 1,
+			},
+		},
+		{
+			name:  "variables in expressions",
+			input: "A + B",
+			expected: &BinaryOperation{
+				Left: &VariableReference{Name: "A", Line: 1},
+				Operator: "+",
+				Right: &VariableReference{Name: "B", Line: 1},
+				Line: 1,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := lexer.New(tt.input)
+			p := New(l)
+			
+			expr := p.parseExpression()
+			
+			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
+			assert.Equal(t, tt.expected, expr)
+		})
+	}
+}

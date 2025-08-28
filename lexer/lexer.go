@@ -8,16 +8,23 @@ type TokenType string
 
 // Token types for BASIC language
 const (
-	ILLEGAL TokenType = "ILLEGAL"
-	EOF     TokenType = "EOF"
-	NUMBER  TokenType = "NUMBER"
-	STRING  TokenType = "STRING"
-	IDENT   TokenType = "IDENT"
-	ASSIGN  TokenType = "="
-	PRINT   TokenType = "PRINT"
-	LET     TokenType = "LET"
-	END     TokenType = "END"
-	NEWLINE TokenType = "NEWLINE"
+	ILLEGAL  TokenType = "ILLEGAL"
+	EOF      TokenType = "EOF"
+	NUMBER   TokenType = "NUMBER"
+	STRING   TokenType = "STRING"
+	IDENT    TokenType = "IDENT"
+	ASSIGN   TokenType = "="
+	PRINT    TokenType = "PRINT"
+	LET      TokenType = "LET"
+	END      TokenType = "END"
+	NEWLINE  TokenType = "NEWLINE"
+	PLUS     TokenType = "+"
+	MINUS    TokenType = "-"
+	MULTIPLY TokenType = "*"
+	DIVIDE   TokenType = "/"
+	POWER    TokenType = "^"
+	LPAREN   TokenType = "("
+	RPAREN   TokenType = ")"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -76,6 +83,34 @@ func (l *Lexer) NextToken() Token {
 	switch l.currentChar {
 	case '=':
 		tok := l.createToken(ASSIGN, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '+':
+		tok := l.createToken(PLUS, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '-':
+		tok := l.createToken(MINUS, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '*':
+		tok := l.createToken(MULTIPLY, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '/':
+		tok := l.createToken(DIVIDE, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '^':
+		tok := l.createToken(POWER, string(l.currentChar))
+		l.readChar()
+		return tok
+	case '(':
+		tok := l.createToken(LPAREN, string(l.currentChar))
+		l.readChar()
+		return tok
+	case ')':
+		tok := l.createToken(RPAREN, string(l.currentChar))
 		l.readChar()
 		return tok
 	case '"':

@@ -94,3 +94,14 @@ type NumberLiteral struct {
 
 func (nl *NumberLiteral) expressionNode() {}
 func (nl *NumberLiteral) GetLineNumber() int { return nl.Line }
+
+// BinaryOperation represents a binary arithmetic operation
+type BinaryOperation struct {
+	Left     Expression // Left operand
+	Operator string     // Operator (+, -, *, /, ^)
+	Right    Expression // Right operand
+	Line     int        // Source line number
+}
+
+func (bo *BinaryOperation) expressionNode() {}
+func (bo *BinaryOperation) GetLineNumber() int { return bo.Line }

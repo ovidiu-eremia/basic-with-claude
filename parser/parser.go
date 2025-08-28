@@ -148,8 +148,64 @@ func (p *Parser) parsePrintStatement() *PrintStatement {
 	return stmt
 }
 
-// parseExpression parses an expression
+// Operator precedence levels
+type precedence int
+
+const (
+	_ precedence = iota
+	LOWEST
+	SUM     // +, -
+	PRODUCT // *, /
+	POWER   // ^
+	CALL    // functions (future use)
+)
+
+// precedences maps token types to their precedence levels
+var precedences = map[lexer.TokenType]precedence{
+	lexer.PLUS:     SUM,
+	lexer.MINUS:    SUM,
+	lexer.MULTIPLY: PRODUCT,
+	lexer.DIVIDE:   PRODUCT,
+	lexer.POWER:    POWER,
+}
+
+// parseExpression parses an expression using operator precedence parsing
 func (p *Parser) parseExpression() Expression {
+	return p.parseExpressionWithPrecedence(LOWEST)
+}
+
+// parseExpressionWithPrecedence parses expressions with given minimum precedence
+func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
+	left := p.parsePrimaryExpression()
+	if left == nil {
+		return nil
+	}
+
+	for p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.peekTokenPrecedence() > minPrec {
+		operator := p.peekToken.Literal
+		operatorPrec := p.peekTokenPrecedence()
+		
+		p.nextToken() // consume the operator
+		p.nextToken() // move to right operand
+		
+		right := p.parseExpressionWithPrecedence(operatorPrec)
+		if right == nil {
+			return nil
+		}
+		
+		left = &BinaryOperation{
+			Left:     left,
+			Operator: operator,
+			Right:    right,
+			Line:     left.GetLineNumber(),
+		}
+	}
+
+	return left
+}
+
+// parsePrimaryExpression parses primary expressions (literals, variables, parentheses)
+func (p *Parser) parsePrimaryExpression() Expression {
 	switch p.currentToken.Type {
 	case lexer.STRING:
 		return p.parseStringLiteral()
@@ -157,6 +213,8 @@ func (p *Parser) parseExpression() Expression {
 		return p.parseNumberLiteral()
 	case lexer.IDENT:
 		return p.parseVariableReference()
+	case lexer.LPAREN:
+		return p.parseGroupedExpression()
 	case lexer.ILLEGAL:
 		p.addError(fmt.Sprintf("illegal token in expression: %s", p.currentToken.Literal))
 		return nil
@@ -164,6 +222,32 @@ func (p *Parser) parseExpression() Expression {
 		p.addError(fmt.Sprintf("unexpected token in expression: %s", p.currentToken.Type))
 		return nil
 	}
+}
+
+// parseGroupedExpression parses expressions in parentheses
+func (p *Parser) parseGroupedExpression() Expression {
+	p.nextToken() // consume '('
+	
+	expr := p.parseExpression()
+	if expr == nil {
+		return nil
+	}
+	
+	if p.peekToken.Type != lexer.RPAREN {
+		p.addError("expected ')' after grouped expression")
+		return nil
+	}
+	
+	p.nextToken() // consume ')'
+	return expr
+}
+
+// peekTokenPrecedence returns the precedence of the peek token
+func (p *Parser) peekTokenPrecedence() precedence {
+	if prec, ok := precedences[p.peekToken.Type]; ok {
+		return prec
+	}
+	return LOWEST
 }
 
 // parseEndStatement parses an END statement

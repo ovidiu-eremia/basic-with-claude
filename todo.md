@@ -44,9 +44,9 @@ Add variable support and basic assignment.
 - [x] **Tests**: String variable handling, type distinction, C64 naming rules
 
 #### Step 6: Arithmetic Expressions
-- [ ] **Goal**: Support basic arithmetic in assignments and PRINT
-- [ ] **Demo**: `10 PRINT 2 + 3 * 4` outputs "14" (precedence working)
-- [ ] **Tests**: Expression parsing, operator precedence, arithmetic evaluation
+- [x] **Goal**: Support basic arithmetic in assignments and PRINT
+- [x] **Demo**: `10 PRINT 2 + 3 * 4` outputs "14" (precedence working)
+- [x] **Tests**: Expression parsing, operator precedence, arithmetic evaluation
 
 ### Phase 3: Control Flow (Steps 7-9)
 Add basic program control and flow.

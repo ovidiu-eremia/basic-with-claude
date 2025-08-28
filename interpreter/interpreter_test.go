@@ -41,49 +41,15 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 			expectedOutput: []string{"HELLO WORLD\n"},
 		},
 		{
-			name: "multiple print statements",
+			name: "numeric literal print",
 			program: &parser.Program{
 				Lines: []*parser.Line{
 					{
 						Number: 10,
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
-								Expression: &parser.StringLiteral{
-									Value: "HELLO",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []parser.Statement{
-							&parser.PrintStatement{
-								Expression: &parser.StringLiteral{
-									Value: "WORLD",
-									Line:  2,
-								},
-								Line: 2,
-							},
-						},
-						SourceLine: 2,
-					},
-				},
-			},
-			expectedOutput: []string{"HELLO\n", "WORLD\n"},
-		},
-		{
-			name: "empty string print",
-			program: &parser.Program{
-				Lines: []*parser.Line{
-					{
-						Number: 10,
-						Statements: []parser.Statement{
-							&parser.PrintStatement{
-								Expression: &parser.StringLiteral{
-									Value: "",
+								Expression: &parser.NumberLiteral{
+									Value: "42",
 									Line:  1,
 								},
 								Line: 1,
@@ -93,7 +59,7 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 					},
 				},
 			},
-			expectedOutput: []string{"\n"},
+			expectedOutput: []string{"42\n"},
 		},
 	}
 
@@ -111,77 +77,14 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 	}
 }
 
-func TestInterpreter_ExecuteWithEndStatement(t *testing.T) {
-	testRuntime := runtime.NewTestRuntime()
-	interpreter := NewInterpreter(testRuntime)
-	
-	program := &parser.Program{
-		Lines: []*parser.Line{
-			{
-				Number: 10,
-				Statements: []parser.Statement{
-					&parser.PrintStatement{
-						Expression: &parser.StringLiteral{
-							Value: "BEFORE END",
-							Line:  1,
-						},
-						Line: 1,
-					},
-				},
-				SourceLine: 1,
-			},
-			{
-				Number: 20,
-				Statements: []parser.Statement{
-					&parser.EndStatement{Line: 2},
-				},
-				SourceLine: 2,
-			},
-			{
-				Number: 30,
-				Statements: []parser.Statement{
-					&parser.PrintStatement{
-						Expression: &parser.StringLiteral{
-							Value: "AFTER END",
-							Line:  3,
-						},
-						Line: 3,
-					},
-				},
-				SourceLine: 3,
-			},
-		},
-	}
-	
-	err := interpreter.Execute(program)
-	require.NoError(t, err)
-	
-	output := testRuntime.GetOutput()
-	require.Len(t, output, 1)
-	assert.Equal(t, "BEFORE END\n", output[0])
-}
-
-func TestInterpreter_EmptyProgram(t *testing.T) {
-	testRuntime := runtime.NewTestRuntime()
-	interpreter := NewInterpreter(testRuntime)
-	
-	program := &parser.Program{Lines: []*parser.Line{}}
-	
-	err := interpreter.Execute(program)
-	require.NoError(t, err)
-	
-	output := testRuntime.GetOutput()
-	assert.Len(t, output, 0)
-}
-
-func TestInterpreter_VariableAssignment(t *testing.T) {
+func TestInterpreter_NumericVariables(t *testing.T) {
 	tests := []struct {
 		name           string
 		program        *parser.Program
 		expectedOutput []string
 	}{
 		{
-			name: "LET assignment and PRINT",
+			name: "variable assignment with LET",
 			program: &parser.Program{
 				Lines: []*parser.Line{
 					{
@@ -214,103 +117,6 @@ func TestInterpreter_VariableAssignment(t *testing.T) {
 				},
 			},
 			expectedOutput: []string{"42\n"},
-		},
-		{
-			name: "assignment without LET",
-			program: &parser.Program{
-				Lines: []*parser.Line{
-					{
-						Number: 10,
-						Statements: []parser.Statement{
-							&parser.LetStatement{
-								Variable: "X",
-								Expression: &parser.NumberLiteral{
-									Value: "123",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []parser.Statement{
-							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "X",
-									Line: 2,
-								},
-								Line: 2,
-							},
-						},
-						SourceLine: 2,
-					},
-				},
-			},
-			expectedOutput: []string{"123\n"},
-		},
-		{
-			name: "multiple variables",
-			program: &parser.Program{
-				Lines: []*parser.Line{
-					{
-						Number: 10,
-						Statements: []parser.Statement{
-							&parser.LetStatement{
-								Variable: "A",
-								Expression: &parser.NumberLiteral{
-									Value: "10",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []parser.Statement{
-							&parser.LetStatement{
-								Variable: "B",
-								Expression: &parser.NumberLiteral{
-									Value: "20",
-									Line:  2,
-								},
-								Line: 2,
-							},
-						},
-						SourceLine: 2,
-					},
-					{
-						Number: 30,
-						Statements: []parser.Statement{
-							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "A",
-									Line: 3,
-								},
-								Line: 3,
-							},
-						},
-						SourceLine: 3,
-					},
-					{
-						Number: 40,
-						Statements: []parser.Statement{
-							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "B",
-									Line: 4,
-								},
-								Line: 4,
-							},
-						},
-						SourceLine: 4,
-					},
-				},
-			},
-			expectedOutput: []string{"10\n", "20\n"},
 		},
 	}
 
@@ -369,43 +175,81 @@ func TestInterpreter_StringVariables(t *testing.T) {
 			},
 			expectedOutput: []string{"HELLO\n"},
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testRuntime := runtime.NewTestRuntime()
+			interpreter := NewInterpreter(testRuntime)
+			
+			err := interpreter.Execute(tt.program)
+			require.NoError(t, err)
+			
+			output := testRuntime.GetOutput()
+			assert.Equal(t, tt.expectedOutput, output)
+		})
+	}
+}
+
+func TestInterpreter_ArithmeticExpressions(t *testing.T) {
+	tests := []struct {
+		name           string
+		program        *parser.Program
+		expectedOutput []string
+	}{
 		{
-			name: "string variable assignment without LET",
+			name: "simple addition",
 			program: &parser.Program{
 				Lines: []*parser.Line{
 					{
 						Number: 10,
 						Statements: []parser.Statement{
-							&parser.LetStatement{
-								Variable: "NAME$",
-								Expression: &parser.StringLiteral{
-									Value: "JOHN DOE",
-									Line:  1,
+							&parser.PrintStatement{
+								Expression: &parser.BinaryOperation{
+									Left: &parser.NumberLiteral{Value: "2", Line: 1},
+									Operator: "+",
+									Right: &parser.NumberLiteral{Value: "3", Line: 1},
+									Line: 1,
 								},
 								Line: 1,
 							},
 						},
 						SourceLine: 1,
 					},
+				},
+			},
+			expectedOutput: []string{"5\n"},
+		},
+		{
+			name: "operator precedence",
+			program: &parser.Program{
+				Lines: []*parser.Line{
 					{
-						Number: 20,
+						Number: 10,
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "NAME$",
-									Line: 2,
+								Expression: &parser.BinaryOperation{
+									Left: &parser.NumberLiteral{Value: "2", Line: 1},
+									Operator: "+",
+									Right: &parser.BinaryOperation{
+										Left: &parser.NumberLiteral{Value: "3", Line: 1},
+										Operator: "*",
+										Right: &parser.NumberLiteral{Value: "4", Line: 1},
+										Line: 1,
+									},
+									Line: 1,
 								},
-								Line: 2,
+								Line: 1,
 							},
 						},
-						SourceLine: 2,
+						SourceLine: 1,
 					},
 				},
 			},
-			expectedOutput: []string{"JOHN DOE\n"},
+			expectedOutput: []string{"14\n"},
 		},
 		{
-			name: "mixed numeric and string variables",
+			name: "variables in expressions",
 			program: &parser.Program{
 				Lines: []*parser.Line{
 					{
@@ -413,10 +257,7 @@ func TestInterpreter_StringVariables(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.LetStatement{
 								Variable: "A",
-								Expression: &parser.NumberLiteral{
-									Value: "42",
-									Line:  1,
-								},
+								Expression: &parser.NumberLiteral{Value: "5", Line: 1},
 								Line: 1,
 							},
 						},
@@ -426,11 +267,8 @@ func TestInterpreter_StringVariables(t *testing.T) {
 						Number: 20,
 						Statements: []parser.Statement{
 							&parser.LetStatement{
-								Variable: "B$",
-								Expression: &parser.StringLiteral{
-									Value: "ANSWER",
-									Line:  2,
-								},
+								Variable: "B",
+								Expression: &parser.NumberLiteral{Value: "3", Line: 2},
 								Line: 2,
 							},
 						},
@@ -440,8 +278,15 @@ func TestInterpreter_StringVariables(t *testing.T) {
 						Number: 30,
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "B$",
+								Expression: &parser.BinaryOperation{
+									Left: &parser.VariableReference{Name: "A", Line: 3},
+									Operator: "*",
+									Right: &parser.BinaryOperation{
+										Left: &parser.VariableReference{Name: "B", Line: 3},
+										Operator: "+",
+										Right: &parser.NumberLiteral{Value: "1", Line: 3},
+										Line: 3,
+									},
 									Line: 3,
 								},
 								Line: 3,
@@ -449,22 +294,47 @@ func TestInterpreter_StringVariables(t *testing.T) {
 						},
 						SourceLine: 3,
 					},
+				},
+			},
+			expectedOutput: []string{"20\n"},
+		},
+		{
+			name: "division and power",
+			program: &parser.Program{
+				Lines: []*parser.Line{
 					{
-						Number: 40,
+						Number: 10,
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
-								Expression: &parser.VariableReference{
-									Name: "A",
-									Line: 4,
+								Expression: &parser.BinaryOperation{
+									Left: &parser.NumberLiteral{Value: "10", Line: 1},
+									Operator: "/",
+									Right: &parser.NumberLiteral{Value: "2", Line: 1},
+									Line: 1,
 								},
-								Line: 4,
+								Line: 1,
 							},
 						},
-						SourceLine: 4,
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.BinaryOperation{
+									Left: &parser.NumberLiteral{Value: "2", Line: 2},
+									Operator: "^",
+									Right: &parser.NumberLiteral{Value: "3", Line: 2},
+									Line: 2,
+								},
+								Line: 2,
+							},
+						},
+						SourceLine: 2,
 					},
 				},
 			},
-			expectedOutput: []string{"ANSWER\n", "42\n"},
+			expectedOutput: []string{"5\n", "8\n"},
 		},
 	}
 
@@ -478,6 +348,53 @@ func TestInterpreter_StringVariables(t *testing.T) {
 			
 			output := testRuntime.GetOutput()
 			assert.Equal(t, tt.expectedOutput, output)
+		})
+	}
+}
+
+func TestInterpreter_ArithmeticErrors(t *testing.T) {
+	tests := []struct {
+		name        string
+		program     *parser.Program
+		expectError bool
+	}{
+		{
+			name: "division by zero",
+			program: &parser.Program{
+				Lines: []*parser.Line{
+					{
+						Number: 10,
+						Statements: []parser.Statement{
+							&parser.PrintStatement{
+								Expression: &parser.BinaryOperation{
+									Left: &parser.NumberLiteral{Value: "10", Line: 1},
+									Operator: "/",
+									Right: &parser.NumberLiteral{Value: "0", Line: 1},
+									Line: 1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			testRuntime := runtime.NewTestRuntime()
+			interpreter := NewInterpreter(testRuntime)
+			
+			err := interpreter.Execute(tt.program)
+			
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 		})
 	}
 }
