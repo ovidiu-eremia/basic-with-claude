@@ -39,112 +39,43 @@ func TestParser_ParseProgram(t *testing.T) {
 			expected: program(line(10, 1, letStmt("A", num("42", 1), 1))),
 		},
 		{
-			name:  "assignment without LET",
-			input: `10 X = 123`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&LetStatement{
-								Variable: "X",
-								Expression: &NumberLiteral{
-									Value: "123",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "assignment without LET",
+			input:    `10 X = 123`,
+			expected: program(line(10, 1, letStmt("X", num("123", 1), 1))),
 		},
 		{
-			name:  "PRINT variable",
-			input: `10 PRINT A`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &VariableReference{
-									Name: "A",
-									Line: 1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "PRINT variable",
+			input:    `10 PRINT A`,
+			expected: program(line(10, 1, printStmt(varRef("A", 1), 1))),
 		},
 		{
-			name:  "string variable assignment with LET",
-			input: `10 LET A$ = "HELLO"`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&LetStatement{
-								Variable: "A$",
-								Expression: &StringLiteral{
-									Value: "HELLO",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "string variable assignment with LET",
+			input:    `10 LET A$ = "HELLO"`,
+			expected: program(line(10, 1, letStmt("A$", str("HELLO", 1), 1))),
 		},
 		{
-			name:  "string variable assignment without LET",
-			input: `10 NAME$ = "JOHN DOE"`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&LetStatement{
-								Variable: "NAME$",
-								Expression: &StringLiteral{
-									Value: "JOHN DOE",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "string variable assignment without LET",
+			input:    `10 NAME$ = "JOHN DOE"`,
+			expected: program(line(10, 1, letStmt("NAME$", str("JOHN DOE", 1), 1))),
 		},
 		{
-			name:  "PRINT string variable",
-			input: `10 PRINT A$`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &VariableReference{
-									Name: "A$",
-									Line: 1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "PRINT string variable",
+			input:    `10 PRINT A$`,
+			expected: program(line(10, 1, printStmt(varRef("A$", 1), 1))),
+		},
+		{
+			name:     "END statement",
+			input:    "10 END",
+			expected: program(line(10, 1, endStmt(1))),
+		},
+		{
+			name:  "program with END",
+			input: "10 PRINT \"START\"\n20 END\n30 PRINT \"NEVER REACHED\"",
+			expected: program(
+				line(10, 1, printStmt(str("START", 1), 1)),
+				line(20, 2, endStmt(2)),
+				line(30, 3, printStmt(str("NEVER REACHED", 3), 3)),
+			),
 		},
 	}
 
@@ -281,81 +212,23 @@ func TestParser_RunAndStopStatements(t *testing.T) {
 		expected *Program
 	}{
 		{
-			name:  "RUN statement",
-			input: "10 RUN",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&RunStatement{
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "RUN statement",
+			input:    "10 RUN",
+			expected: program(line(10, 1, runStmt(1))),
 		},
 		{
-			name:  "STOP statement",
-			input: "10 STOP",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&StopStatement{
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "STOP statement",
+			input:    "10 STOP",
+			expected: program(line(10, 1, stopStmt(1))),
 		},
 		{
 			name:  "program with STOP",
 			input: "10 PRINT \"START\"\n20 STOP\n30 PRINT \"NEVER\"",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "START",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []Statement{
-							&StopStatement{
-								Line: 2,
-							},
-						},
-						SourceLine: 2,
-					},
-					{
-						Number: 30,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "NEVER",
-									Line:  3,
-								},
-								Line: 3,
-							},
-						},
-						SourceLine: 3,
-					},
-				},
-			},
+			expected: program(
+				line(10, 1, printStmt(str("START", 1), 1)),
+				line(20, 2, stopStmt(2)),
+				line(30, 3, printStmt(str("NEVER", 3), 3)),
+			),
 		},
 	}
 
@@ -379,79 +252,19 @@ func TestParser_GotoStatements(t *testing.T) {
 		expected *Program
 	}{
 		{
-			name:  "GOTO statement",
-			input: "10 GOTO 50",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&GotoStatement{
-								TargetLine: 50,
-								Line:       1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "GOTO statement",
+			input:    "10 GOTO 50",
+			expected: program(line(10, 1, gotoStmt(50, 1))),
 		},
 		{
 			name:  "program with GOTO",
 			input: "10 PRINT \"BEFORE\"\n20 GOTO 50\n30 PRINT \"SKIPPED\"\n50 PRINT \"AFTER\"",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "BEFORE",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []Statement{
-							&GotoStatement{
-								TargetLine: 50,
-								Line:       2,
-							},
-						},
-						SourceLine: 2,
-					},
-					{
-						Number: 30,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "SKIPPED",
-									Line:  3,
-								},
-								Line: 3,
-							},
-						},
-						SourceLine: 3,
-					},
-					{
-						Number: 50,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "AFTER",
-									Line:  4,
-								},
-								Line: 4,
-							},
-						},
-						SourceLine: 4,
-					},
-				},
-			},
+			expected: program(
+				line(10, 1, printStmt(str("BEFORE", 1), 1)),
+				line(20, 2, gotoStmt(50, 2)),
+				line(30, 3, printStmt(str("SKIPPED", 3), 3)),
+				line(50, 4, printStmt(str("AFTER", 4), 4)),
+			),
 		},
 	}
 
