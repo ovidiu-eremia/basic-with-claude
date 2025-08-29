@@ -34,7 +34,8 @@ var binaryOperations = map[string]func(Value, Value) (Value, error){
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
 	runtime   runtime.Runtime
-	variables map[string]Value // Variable storage using proper Value types
+	variables map[string]Value     // Variable storage using proper Value types
+	lineIndex map[int]*parser.Line // Maps line numbers to Line nodes for GOTO
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -42,29 +43,75 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	return &Interpreter{
 		runtime:   rt,
 		variables: make(map[string]Value),
+		lineIndex: make(map[int]*parser.Line),
 	}
 }
 
 // Execute runs a BASIC program
 func (i *Interpreter) Execute(program *parser.Program) error {
-	// Execute each line in sequence
+	// Build line number index for GOTO statements
+	i.buildLineIndex(program)
+
+	// Execute program with program counter for GOTO support
+	return i.executeWithProgramCounter(program)
+}
+
+// buildLineIndex creates a map from line numbers to Line nodes
+func (i *Interpreter) buildLineIndex(program *parser.Program) {
 	for _, line := range program.Lines {
+		i.lineIndex[line.Number] = line
+	}
+}
+
+// executeWithProgramCounter executes program with support for GOTO jumps
+func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
+	if len(program.Lines) == 0 {
+		return nil
+	}
+
+	// Start execution at the first line
+	currentLineIndex := 0
+
+	for currentLineIndex < len(program.Lines) {
+		line := program.Lines[currentLineIndex]
+
 		for _, stmt := range line.Statements {
 			err := i.executeStatement(stmt)
 			if err != nil {
 				return err
 			}
 
-			// Check if this is an END or STOP statement - stop execution
-			if _, isEnd := stmt.(*parser.EndStatement); isEnd {
+			// Check for flow control statements
+			switch s := stmt.(type) {
+			case *parser.EndStatement, *parser.StopStatement:
 				return nil
-			}
-			if _, isStop := stmt.(*parser.StopStatement); isStop {
-				return nil
+			case *parser.GotoStatement:
+				// Find the target line and jump to it
+				targetLineIndex, found := i.findLineIndex(program, s.TargetLine)
+				if !found {
+					return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
+				}
+				currentLineIndex = targetLineIndex
+				goto nextLine // Skip to the target line
 			}
 		}
+
+		// Move to next line
+		currentLineIndex++
+	nextLine:
 	}
+
 	return nil
+}
+
+// findLineIndex finds the index of a line with the given line number
+func (i *Interpreter) findLineIndex(program *parser.Program, lineNumber int) (int, bool) {
+	for index, line := range program.Lines {
+		if line.Number == lineNumber {
+			return index, true
+		}
+	}
+	return 0, false
 }
 
 // executeStatement executes a single statement
@@ -75,12 +122,15 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 	case *parser.LetStatement:
 		return i.executeLetStatement(s)
 	case *parser.EndStatement:
-		// END statement - just return, handled in Execute
+		// END statement - just return, handled in executeWithProgramCounter
 		return nil
 	case *parser.RunStatement:
 		return i.executeRunStatement(s)
 	case *parser.StopStatement:
 		return i.executeStopStatement(s)
+	case *parser.GotoStatement:
+		// GOTO statement - handled in executeWithProgramCounter
+		return nil
 	default:
 		// For now, ignore unknown statement types
 		return nil

@@ -446,3 +446,99 @@ func TestParser_RunAndStopStatements(t *testing.T) {
 		})
 	}
 }
+
+func TestParser_GotoStatements(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected *Program
+	}{
+		{
+			name:  "GOTO statement",
+			input: "10 GOTO 50",
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&GotoStatement{
+								TargetLine: 50,
+								Line:       1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
+		{
+			name:  "program with GOTO",
+			input: "10 PRINT \"BEFORE\"\n20 GOTO 50\n30 PRINT \"SKIPPED\"\n50 PRINT \"AFTER\"",
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &StringLiteral{
+									Value: "BEFORE",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []Statement{
+							&GotoStatement{
+								TargetLine: 50,
+								Line:       2,
+							},
+						},
+						SourceLine: 2,
+					},
+					{
+						Number: 30,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &StringLiteral{
+									Value: "SKIPPED",
+									Line:  3,
+								},
+								Line: 3,
+							},
+						},
+						SourceLine: 3,
+					},
+					{
+						Number: 50,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &StringLiteral{
+									Value: "AFTER",
+									Line:  4,
+								},
+								Line: 4,
+							},
+						},
+						SourceLine: 4,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := lexer.New(tt.input)
+			p := New(l)
+
+			program := p.ParseProgram()
+
+			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
+			assert.Equal(t, tt.expected, program)
+		})
+	}
+}

@@ -19,6 +19,7 @@ const (
 	END      TokenType = "END"
 	RUN      TokenType = "RUN"
 	STOP     TokenType = "STOP"
+	GOTO     TokenType = "GOTO"
 	NEWLINE  TokenType = "NEWLINE"
 	PLUS     TokenType = "+"
 	MINUS    TokenType = "-"
@@ -36,6 +37,7 @@ var keywords = map[string]TokenType{
 	"END":   END,
 	"RUN":   RUN,
 	"STOP":  STOP,
+	"GOTO":  GOTO,
 }
 
 // Position represents a position in the source code

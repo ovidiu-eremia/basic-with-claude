@@ -156,6 +156,41 @@ func TestAcceptance(t *testing.T) {
 				"AFTER RUN\n",
 			},
 		},
+		{
+			name: "GotoStatement",
+			program: `10 PRINT "BEFORE JUMP"
+20 GOTO 50
+30 PRINT "SKIPPED"
+40 PRINT "ALSO SKIPPED"
+50 PRINT "AFTER JUMP"`,
+			expected: []string{
+				"BEFORE JUMP\n",
+				"AFTER JUMP\n",
+			},
+		},
+		{
+			name: "GotoBackward",
+			program: `10 PRINT "FIRST"
+20 GOTO 40
+30 PRINT "NEVER"
+40 PRINT "SECOND"
+50 GOTO 70
+60 PRINT "ALSO NEVER"
+70 PRINT "THIRD"`,
+			expected: []string{
+				"FIRST\n",
+				"SECOND\n",
+				"THIRD\n",
+			},
+		},
+		{
+			name: "InvalidGoto",
+			program: `10 PRINT "START"
+20 GOTO 999
+30 PRINT "END"`,
+			wantErr:     true,
+			errContains: "UNDEFINED STATEMENT ERROR",
+		},
 	}
 
 	for _, tt := range tests {

@@ -160,6 +160,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseRunStatement()
 	case lexer.STOP:
 		return p.parseStopStatement()
+	case lexer.GOTO:
+		return p.parseGotoStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -272,6 +274,29 @@ func (p *Parser) parseStopStatement() *StopStatement {
 	return &StopStatement{
 		Line: p.currentToken.Line,
 	}
+}
+
+// parseGotoStatement parses a GOTO statement
+func (p *Parser) parseGotoStatement() *GotoStatement {
+	stmt := &GotoStatement{Line: p.currentToken.Line}
+
+	p.nextToken() // consume GOTO
+
+	// Expect a number (target line)
+	if p.currentToken.Type != lexer.NUMBER {
+		p.addTokenError("line number", p.currentToken.Type)
+		return nil
+	}
+
+	// Parse the target line number
+	targetLine, err := strconv.Atoi(p.currentToken.Literal)
+	if err != nil {
+		p.addErrorf("invalid line number: %s", p.currentToken.Literal)
+		return nil
+	}
+
+	stmt.TargetLine = targetLine
+	return stmt
 }
 
 // parseStringLiteral parses a string literal

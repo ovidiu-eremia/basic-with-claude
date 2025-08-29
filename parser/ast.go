@@ -121,3 +121,12 @@ type StopStatement struct {
 
 func (ss *StopStatement) statementNode()     {}
 func (ss *StopStatement) GetLineNumber() int { return ss.Line }
+
+// GotoStatement represents a GOTO statement
+type GotoStatement struct {
+	TargetLine int // Target line number to jump to
+	Line       int // Source line number
+}
+
+func (gs *GotoStatement) statementNode()     {}
+func (gs *GotoStatement) GetLineNumber() int { return gs.Line }

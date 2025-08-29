@@ -57,9 +57,9 @@ Add basic program control and flow.
 - [x] **Tests**: Program counter management, execution flow control
 
 #### Step 8: GOTO Statement
-- [ ] **Goal**: Support unconditional jumps
-- [ ] **Demo**: Program with GOTO creates infinite loop (Ctrl+C to stop)
-- [ ] **Tests**: Line number lookup, program counter modification
+- [x] **Goal**: Support unconditional jumps
+- [x] **Demo**: Program with GOTO creates infinite loop (Ctrl+C to stop)
+- [x] **Tests**: Line number lookup, program counter modification
 
 #### Step 9: IF...THEN Statement
 - [ ] **Goal**: Support conditional execution
