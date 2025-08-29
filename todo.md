@@ -67,9 +67,9 @@ Add basic program control and flow.
 - [x] **Tests**: IF/THEN parsing, boolean evaluation, conditional statement execution
 
 #### Step 9b: Numeric Comparisons
-- [ ] **Goal**: Support numeric comparison operators in IF conditions
-- [ ] **Demo**: `10 IF A > 5 THEN PRINT "BIG"` with different A values
-- [ ] **Tests**: All numeric comparison operators (=, <, >, <=, >=, <>), variable comparisons
+- [x] **Goal**: Support numeric comparison operators in IF conditions
+- [x] **Demo**: `10 IF A > 5 THEN PRINT "BIG"` with different A values
+- [x] **Tests**: All numeric comparison operators (=, <, >, <=, >=, <>), variable comparisons
 
 #### Step 9c: String Comparisons and Mixed Expressions
 - [ ] **Goal**: Support string comparisons and complex conditional expressions
