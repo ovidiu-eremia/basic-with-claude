@@ -62,9 +62,9 @@ Add basic program control and flow.
 - [x] **Tests**: Line number lookup, program counter modification
 
 #### Step 9a: Basic IF...THEN Structure
-- [ ] **Goal**: Support basic conditional execution with simple boolean conditions
-- [ ] **Demo**: `10 IF 1 THEN PRINT "TRUE"` and `20 IF 0 THEN PRINT "FALSE"`
-- [ ] **Tests**: IF/THEN parsing, boolean evaluation, conditional statement execution
+- [x] **Goal**: Support basic conditional execution with simple boolean conditions
+- [x] **Demo**: `10 IF 1 THEN PRINT "TRUE"` and `20 IF 0 THEN PRINT "FALSE"`
+- [x] **Tests**: IF/THEN parsing, boolean evaluation, conditional statement execution
 
 #### Step 9b: Numeric Comparisons
 - [ ] **Goal**: Support numeric comparison operators in IF conditions

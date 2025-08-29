@@ -352,6 +352,11 @@ func (p *Parser) parseIfStatement() *IfStatement {
 		return nil
 	}
 
+	// For simple expressions without operators, we need to advance past the primary expression
+	if p.currentToken.Type != lexer.THEN && p.peekToken.Type == lexer.THEN {
+		p.nextToken()
+	}
+
 	// Expect THEN
 	if p.currentToken.Type != lexer.THEN {
 		p.addTokenError("THEN", p.currentToken.Type)

@@ -320,6 +320,54 @@ func TestAcceptance(t *testing.T) {
 			errContains: "?INFINITE LOOP ERROR",
 			maxSteps:    5, // Custom low limit
 		},
+		// ---
+		// STEP 9A: BASIC IF...THEN TESTS
+		// ---
+		{
+			name: "BasicIFThen_TrueCondition",
+			program: `10 IF 1 THEN PRINT "TRUE"
+20 PRINT "DONE"`,
+			expected: []string{
+				"TRUE\n",
+				"DONE\n",
+			},
+		},
+		{
+			name: "BasicIFThen_FalseCondition",
+			program: `10 IF 0 THEN PRINT "FALSE"
+20 PRINT "DONE"`,
+			expected: []string{
+				"DONE\n",
+			},
+		},
+		{
+			name: "BasicIFThen_NonZeroTrue",
+			program: `10 A = 5
+20 IF A THEN PRINT "NON-ZERO"
+30 PRINT "FINISHED"`,
+			expected: []string{
+				"NON-ZERO\n",
+				"FINISHED\n",
+			},
+		},
+		{
+			name: "BasicIFThen_ZeroFalse",
+			program: `10 A = 0
+20 IF A THEN PRINT "NON-ZERO"
+30 PRINT "FINISHED"`,
+			expected: []string{
+				"FINISHED\n",
+			},
+		},
+		{
+			name: "BasicIFThen_NegativeTrue",
+			program: `10 IF -1 THEN PRINT "NEGATIVE IS TRUE"
+20 PRINT "END"`,
+			expected: []string{
+				"NEGATIVE IS TRUE\n",
+				"END\n",
+			},
+		},
 	}
 
 	for _, tt := range tests {
