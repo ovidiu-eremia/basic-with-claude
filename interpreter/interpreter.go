@@ -5,6 +5,7 @@ package interpreter
 
 import (
 	"fmt"
+	"strings"
 
 	"basic-interpreter/lexer"
 	"basic-interpreter/parser"
@@ -78,7 +79,7 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 		for _, stmt := range line.Statements {
 			err := i.executeStatement(stmt)
 			if err != nil {
-				return err
+				return i.wrapErrorWithLine(err, line.Number)
 			}
 
 			// Check for flow control statements
@@ -159,12 +160,19 @@ func (i *Interpreter) evaluateExpression(expr parser.Expression) (Value, error) 
 		}
 		return val, nil
 	case *parser.VariableReference:
-		if value, exists := i.variables[e.Name]; exists {
+		normalizedName := i.normalizeVariableName(e.Name)
+		if value, exists := i.variables[normalizedName]; exists {
 			return value, nil
 		}
-		return NewNumberValue(0), nil // Default value for uninitialized variables
+		// Default value for uninitialized variables depends on type
+		if strings.HasSuffix(e.Name, "$") {
+			return NewStringValue(""), nil // String variables default to empty string
+		}
+		return NewNumberValue(0), nil // Numeric variables default to 0
 	case *parser.BinaryOperation:
 		return i.evaluateBinaryOperation(e)
+	case *parser.UnaryOperation:
+		return i.evaluateUnaryOperation(e)
 	default:
 		return Value{}, fmt.Errorf("unknown expression type")
 	}
@@ -189,6 +197,31 @@ func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (Val
 	return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
 }
 
+// evaluateUnaryOperation evaluates a unary arithmetic operation
+func (i *Interpreter) evaluateUnaryOperation(expr *parser.UnaryOperation) (Value, error) {
+	operand, err := i.evaluateExpression(expr.Right)
+	if err != nil {
+		return Value{}, err
+	}
+
+	switch expr.Operator {
+	case "-":
+		// Negate the operand
+		if operand.Type == NumberType {
+			return NewNumberValue(-operand.Number), nil
+		}
+		return Value{}, fmt.Errorf("cannot negate non-numeric value")
+	case "+":
+		// Unary plus - just return the operand
+		if operand.Type == NumberType {
+			return operand, nil
+		}
+		return Value{}, fmt.Errorf("cannot apply unary plus to non-numeric value")
+	default:
+		return Value{}, fmt.Errorf("unknown unary operator: %s", expr.Operator)
+	}
+}
+
 // executeLetStatement executes a LET statement (variable assignment)
 func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
 	value, err := i.evaluateExpression(stmt.Expression)
@@ -196,7 +229,17 @@ func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
 		return err
 	}
 
-	i.variables[stmt.Variable] = value
+	// Type check: string variables can only hold strings, numeric variables can only hold numbers
+	isStringVariable := strings.HasSuffix(stmt.Variable, "$")
+	if isStringVariable && value.Type != StringType {
+		return fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+	if !isStringVariable && value.Type != NumberType {
+		return fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+
+	normalizedName := i.normalizeVariableName(stmt.Variable)
+	i.variables[normalizedName] = value
 	return nil
 }
 
@@ -213,4 +256,31 @@ func (i *Interpreter) executeRunStatement(stmt *parser.RunStatement) error {
 func (i *Interpreter) executeStopStatement(stmt *parser.StopStatement) error {
 	// STOP statement - execution handled in Execute method
 	return nil
+}
+
+// normalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)
+func (i *Interpreter) normalizeVariableName(name string) string {
+	if len(name) > 2 {
+		return name[:2]
+	}
+	return name
+}
+
+// wrapErrorWithLine wraps an error with C64 BASIC format including line number
+func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
+	// Check if it's already a C64 format error (starts with ?)
+	errMsg := err.Error()
+	if len(errMsg) > 0 && errMsg[0] == '?' {
+		return err // Already formatted
+	}
+
+	// Convert common errors to C64 BASIC format
+	switch {
+	case strings.Contains(errMsg, "division by zero"):
+		return fmt.Errorf("?DIVISION BY ZERO ERROR IN %d", lineNumber)
+	case strings.Contains(errMsg, "TYPE MISMATCH ERROR"):
+		return fmt.Errorf("?TYPE MISMATCH ERROR IN %d", lineNumber)
+	default:
+		return fmt.Errorf("?ERROR IN %d: %s", lineNumber, errMsg)
+	}
 }

@@ -14,6 +14,7 @@ const (
 	SUM     // +, -
 	PRODUCT // *, /
 	POWER   // ^
+	PREFIX  // -X or +X
 	CALL    // functions (future use)
 )
 

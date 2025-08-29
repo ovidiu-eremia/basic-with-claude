@@ -3,6 +3,8 @@
 
 package lexer
 
+import "strings"
+
 // TokenType represents the type of a token
 type TokenType string
 
@@ -189,6 +191,12 @@ func (l *Lexer) readNumber() string {
 	for isDigit(l.currentChar) {
 		l.readChar()
 	}
+	if l.currentChar == '.' {
+		l.readChar()
+		for isDigit(l.currentChar) {
+			l.readChar()
+		}
+	}
 	return l.input[position:l.currentPosition]
 }
 
@@ -204,7 +212,9 @@ func isDigit(ch byte) bool {
 
 // lookupIdent checks if identifier is a keyword
 func lookupIdent(ident string) TokenType {
-	if tok, ok := keywords[ident]; ok {
+	// Convert to uppercase for case-insensitive keyword matching
+	upperIdent := strings.ToUpper(ident)
+	if tok, ok := keywords[upperIdent]; ok {
 		return tok
 	}
 	return IDENT // Non-keyword identifiers are now valid variable names

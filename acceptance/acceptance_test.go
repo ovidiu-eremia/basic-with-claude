@@ -4,6 +4,7 @@
 package acceptance
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -35,10 +36,10 @@ func executeBasicProgram(t *testing.T, program string) ([]string, error) {
 
 	// Check for parsing errors
 	if len(p.Errors()) > 0 {
-		return nil, assert.AnError
+		return nil, fmt.Errorf("parse errors: %v", p.Errors())
 	}
 	if ast == nil {
-		return nil, assert.AnError
+		return nil, fmt.Errorf("parsing returned nil AST")
 	}
 
 	// Create test runtime and interpreter

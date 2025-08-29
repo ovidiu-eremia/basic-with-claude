@@ -130,3 +130,13 @@ type GotoStatement struct {
 
 func (gs *GotoStatement) statementNode()     {}
 func (gs *GotoStatement) GetLineNumber() int { return gs.Line }
+
+// UnaryOperation represents a unary arithmetic operation
+type UnaryOperation struct {
+	Operator string     // Operator (-)
+	Right    Expression // Right operand
+	Line     int        // Source line number
+}
+
+func (uo *UnaryOperation) expressionNode()    {}
+func (uo *UnaryOperation) GetLineNumber() int { return uo.Line }

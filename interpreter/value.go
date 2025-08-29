@@ -118,6 +118,27 @@ func (v Value) binaryArithmeticOpWithError(other Value, operation func(float64, 
 
 // Add performs addition on two values
 func (v Value) Add(other Value) (Value, error) {
+	// If both values are strings, try numeric conversion first
+	if v.Type == StringType && other.Type == StringType {
+		// Try to convert both strings to numbers
+		leftNum, leftErr := v.ToNumber()
+		rightNum, rightErr := other.ToNumber()
+
+		// If both can be converted to numbers, do numeric addition
+		if leftErr == nil && rightErr == nil {
+			return NewNumberValue(leftNum + rightNum), nil
+		}
+
+		// Otherwise, do string concatenation
+		return NewStringValue(v.String + other.String), nil
+	}
+
+	// If one is string and other is number, this is a type mismatch error in BASIC
+	if v.Type == StringType || other.Type == StringType {
+		return Value{}, fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+
+	// Both are numbers, perform arithmetic addition
 	return v.binaryArithmeticOp(other, func(left, right float64) float64 {
 		return left + right
 	})

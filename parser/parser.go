@@ -177,7 +177,13 @@ func (p *Parser) parsePrintStatement() *PrintStatement {
 
 	p.nextToken() // consume PRINT
 
-	stmt.Expression = p.parseExpression()
+	// Check if there's an expression to print, or if we're at end of line/file
+	if p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
+		stmt.Expression = p.parseExpression()
+	} else {
+		// No expression means print empty line
+		stmt.Expression = &StringLiteral{Value: "", Line: stmt.Line}
+	}
 
 	return stmt
 }
@@ -228,6 +234,8 @@ func (p *Parser) parsePrimaryExpression() Expression {
 		return p.parseVariableReference()
 	case lexer.LPAREN:
 		return p.parseGroupedExpression()
+	case lexer.MINUS:
+		return p.parseUnaryOperation()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token in expression", p.currentToken.Literal)
 		return nil
@@ -235,6 +243,17 @@ func (p *Parser) parsePrimaryExpression() Expression {
 		p.addTokenError("valid expression", p.currentToken.Type)
 		return nil
 	}
+}
+
+// parseUnaryOperation parses a unary operation
+func (p *Parser) parseUnaryOperation() Expression {
+	stmt := &UnaryOperation{
+		Operator: p.currentToken.Literal,
+		Line:     p.currentToken.Line,
+	}
+	p.nextToken() // consume operator
+	stmt.Right = p.parseExpressionWithPrecedence(PREFIX)
+	return stmt
 }
 
 // parseGroupedExpression parses expressions in parentheses
