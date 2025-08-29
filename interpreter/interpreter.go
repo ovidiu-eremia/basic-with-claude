@@ -55,8 +55,11 @@ func (i *Interpreter) Execute(program *parser.Program) error {
 				return err
 			}
 
-			// Check if this is an END statement - stop execution
+			// Check if this is an END or STOP statement - stop execution
 			if _, isEnd := stmt.(*parser.EndStatement); isEnd {
+				return nil
+			}
+			if _, isStop := stmt.(*parser.StopStatement); isStop {
 				return nil
 			}
 		}
@@ -74,6 +77,10 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 	case *parser.EndStatement:
 		// END statement - just return, handled in Execute
 		return nil
+	case *parser.RunStatement:
+		return i.executeRunStatement(s)
+	case *parser.StopStatement:
+		return i.executeStopStatement(s)
 	default:
 		// For now, ignore unknown statement types
 		return nil
@@ -140,5 +147,20 @@ func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
 	}
 
 	i.variables[stmt.Variable] = value
+	return nil
+}
+
+// executeRunStatement executes a RUN statement
+func (i *Interpreter) executeRunStatement(stmt *parser.RunStatement) error {
+	// RUN statement doesn't do anything during normal program execution
+	// In a C64 BASIC, RUN would start program execution from the beginning,
+	// but in our current architecture, we're already executing the program
+	// so RUN is effectively a no-op when encountered in program flow
+	return nil
+}
+
+// executeStopStatement executes a STOP statement
+func (i *Interpreter) executeStopStatement(stmt *parser.StopStatement) error {
+	// STOP statement - execution handled in Execute method
 	return nil
 }

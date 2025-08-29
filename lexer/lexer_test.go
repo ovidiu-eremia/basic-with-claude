@@ -165,6 +165,22 @@ func TestLexer_NextToken(t *testing.T) {
 				{Type: EOF, Literal: "", Line: 1},
 			},
 		},
+		{
+			name:  "RUN keyword",
+			input: "RUN",
+			expected: []Token{
+				{Type: RUN, Literal: "RUN", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "STOP keyword",
+			input: "STOP",
+			expected: []Token{
+				{Type: STOP, Literal: "STOP", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
 	}
 
 	for _, tt := range tests {

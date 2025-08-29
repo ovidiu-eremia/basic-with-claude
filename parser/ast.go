@@ -105,3 +105,19 @@ type BinaryOperation struct {
 
 func (bo *BinaryOperation) expressionNode()    {}
 func (bo *BinaryOperation) GetLineNumber() int { return bo.Line }
+
+// RunStatement represents a RUN statement
+type RunStatement struct {
+	Line int // Source line number
+}
+
+func (rs *RunStatement) statementNode()     {}
+func (rs *RunStatement) GetLineNumber() int { return rs.Line }
+
+// StopStatement represents a STOP statement
+type StopStatement struct {
+	Line int // Source line number
+}
+
+func (ss *StopStatement) statementNode()     {}
+func (ss *StopStatement) GetLineNumber() int { return ss.Line }

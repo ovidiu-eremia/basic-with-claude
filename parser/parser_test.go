@@ -348,3 +348,101 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 		})
 	}
 }
+
+func TestParser_RunAndStopStatements(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected *Program
+	}{
+		{
+			name:  "RUN statement",
+			input: "10 RUN",
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&RunStatement{
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
+		{
+			name:  "STOP statement",
+			input: "10 STOP",
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&StopStatement{
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+				},
+			},
+		},
+		{
+			name:  "program with STOP",
+			input: "10 PRINT \"START\"\n20 STOP\n30 PRINT \"NEVER\"",
+			expected: &Program{
+				Lines: []*Line{
+					{
+						Number: 10,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &StringLiteral{
+									Value: "START",
+									Line:  1,
+								},
+								Line: 1,
+							},
+						},
+						SourceLine: 1,
+					},
+					{
+						Number: 20,
+						Statements: []Statement{
+							&StopStatement{
+								Line: 2,
+							},
+						},
+						SourceLine: 2,
+					},
+					{
+						Number: 30,
+						Statements: []Statement{
+							&PrintStatement{
+								Expression: &StringLiteral{
+									Value: "NEVER",
+									Line:  3,
+								},
+								Line: 3,
+							},
+						},
+						SourceLine: 3,
+					},
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := lexer.New(tt.input)
+			p := New(l)
+
+			program := p.ParseProgram()
+
+			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
+			assert.Equal(t, tt.expected, program)
+		})
+	}
+}

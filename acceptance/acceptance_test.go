@@ -137,6 +137,25 @@ func TestAcceptance(t *testing.T) {
 				"12\n",  // (A + B) * C - A ^ B = (2 + 3) * 4 - 2 ^ 3 = 5 * 4 - 8 = 20 - 8 = 12
 			},
 		},
+		{
+			name: "StopStatement",
+			program: `10 PRINT "START"
+20 STOP
+30 PRINT "NEVER REACHED"`,
+			expected: []string{
+				"START\n",
+			},
+		},
+		{
+			name: "RunStatement",
+			program: `10 PRINT "BEFORE RUN"
+20 RUN
+30 PRINT "AFTER RUN"`,
+			expected: []string{
+				"BEFORE RUN\n",
+				"AFTER RUN\n",
+			},
+		},
 	}
 
 	for _, tt := range tests {

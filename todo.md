@@ -52,9 +52,9 @@ Add variable support and basic assignment.
 Add basic program control and flow.
 
 #### Step 7: RUN Command and Program Control
-- [ ] **Goal**: Support RUN, END, STOP commands
-- [ ] **Demo**: Multi-line program with END statement stops execution properly
-- [ ] **Tests**: Program counter management, execution flow control
+- [x] **Goal**: Support RUN, END, STOP commands
+- [x] **Demo**: Multi-line program with END statement stops execution properly
+- [x] **Tests**: Program counter management, execution flow control
 
 #### Step 8: GOTO Statement
 - [ ] **Goal**: Support unconditional jumps

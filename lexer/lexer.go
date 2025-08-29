@@ -17,6 +17,8 @@ const (
 	PRINT    TokenType = "PRINT"
 	LET      TokenType = "LET"
 	END      TokenType = "END"
+	RUN      TokenType = "RUN"
+	STOP     TokenType = "STOP"
 	NEWLINE  TokenType = "NEWLINE"
 	PLUS     TokenType = "+"
 	MINUS    TokenType = "-"
@@ -32,6 +34,8 @@ var keywords = map[string]TokenType{
 	"PRINT": PRINT,
 	"LET":   LET,
 	"END":   END,
+	"RUN":   RUN,
+	"STOP":  STOP,
 }
 
 // Position represents a position in the source code

@@ -156,6 +156,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseAssignmentStatement(false) // Direct assignment
 	case lexer.END:
 		return p.parseEndStatement()
+	case lexer.RUN:
+		return p.parseRunStatement()
+	case lexer.STOP:
+		return p.parseStopStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -252,6 +256,20 @@ func (p *Parser) parseGroupedExpression() Expression {
 // parseEndStatement parses an END statement
 func (p *Parser) parseEndStatement() *EndStatement {
 	return &EndStatement{
+		Line: p.currentToken.Line,
+	}
+}
+
+// parseRunStatement parses a RUN statement
+func (p *Parser) parseRunStatement() *RunStatement {
+	return &RunStatement{
+		Line: p.currentToken.Line,
+	}
+}
+
+// parseStopStatement parses a STOP statement
+func (p *Parser) parseStopStatement() *StopStatement {
+	return &StopStatement{
 		Line: p.currentToken.Line,
 	}
 }
