@@ -61,10 +61,20 @@ Add basic program control and flow.
 - [x] **Demo**: Program with GOTO creates infinite loop (Ctrl+C to stop)
 - [x] **Tests**: Line number lookup, program counter modification
 
-#### Step 9: IF...THEN Statement
-- [ ] **Goal**: Support conditional execution
+#### Step 9a: Basic IF...THEN Structure
+- [ ] **Goal**: Support basic conditional execution with simple boolean conditions
+- [ ] **Demo**: `10 IF 1 THEN PRINT "TRUE"` and `20 IF 0 THEN PRINT "FALSE"`
+- [ ] **Tests**: IF/THEN parsing, boolean evaluation, conditional statement execution
+
+#### Step 9b: Numeric Comparisons
+- [ ] **Goal**: Support numeric comparison operators in IF conditions
 - [ ] **Demo**: `10 IF A > 5 THEN PRINT "BIG"` with different A values
-- [ ] **Tests**: Conditional evaluation, comparison operators, conditional jumps
+- [ ] **Tests**: All numeric comparison operators (=, <, >, <=, >=, <>), variable comparisons
+
+#### Step 9c: String Comparisons and Mixed Expressions
+- [ ] **Goal**: Support string comparisons and complex conditional expressions
+- [ ] **Demo**: `10 IF A$ = "HELLO" THEN PRINT "MATCH"` and mixed expression types
+- [ ] **Tests**: String comparisons, mixed types, complex conditional logic
 
 ### Phase 4: User Interaction (Steps 10-11)
 Add user input capabilities.
@@ -502,30 +512,70 @@ ACCEPTANCE CRITERIA:
 This step adds the first non-linear program flow capability.
 ```
 
-### Step 9 Prompt
+### Step 9a Prompt
 
 ```
-Building on Steps 1-8, I need to add conditional execution.
+Building on Steps 1-8, I need to add basic conditional execution.
 
-GOAL: Support IF...THEN statements for conditional program flow.
+GOAL: Support basic IF...THEN statements with simple boolean conditions.
 
 REQUIREMENTS:
-1. Extend lexer/parser for IF, THEN keywords and comparison operators (=, <>, <, >, <=, >=)
-2. Add conditional expression evaluation:
-   - Comparison operations between numbers
-   - Comparison operations between strings
-   - Boolean result evaluation
+1. Extend lexer/parser for IF and THEN keywords only
+2. Add basic boolean evaluation:
+   - Treat 0 as false, non-zero as true (C64 BASIC behavior)
+   - Support numeric literals in conditions
 3. Add IF statement AST node:
-   - Condition expression
-   - THEN statement (can be any statement including GOTO)
-4. Extend interpreter with conditional execution logic
-5. Add comprehensive tests for all comparison operators and edge cases
+   - Condition expression (boolean evaluation)
+   - THEN statement (start with PRINT statements)
+4. Extend interpreter with basic conditional execution logic
+5. Add tests for IF/THEN parsing and basic boolean evaluation
+
+EXAMPLE PROGRAMS:
+```
+10 IF 1 THEN PRINT "TRUE"
+20 IF 0 THEN PRINT "FALSE"
+30 PRINT "DONE"
+```
+
+```
+10 A = 5
+20 IF A THEN PRINT "NON-ZERO"
+30 PRINT "FINISHED"
+```
+
+ACCEPTANCE CRITERIA:
+- IF statements parse correctly with THEN keyword
+- Boolean evaluation follows C64 rules (0=false, non-zero=true)
+- THEN clause executes only when condition is true
+- Can execute PRINT statements after THEN
+- All tests pass including boolean logic verification
+
+This step establishes the foundation for conditional execution.
+```
+
+### Step 9b Prompt
+
+```
+Building on Steps 1-8 and 9a, I need to add numeric comparison operators.
+
+GOAL: Support all numeric comparison operators in IF conditions.
+
+REQUIREMENTS:
+1. Extend lexer for comparison operators: =, <>, <, >, <=, >=
+2. Add comparison expression evaluation:
+   - All numeric comparison operations
+   - Proper precedence handling
+   - Integration with existing expression system
+3. Enhance IF statement to handle comparison expressions
+4. Add comprehensive tests for all comparison operators
 
 EXAMPLE PROGRAMS:
 ```
 10 A = 5
-20 IF A > 3 THEN PRINT "BIG"
-30 PRINT "DONE"
+20 IF A > 3 THEN PRINT "BIGGER THAN 3"
+30 IF A = 5 THEN PRINT "EQUALS 5"
+40 IF A <> 10 THEN PRINT "NOT 10"
+50 IF A <= 5 THEN PRINT "5 OR LESS"
 ```
 
 ```
@@ -538,13 +588,54 @@ EXAMPLE PROGRAMS:
 ```
 
 ACCEPTANCE CRITERIA:
-- IF conditions evaluate correctly for all comparison operators
-- THEN clause executes only when condition is true
-- Can use any statement after THEN (including GOTO)
-- String and numeric comparisons work properly
-- All tests pass including complex conditional logic
+- All comparison operators work correctly (=, <>, <, >, <=, >=)
+- Comparisons work with variables and expressions
+- THEN can execute any statement (including GOTO)
+- Proper operator precedence in complex expressions
+- All tests pass including edge cases and variable comparisons
 
-This step enables decision-making in BASIC programs.
+This step adds full numeric comparison capabilities.
+```
+
+### Step 9c Prompt
+
+```
+Building on Steps 1-8, 9a, and 9b, I need to add string comparisons and complete conditional logic.
+
+GOAL: Support string comparisons and complex conditional expressions.
+
+REQUIREMENTS:
+1. Add string comparison operations:
+   - String equality and inequality
+   - Lexicographic ordering for <, >, <=, >=
+   - Proper string vs numeric type handling
+2. Handle mixed expression types in conditions:
+   - Type checking for comparisons
+   - Error handling for invalid type combinations
+3. Add comprehensive tests for string comparisons and edge cases
+4. Ensure full C64 BASIC compatibility for conditional logic
+
+EXAMPLE PROGRAMS:
+```
+10 NAME$ = "ALICE"
+20 IF NAME$ = "ALICE" THEN PRINT "HELLO ALICE"
+30 IF NAME$ <> "BOB" THEN PRINT "NOT BOB"
+```
+
+```
+10 INPUT "ENTER WORD"; WORD$
+20 IF WORD$ < "M" THEN PRINT "FIRST HALF OF ALPHABET"
+30 IF WORD$ >= "M" THEN PRINT "SECOND HALF OF ALPHABET"
+```
+
+ACCEPTANCE CRITERIA:
+- String equality and inequality comparisons work correctly
+- String ordering comparisons use lexicographic order
+- Type mismatches in comparisons produce appropriate errors
+- Complex conditional expressions parse and evaluate correctly
+- All tests pass including string comparison edge cases
+
+This step completes the conditional execution implementation.
 ```
 
 ### Step 10 Prompt

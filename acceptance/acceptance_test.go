@@ -320,6 +320,123 @@ func TestAcceptance(t *testing.T) {
 			errContains: "?INFINITE LOOP ERROR",
 			maxSteps:    5, // Custom low limit
 		},
+		// ---
+		// IF...THEN STATEMENT TESTS
+		// ---
+		{
+			name: "IfThen_SimpleNumericComparison",
+			program: `10 A = 5
+20 IF A > 3 THEN PRINT "BIG"
+30 PRINT "DONE"`,
+			expected: []string{
+				"BIG\n",
+				"DONE\n",
+			},
+		},
+		{
+			name: "IfThen_FalseCondition",
+			program: `10 A = 2
+20 IF A > 3 THEN PRINT "BIG"
+30 PRINT "DONE"`,
+			expected: []string{
+				"DONE\n",
+			},
+		},
+		{
+			name: "IfThen_EqualComparison",
+			program: `10 A = 5
+20 IF A = 5 THEN PRINT "EQUAL"
+30 IF A = 4 THEN PRINT "NOT EQUAL"
+40 PRINT "END"`,
+			expected: []string{
+				"EQUAL\n",
+				"END\n",
+			},
+		},
+		{
+			name: "IfThen_NotEqualComparison",
+			program: `10 A = 5
+20 IF A <> 3 THEN PRINT "NOT THREE"
+30 IF A <> 5 THEN PRINT "NOT FIVE"
+40 PRINT "END"`,
+			expected: []string{
+				"NOT THREE\n",
+				"END\n",
+			},
+		},
+		{
+			name: "IfThen_LessThanComparison",
+			program: `10 A = 3
+20 IF A < 5 THEN PRINT "SMALL"
+30 IF A < 2 THEN PRINT "VERY SMALL"`,
+			expected: []string{
+				"SMALL\n",
+			},
+		},
+		{
+			name: "IfThen_GreaterEqualComparison",
+			program: `10 A = 5
+20 IF A >= 5 THEN PRINT "AT LEAST FIVE"
+30 IF A >= 6 THEN PRINT "AT LEAST SIX"`,
+			expected: []string{
+				"AT LEAST FIVE\n",
+			},
+		},
+		{
+			name: "IfThen_LessEqualComparison",
+			program: `10 A = 5
+20 IF A <= 5 THEN PRINT "AT MOST FIVE"
+30 IF A <= 4 THEN PRINT "AT MOST FOUR"`,
+			expected: []string{
+				"AT MOST FIVE\n",
+			},
+		},
+		{
+			name: "IfThen_StringComparison",
+			program: `10 A$ = "HELLO"
+20 IF A$ = "HELLO" THEN PRINT "MATCH"
+30 IF A$ = "WORLD" THEN PRINT "NO MATCH"
+40 PRINT "DONE"`,
+			expected: []string{
+				"MATCH\n",
+				"DONE\n",
+			},
+		},
+		{
+			name: "IfThen_WithGoto",
+			program: `10 A = 10
+20 IF A > 5 THEN GOTO 50
+30 PRINT "SMALL"
+40 GOTO 60
+50 PRINT "BIG"
+60 PRINT "END"`,
+			expected: []string{
+				"BIG\n",
+				"END\n",
+			},
+		},
+		{
+			name: "IfThen_VariableComparison",
+			program: `10 A = 5
+20 B = 3
+30 IF A > B THEN PRINT "A IS BIGGER"
+40 IF B > A THEN PRINT "B IS BIGGER"
+50 PRINT "COMPARED"`,
+			expected: []string{
+				"A IS BIGGER\n",
+				"COMPARED\n",
+			},
+		},
+		{
+			name: "IfThen_ExpressionInCondition",
+			program: `10 A = 2
+20 B = 3
+30 IF A + B = 5 THEN PRINT "MATH WORKS"
+40 IF A * B > 7 THEN PRINT "BIG PRODUCT"`,
+			expected: []string{
+				"MATH WORKS\n",
+			},
+		},
 	}
 
 	for _, tt := range tests {

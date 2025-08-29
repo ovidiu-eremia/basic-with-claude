@@ -131,6 +131,16 @@ type GotoStatement struct {
 func (gs *GotoStatement) statementNode()     {}
 func (gs *GotoStatement) GetLineNumber() int { return gs.Line }
 
+// IfStatement represents an IF...THEN statement
+type IfStatement struct {
+	Condition Expression // The condition to evaluate
+	ThenStmt  Statement  // The statement to execute if condition is true
+	Line      int        // Source line number
+}
+
+func (is *IfStatement) statementNode()     {}
+func (is *IfStatement) GetLineNumber() int { return is.Line }
+
 // UnaryOperation represents a unary arithmetic operation
 type UnaryOperation struct {
 	Operator string     // Operator (-)
@@ -140,3 +150,14 @@ type UnaryOperation struct {
 
 func (uo *UnaryOperation) expressionNode()    {}
 func (uo *UnaryOperation) GetLineNumber() int { return uo.Line }
+
+// ComparisonExpression represents a comparison operation (=, <>, <, >, <=, >=)
+type ComparisonExpression struct {
+	Left     Expression // Left operand
+	Operator string     // Comparison operator
+	Right    Expression // Right operand
+	Line     int        // Source line number
+}
+
+func (ce *ComparisonExpression) expressionNode()    {}
+func (ce *ComparisonExpression) GetLineNumber() int { return ce.Line }

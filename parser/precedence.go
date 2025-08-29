@@ -11,6 +11,7 @@ type precedence int
 const (
 	_ precedence = iota
 	LOWEST
+	COMPARE // =, <>, <, >, <=, >=
 	SUM     // +, -
 	PRODUCT // *, /
 	POWER   // ^
@@ -27,6 +28,12 @@ type PrecedenceTable struct {
 func NewPrecedenceTable() *PrecedenceTable {
 	return &PrecedenceTable{
 		precedences: map[lexer.TokenType]precedence{
+			lexer.ASSIGN:   COMPARE,
+			lexer.NE:       COMPARE,
+			lexer.LT:       COMPARE,
+			lexer.GT:       COMPARE,
+			lexer.LE:       COMPARE,
+			lexer.GE:       COMPARE,
 			lexer.PLUS:     SUM,
 			lexer.MINUS:    SUM,
 			lexer.MULTIPLY: PRODUCT,

@@ -112,6 +112,24 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				}
 				currentLineIndex = targetLineIndex
 				goto nextLine // Skip to the target line
+			case *parser.IfStatement:
+				// IF statement might execute a GOTO, need to check if flow changed
+				if gotoStmt, ok := s.ThenStmt.(*parser.GotoStatement); ok {
+					// Check if condition is true
+					condition, err := i.evaluateExpression(s.Condition)
+					if err != nil {
+						return i.wrapErrorWithLine(err, line.Number)
+					}
+					if i.isConditionTrue(condition) {
+						// Execute the GOTO
+						targetLineIndex, found := i.findLineIndex(program, gotoStmt.TargetLine)
+						if !found {
+							return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
+						}
+						currentLineIndex = targetLineIndex
+						goto nextLine // Skip to the target line
+					}
+				}
 			}
 		}
 
@@ -150,6 +168,8 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 	case *parser.GotoStatement:
 		// GOTO statement - handled in executeWithProgramCounter
 		return nil
+	case *parser.IfStatement:
+		return i.executeIfStatement(s)
 	default:
 		// For now, ignore unknown statement types
 		return nil
@@ -191,6 +211,8 @@ func (i *Interpreter) evaluateExpression(expr parser.Expression) (Value, error) 
 		return i.evaluateBinaryOperation(e)
 	case *parser.UnaryOperation:
 		return i.evaluateUnaryOperation(e)
+	case *parser.ComparisonExpression:
+		return i.evaluateComparisonExpression(e)
 	default:
 		return Value{}, fmt.Errorf("unknown expression type")
 	}
@@ -240,6 +262,87 @@ func (i *Interpreter) evaluateUnaryOperation(expr *parser.UnaryOperation) (Value
 	}
 }
 
+// evaluateComparisonExpression evaluates a comparison operation
+func (i *Interpreter) evaluateComparisonExpression(expr *parser.ComparisonExpression) (Value, error) {
+	left, err := i.evaluateExpression(expr.Left)
+	if err != nil {
+		return Value{}, err
+	}
+
+	right, err := i.evaluateExpression(expr.Right)
+	if err != nil {
+		return Value{}, err
+	}
+
+	// Perform the comparison based on operator
+	result, err := i.compareValues(left, right, expr.Operator)
+	if err != nil {
+		return Value{}, err
+	}
+
+	// Return 1 for true, 0 for false (C64 BASIC convention)
+	if result {
+		return NewNumberValue(1), nil
+	} else {
+		return NewNumberValue(0), nil
+	}
+}
+
+// compareValues compares two values using the specified operator
+func (i *Interpreter) compareValues(left, right Value, operator string) (bool, error) {
+	// Handle comparison based on types
+	if left.Type == NumberType && right.Type == NumberType {
+		// Numeric comparison
+		return i.compareNumbers(left.Number, right.Number, operator), nil
+	} else if left.Type == StringType && right.Type == StringType {
+		// String comparison
+		return i.compareStrings(left.String, right.String, operator), nil
+	} else {
+		// Type mismatch
+		return false, fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+}
+
+// compareNumbers performs numeric comparison
+func (i *Interpreter) compareNumbers(left, right float64, operator string) bool {
+	switch operator {
+	case "=":
+		return left == right
+	case "<>":
+		return left != right
+	case "<":
+		return left < right
+	case ">":
+		return left > right
+	case "<=":
+		return left <= right
+	case ">=":
+		return left >= right
+	default:
+		return false // Invalid operator
+	}
+}
+
+// compareStrings performs string comparison
+func (i *Interpreter) compareStrings(left, right string, operator string) bool {
+	switch operator {
+	case "=":
+		return left == right
+	case "<>":
+		return left != right
+	case "<":
+		return left < right
+	case ">":
+		return left > right
+	case "<=":
+		return left <= right
+	case ">=":
+		return left >= right
+	default:
+		return false // Invalid operator
+	}
+}
+
 // executeLetStatement executes a LET statement (variable assignment)
 func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
 	value, err := i.evaluateExpression(stmt.Expression)
@@ -274,6 +377,36 @@ func (i *Interpreter) executeRunStatement(stmt *parser.RunStatement) error {
 func (i *Interpreter) executeStopStatement(stmt *parser.StopStatement) error {
 	// STOP statement - execution handled in Execute method
 	return nil
+}
+
+// executeIfStatement executes an IF...THEN statement
+func (i *Interpreter) executeIfStatement(stmt *parser.IfStatement) error {
+	// Evaluate the condition
+	condition, err := i.evaluateExpression(stmt.Condition)
+	if err != nil {
+		return err
+	}
+
+	// Check if condition is true
+	if i.isConditionTrue(condition) {
+		// Execute the THEN statement
+		return i.executeStatement(stmt.ThenStmt)
+	}
+
+	// Condition is false, do nothing
+	return nil
+}
+
+// isConditionTrue determines if a condition value evaluates to true
+func (i *Interpreter) isConditionTrue(value Value) bool {
+	switch value.Type {
+	case NumberType:
+		return value.Number != 0 // Non-zero numbers are true
+	case StringType:
+		return value.String != "" // Non-empty strings are true
+	default:
+		return false
+	}
 }
 
 // normalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)

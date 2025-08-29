@@ -30,6 +30,13 @@ const (
 	POWER    TokenType = "^"
 	LPAREN   TokenType = "("
 	RPAREN   TokenType = ")"
+	IF       TokenType = "IF"
+	THEN     TokenType = "THEN"
+	GT       TokenType = ">"
+	LT       TokenType = "<"
+	NE       TokenType = "<>"
+	GE       TokenType = ">="
+	LE       TokenType = "<="
 )
 
 // keywords maps BASIC keywords to their token types
@@ -40,6 +47,8 @@ var keywords = map[string]TokenType{
 	"RUN":   RUN,
 	"STOP":  STOP,
 	"GOTO":  GOTO,
+	"IF":    IF,
+	"THEN":  THEN,
 }
 
 // Position represents a position in the source code
@@ -118,6 +127,10 @@ func (l *Lexer) NextToken() Token {
 		return l.createSingleCharToken(LPAREN)
 	case ')':
 		return l.createSingleCharToken(RPAREN)
+	case '<':
+		return l.readComparisonOperator('<')
+	case '>':
+		return l.readComparisonOperator('>')
 	case '"':
 		if literal, terminated := l.readString(); terminated {
 			return l.createToken(STRING, literal)
@@ -198,6 +211,44 @@ func (l *Lexer) readNumber() string {
 		}
 	}
 	return l.input[position:l.currentPosition]
+}
+
+// readComparisonOperator reads comparison operators (< <= <> > >=)
+func (l *Lexer) readComparisonOperator(firstChar byte) Token {
+	switch firstChar {
+	case '<':
+		if l.peekChar() == '=' {
+			l.readChar() // consume '<'
+			l.readChar() // consume '='
+			return l.createToken(LE, "<=")
+		} else if l.peekChar() == '>' {
+			l.readChar() // consume '<'
+			l.readChar() // consume '>'
+			return l.createToken(NE, "<>")
+		} else {
+			return l.createSingleCharToken(LT)
+		}
+	case '>':
+		if l.peekChar() == '=' {
+			l.readChar() // consume '>'
+			l.readChar() // consume '='
+			return l.createToken(GE, ">=")
+		} else {
+			return l.createSingleCharToken(GT)
+		}
+	default:
+		tok := l.createToken(ILLEGAL, string(firstChar))
+		l.readChar()
+		return tok
+	}
+}
+
+// peekChar returns the next character without advancing position
+func (l *Lexer) peekChar() byte {
+	if l.nextPosition >= len(l.input) {
+		return 0
+	}
+	return l.input[l.nextPosition]
 }
 
 // isLetter checks if character is a letter

@@ -162,6 +162,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseStopStatement()
 	case lexer.GOTO:
 		return p.parseGotoStatement()
+	case lexer.IF:
+		return p.parseIfStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -212,15 +214,35 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 			return nil
 		}
 
-		left = &BinaryOperation{
-			Left:     left,
-			Operator: operator,
-			Right:    right,
-			Line:     left.GetLineNumber(),
+		// Create appropriate node type based on operator
+		if p.isComparisonOperatorString(operator) {
+			left = &ComparisonExpression{
+				Left:     left,
+				Operator: operator,
+				Right:    right,
+				Line:     left.GetLineNumber(),
+			}
+		} else {
+			left = &BinaryOperation{
+				Left:     left,
+				Operator: operator,
+				Right:    right,
+				Line:     left.GetLineNumber(),
+			}
 		}
 	}
 
 	return left
+}
+
+// isComparisonOperatorString checks if an operator string is a comparison operator
+func (p *Parser) isComparisonOperatorString(operator string) bool {
+	switch operator {
+	case "=", "<>", "<", ">", "<=", ">=":
+		return true
+	default:
+		return false
+	}
 }
 
 // parsePrimaryExpression parses primary expressions (literals, variables, parentheses)
@@ -316,6 +338,80 @@ func (p *Parser) parseGotoStatement() *GotoStatement {
 
 	stmt.TargetLine = targetLine
 	return stmt
+}
+
+// parseIfStatement parses an IF...THEN statement
+func (p *Parser) parseIfStatement() *IfStatement {
+	stmt := &IfStatement{Line: p.currentToken.Line}
+
+	p.nextToken() // consume IF
+
+	// Parse the condition expression
+	stmt.Condition = p.parseExpression()
+	if stmt.Condition == nil {
+		return nil
+	}
+
+	// Expect THEN
+	if p.currentToken.Type != lexer.THEN {
+		p.addTokenError("THEN", p.currentToken.Type)
+		return nil
+	}
+
+	p.nextToken() // consume THEN
+
+	// Parse the statement to execute when condition is true
+	stmt.ThenStmt = p.parseStatement()
+	if stmt.ThenStmt == nil {
+		return nil
+	}
+
+	return stmt
+}
+
+// parseComparisonExpression parses a comparison expression (left op right)
+func (p *Parser) parseComparisonExpression() Expression {
+	// Parse left side - for comparisons, we want to allow arithmetic expressions
+	left := p.parseExpressionWithPrecedence(LOWEST) // Parse full expressions
+	if left == nil {
+		return nil
+	}
+
+	// Check if current token is a comparison operator
+	operator := ""
+	switch p.currentToken.Type {
+	case lexer.ASSIGN: // = for comparison
+		operator = "="
+	case lexer.NE: // <>
+		operator = "<>"
+	case lexer.LT: // <
+		operator = "<"
+	case lexer.GT: // >
+		operator = ">"
+	case lexer.LE: // <=
+		operator = "<="
+	case lexer.GE: // >=
+		operator = ">="
+	default:
+		p.addTokenError("comparison operator", p.currentToken.Type)
+		return nil
+	}
+
+	line := p.currentToken.Line
+	p.nextToken() // consume comparison operator
+
+	// Parse right side as an expression
+	right := p.parseExpressionWithPrecedence(LOWEST) // Parse full expressions
+	if right == nil {
+		return nil
+	}
+
+	return &ComparisonExpression{
+		Left:     left,
+		Operator: operator,
+		Right:    right,
+		Line:     line,
+	}
 }
 
 // parseStringLiteral parses a string literal

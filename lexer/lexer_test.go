@@ -211,3 +211,79 @@ func TestLexer_NextToken(t *testing.T) {
 		})
 	}
 }
+
+func TestLexer_ComparisonOperators(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []Token
+	}{
+		{
+			name:  "all comparison operators",
+			input: `< > <= >= <> =`,
+			expected: []Token{
+				{Type: LT, Literal: "<", Line: 1},
+				{Type: GT, Literal: ">", Line: 1},
+				{Type: LE, Literal: "<=", Line: 1},
+				{Type: GE, Literal: ">=", Line: 1},
+				{Type: NE, Literal: "<>", Line: 1},
+				{Type: ASSIGN, Literal: "=", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "IF THEN statement",
+			input: `IF A > 5 THEN PRINT "BIG"`,
+			expected: []Token{
+				{Type: IF, Literal: "IF", Line: 1},
+				{Type: IDENT, Literal: "A", Line: 1},
+				{Type: GT, Literal: ">", Line: 1},
+				{Type: NUMBER, Literal: "5", Line: 1},
+				{Type: THEN, Literal: "THEN", Line: 1},
+				{Type: PRINT, Literal: "PRINT", Line: 1},
+				{Type: STRING, Literal: "BIG", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "IF THEN with not equal",
+			input: `IF A <> 0 THEN GOTO 100`,
+			expected: []Token{
+				{Type: IF, Literal: "IF", Line: 1},
+				{Type: IDENT, Literal: "A", Line: 1},
+				{Type: NE, Literal: "<>", Line: 1},
+				{Type: NUMBER, Literal: "0", Line: 1},
+				{Type: THEN, Literal: "THEN", Line: 1},
+				{Type: GOTO, Literal: "GOTO", Line: 1},
+				{Type: NUMBER, Literal: "100", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "IF THEN with less than or equal",
+			input: `IF X <= 10 THEN Y = 1`,
+			expected: []Token{
+				{Type: IF, Literal: "IF", Line: 1},
+				{Type: IDENT, Literal: "X", Line: 1},
+				{Type: LE, Literal: "<=", Line: 1},
+				{Type: NUMBER, Literal: "10", Line: 1},
+				{Type: THEN, Literal: "THEN", Line: 1},
+				{Type: IDENT, Literal: "Y", Line: 1},
+				{Type: ASSIGN, Literal: "=", Line: 1},
+				{Type: NUMBER, Literal: "1", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lexer := New(tt.input)
+
+			for i, expectedToken := range tt.expected {
+				token := lexer.NextToken()
+				assertToken(t, expectedToken, token, i)
+			}
+		})
+	}
+}
