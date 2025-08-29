@@ -191,6 +191,77 @@ func TestAcceptance(t *testing.T) {
 			wantErr:     true,
 			errContains: "UNDEFINED STATEMENT ERROR",
 		},
+		// ---
+		// BUG-DERIVED TESTS
+		// ---
+		{
+			name:        "Bug_DivisionByZeroErrorMessage",
+			program:     `10 PRINT 1/0`,
+			wantErr:     true,
+			errContains: "?DIVISION BY ZERO ERROR IN 10",
+		},
+		{
+			name:    "Bug_StringConcatenation",
+			program: `10 PRINT "HELLO" + " " + "WORLD"`,
+			expected: []string{
+				"HELLO WORLD\n",
+			},
+		},
+		{
+			name:    "Bug_CaseInsensitiveKeywords",
+			program: `10 print "hello"`,
+			expected: []string{
+				"hello\n",
+			},
+		},
+		{
+			name:    "Bug_PrintStatementWithoutArgs",
+			program: `10 PRINT`,
+			expected: []string{
+				"\n",
+			},
+		},
+		{
+			name: "Bug_VariableNameLength",
+			program: `10 VA = 5
+20 VARA = 10
+30 PRINT VA`,
+			expected: []string{
+				"10\n",
+			},
+		},
+		{
+			name:    "Bug_UninitializedStringVariable",
+			program: `10 PRINT A$`,
+			expected: []string{
+				"\n",
+			},
+		},
+		{
+			name:        "Bug_TypeMismatchOnAssignment",
+			program:     `10 A = "hello"`,
+			wantErr:     true,
+			errContains: "?TYPE MISMATCH ERROR IN 10",
+		},
+		{
+			name: "Bug_TypeMismatchOnAddition",
+			program: `10 A$ = "10"
+20 B = 5
+30 C = A$ + B`,
+			wantErr:     true,
+			errContains: "?TYPE MISMATCH ERROR IN 30",
+		},
+		{
+			name: "Bug_ParserArithmetic",
+			program: `10 PRINT -10 + 5
+20 PRINT 2.5 * 2
+30 PRINT 2 * 3 + 4 * 5`,
+			expected: []string{
+				"-5\n",
+				"5\n",
+				"26\n",
+			},
+		},
 	}
 
 	for _, tt := range tests {
