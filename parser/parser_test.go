@@ -16,102 +16,27 @@ func TestParser_ParseProgram(t *testing.T) {
 		expected *Program
 	}{
 		{
-			name:  "single line with PRINT",
-			input: `10 PRINT "HELLO"`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "HELLO",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "single line with PRINT",
+			input:    `10 PRINT "HELLO"`,
+			expected: program(line(10, 1, printStmt(str("HELLO", 1), 1))),
 		},
 		{
 			name:  "multiple lines",
 			input: "10 PRINT \"LINE1\"\n20 PRINT \"LINE2\"",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "LINE1",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-					{
-						Number: 20,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "LINE2",
-									Line:  2,
-								},
-								Line: 2,
-							},
-						},
-						SourceLine: 2,
-					},
-				},
-			},
+			expected: program(
+				line(10, 1, printStmt(str("LINE1", 1), 1)),
+				line(20, 2, printStmt(str("LINE2", 2), 2)),
+			),
 		},
 		{
-			name:  "empty string",
-			input: `10 PRINT ""`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&PrintStatement{
-								Expression: &StringLiteral{
-									Value: "",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "empty string",
+			input:    `10 PRINT ""`,
+			expected: program(line(10, 1, printStmt(str("", 1), 1))),
 		},
 		{
-			name:  "LET assignment",
-			input: `10 LET A = 42`,
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&LetStatement{
-								Variable: "A",
-								Expression: &NumberLiteral{
-									Value: "42",
-									Line:  1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			name:     "LET assignment",
+			input:    `10 LET A = 42`,
+			expected: program(line(10, 1, letStmt("A", num("42", 1), 1))),
 		},
 		{
 			name:  "assignment without LET",

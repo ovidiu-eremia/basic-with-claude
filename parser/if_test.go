@@ -17,30 +17,9 @@ func TestIfStatementParsing(t *testing.T) {
 		{
 			name:  "simple IF THEN",
 			input: "10 IF 1 THEN PRINT \"TRUE\"",
-			expected: &Program{
-				Lines: []*Line{
-					{
-						Number: 10,
-						Statements: []Statement{
-							&IfStatement{
-								Condition: &NumberLiteral{
-									Value: "1",
-									Line:  1,
-								},
-								ThenStmt: &PrintStatement{
-									Expression: &StringLiteral{
-										Value: "TRUE",
-										Line:  1,
-									},
-									Line: 1,
-								},
-								Line: 1,
-							},
-						},
-						SourceLine: 1,
-					},
-				},
-			},
+			expected: program(
+				line(10, 1, ifStmt(num("1", 1), printStmt(str("TRUE", 1), 1), 1)),
+			),
 		},
 	}
 
