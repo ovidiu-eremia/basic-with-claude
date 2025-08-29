@@ -29,7 +29,7 @@ type Parser struct {
 	currentToken lexer.Token
 	peekToken    lexer.Token
 
-	errors []string
+	errors []*ParseError
 }
 
 // New creates a new parser instance
@@ -37,7 +37,7 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		lexer:      l,
 		precedence: NewPrecedenceTable(),
-		errors:     []string{},
+		errors:     []*ParseError{},
 	}
 
 	// Read two tokens, so currentToken and peekToken are both set
@@ -54,29 +54,50 @@ func (p *Parser) nextToken() {
 }
 
 // Errors returns parsing errors
+// Errors returns parsing errors as human-readable strings (kept for compatibility)
 func (p *Parser) Errors() []string {
+	out := make([]string, 0, len(p.errors))
+	for _, e := range p.errors {
+		out = append(out, fmt.Sprintf("line %d: %s", e.Position.Line, e.Message))
+	}
+	return out
+}
+
+// ParseErrors returns structured parse errors with positions
+func (p *Parser) ParseErrors() []*ParseError {
 	return p.errors
 }
 
 // addError adds an error message
 func (p *Parser) addError(msg string) {
-	p.errors = append(p.errors, msg)
+	p.addErrorAt(p.currentToken.Line, msg)
 }
 
 // addErrorf adds a formatted error message with current token context
 func (p *Parser) addErrorf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	p.addError(msg)
+	p.addErrorAt(p.currentToken.Line, msg)
 }
 
 // addTokenError adds an error message with token type context
 func (p *Parser) addTokenError(expected string, got lexer.TokenType) {
-	p.addErrorf("expected %s, got %s", expected, got)
+	p.addErrorAt(p.currentToken.Line, fmt.Sprintf("expected %s, got %s (token %q)", expected, got, p.currentToken.Literal))
 }
 
 // addLiteralError adds an error message with token literal context
 func (p *Parser) addLiteralError(prefix string, literal string) {
-	p.addErrorf("%s: %s", prefix, literal)
+	p.addErrorAt(p.currentToken.Line, fmt.Sprintf("%s: %s", prefix, literal))
+}
+
+// addErrorAt appends a ParseError with an explicit line
+func (p *Parser) addErrorAt(line int, msg string) {
+	p.errors = append(p.errors, &ParseError{
+		Message: msg,
+		Position: lexer.Position{
+			Line:   line,
+			Column: 0, // Column tracking not implemented yet
+		},
+	})
 }
 
 // skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
@@ -132,14 +153,18 @@ func (p *Parser) parseLine() *Line {
 
 	p.nextToken() // consume line number
 
-	// Parse statements on this line
+	// Parse statements on this line. On first error, skip rest of the line.
 	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
 		stmt := p.parseStatement()
 		if stmt != nil {
 			line.Statements = append(line.Statements, stmt)
+			// Advance token after parsing a successful statement
+			p.nextToken()
+			continue
 		}
-		// Advance token after parsing statement
-		p.nextToken()
+		// An error occurred: skip remaining tokens on this line
+		p.skipToNextLineOrEOF()
+		break
 	}
 
 	return line
@@ -288,7 +313,7 @@ func (p *Parser) parseGroupedExpression() Expression {
 	}
 
 	if p.peekToken.Type != lexer.RPAREN {
-		p.addError("expected ')' after grouped expression")
+		p.addErrorAt(p.currentToken.Line, "expected ')' after grouped expression")
 		return nil
 	}
 
