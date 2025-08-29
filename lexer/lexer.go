@@ -22,6 +22,7 @@ const (
 	RUN      TokenType = "RUN"
 	STOP     TokenType = "STOP"
 	GOTO     TokenType = "GOTO"
+	INPUT    TokenType = "INPUT"
 	NEWLINE  TokenType = "NEWLINE"
 	PLUS     TokenType = "+"
 	MINUS    TokenType = "-"
@@ -47,6 +48,7 @@ var keywords = map[string]TokenType{
 	"RUN":   RUN,
 	"STOP":  STOP,
 	"GOTO":  GOTO,
+	"INPUT": INPUT,
 	"IF":    IF,
 	"THEN":  THEN,
 }

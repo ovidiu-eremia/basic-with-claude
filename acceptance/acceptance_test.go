@@ -27,12 +27,12 @@ type AcceptanceTest struct {
 }
 
 // executeBasicProgram parses and executes a BASIC program string, returning the output
-func executeBasicProgram(t *testing.T, program string) ([]string, error) {
-	return executeBasicProgramWithMaxSteps(t, program, 0) // Use default max steps
+func executeBasicProgram(t *testing.T, program string, inputs []string) ([]string, error) {
+	return executeBasicProgramWithMaxSteps(t, program, inputs, 0) // Use default max steps
 }
 
 // executeBasicProgramWithMaxSteps parses and executes a BASIC program string with custom max steps
-func executeBasicProgramWithMaxSteps(t *testing.T, program string, maxSteps int) ([]string, error) {
+func executeBasicProgramWithMaxSteps(t *testing.T, program string, inputs []string, maxSteps int) ([]string, error) {
 	t.Helper()
 
 	// Parse the program
@@ -50,6 +50,9 @@ func executeBasicProgramWithMaxSteps(t *testing.T, program string, maxSteps int)
 
 	// Create test runtime and interpreter
 	testRuntime := runtime.NewTestRuntime()
+	if len(inputs) > 0 {
+		testRuntime.SetInput(inputs)
+	}
 	interp := interpreter.NewInterpreter(testRuntime)
 
 	// Set custom max steps if specified
@@ -69,6 +72,21 @@ func executeBasicProgramWithMaxSteps(t *testing.T, program string, maxSteps int)
 
 func TestAcceptance(t *testing.T) {
 	tests := []AcceptanceTest{
+		// STEP 10: INPUT Statement
+		{
+			name: "Input_Numeric",
+			program: `10 INPUT A
+20 PRINT A`,
+			inputs:   []string{"5"},
+			expected: []string{"5\n"},
+		},
+		{
+			name: "Input_String",
+			program: `10 INPUT A$
+20 PRINT A$`,
+			inputs:   []string{"HELLO"},
+			expected: []string{"HELLO\n"},
+		},
 		{
 			name: "HelloWorld",
 			program: `10 PRINT "HELLO WORLD"
@@ -620,9 +638,9 @@ func TestAcceptance(t *testing.T) {
 			var output []string
 			var err error
 			if tt.maxSteps > 0 {
-				output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.maxSteps)
+				output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.inputs, tt.maxSteps)
 			} else {
-				output, err = executeBasicProgram(t, tt.program)
+				output, err = executeBasicProgram(t, tt.program, tt.inputs)
 			}
 
 			if tt.wantErr {

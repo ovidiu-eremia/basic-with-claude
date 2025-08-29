@@ -158,6 +158,8 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 		return i.executePrintStatement(s)
 	case *parser.LetStatement:
 		return i.executeLetStatement(s)
+	case *parser.InputStatement:
+		return i.executeInputStatement(s)
 	case *parser.EndStatement:
 		// END statement - just return, handled in executeWithProgramCounter
 		return nil
@@ -434,4 +436,32 @@ func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
 	default:
 		return fmt.Errorf("?ERROR IN %d: %s", lineNumber, errMsg)
 	}
+}
+
+// executeInputStatement executes an INPUT statement (reads user input into a variable)
+func (i *Interpreter) executeInputStatement(stmt *parser.InputStatement) error {
+	// Determine if target is string or numeric based on variable name suffix
+	isString := strings.HasSuffix(stmt.Variable, "$")
+
+	// Prompt is empty for Step 10
+	input, err := i.runtime.Input("")
+	if err != nil {
+		return err
+	}
+
+	var value Value
+	if isString {
+		value = NewStringValue(input)
+	} else {
+		// Parse numeric input
+		parsed, err := ParseValue(input)
+		if err != nil || parsed.Type != NumberType {
+			return fmt.Errorf("TYPE MISMATCH ERROR")
+		}
+		value = parsed
+	}
+
+	normalized := i.normalizeVariableName(stmt.Variable)
+	i.variables[normalized] = value
+	return nil
 }

@@ -80,9 +80,9 @@ Add basic program control and flow.
 Add user input capabilities.
 
 #### Step 10: INPUT Statement
-- [ ] **Goal**: Support user input for variables
-- [ ] **Demo**: `10 INPUT A` prompts user, stores value, can be PRINTed
-- [ ] **Tests**: Input parsing, user interaction, variable assignment from input
+- [x] **Goal**: Support user input for variables
+- [x] **Demo**: `10 INPUT A` prompts user, stores value, can be PRINTed
+- [x] **Tests**: Input parsing, user interaction, variable assignment from input
 
 #### Step 11: INPUT with Prompts
 - [ ] **Goal**: Support INPUT with custom prompts

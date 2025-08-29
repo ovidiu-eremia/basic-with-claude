@@ -179,6 +179,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseAssignmentStatement(true) // LET assignment
 	case lexer.IDENT:
 		return p.parseAssignmentStatement(false) // Direct assignment
+	case lexer.INPUT:
+		return p.parseInputStatement()
 	case lexer.END:
 		return p.parseEndStatement()
 	case lexer.RUN:
@@ -493,5 +495,18 @@ func (p *Parser) parseAssignmentStatement(hasLet bool) *LetStatement {
 
 	stmt.Expression = p.parseExpression()
 
+	return stmt
+}
+
+// parseInputStatement parses an INPUT statement
+func (p *Parser) parseInputStatement() *InputStatement {
+	stmt := &InputStatement{Line: p.currentToken.Line}
+	p.nextToken() // consume INPUT
+
+	if p.currentToken.Type != lexer.IDENT {
+		p.addTokenError("variable name", p.currentToken.Type)
+		return nil
+	}
+	stmt.Variable = p.currentToken.Literal
 	return stmt
 }
