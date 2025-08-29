@@ -72,9 +72,9 @@ Add basic program control and flow.
 - [x] **Tests**: All numeric comparison operators (=, <, >, <=, >=, <>), variable comparisons
 
 #### Step 9c: String Comparisons and Mixed Expressions
-- [ ] **Goal**: Support string comparisons and complex conditional expressions
-- [ ] **Demo**: `10 IF A$ = "HELLO" THEN PRINT "MATCH"` and mixed expression types
-- [ ] **Tests**: String comparisons, mixed types, complex conditional logic
+- [x] **Goal**: Support string comparisons and complex conditional expressions
+- [x] **Demo**: `10 IF A$ = "HELLO" THEN PRINT "MATCH"` and mixed expression types
+- [x] **Tests**: String comparisons, mixed types, complex conditional logic
 
 ### Phase 4: User Interaction (Steps 10-11)
 Add user input capabilities.
