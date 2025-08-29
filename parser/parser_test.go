@@ -141,54 +141,24 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 		expected Expression
 	}{
 		{
-			name:  "simple addition",
-			input: "2 + 3",
-			expected: &BinaryOperation{
-				Left:     &NumberLiteral{Value: "2", Line: 1},
-				Operator: "+",
-				Right:    &NumberLiteral{Value: "3", Line: 1},
-				Line:     1,
-			},
+			name:     "simple addition",
+			input:    "2 + 3",
+			expected: binaryOp(num("2", 1), "+", num("3", 1), 1),
 		},
 		{
-			name:  "precedence: multiplication over addition",
-			input: "2 + 3 * 4",
-			expected: &BinaryOperation{
-				Left:     &NumberLiteral{Value: "2", Line: 1},
-				Operator: "+",
-				Right: &BinaryOperation{
-					Left:     &NumberLiteral{Value: "3", Line: 1},
-					Operator: "*",
-					Right:    &NumberLiteral{Value: "4", Line: 1},
-					Line:     1,
-				},
-				Line: 1,
-			},
+			name:     "precedence: multiplication over addition",
+			input:    "2 + 3 * 4",
+			expected: binaryOp(num("2", 1), "+", binaryOp(num("3", 1), "*", num("4", 1), 1), 1),
 		},
 		{
-			name:  "parentheses override precedence",
-			input: "(2 + 3) * 4",
-			expected: &BinaryOperation{
-				Left: &BinaryOperation{
-					Left:     &NumberLiteral{Value: "2", Line: 1},
-					Operator: "+",
-					Right:    &NumberLiteral{Value: "3", Line: 1},
-					Line:     1,
-				},
-				Operator: "*",
-				Right:    &NumberLiteral{Value: "4", Line: 1},
-				Line:     1,
-			},
+			name:     "parentheses override precedence",
+			input:    "(2 + 3) * 4",
+			expected: binaryOp(binaryOp(num("2", 1), "+", num("3", 1), 1), "*", num("4", 1), 1),
 		},
 		{
-			name:  "variables in expressions",
-			input: "A + B",
-			expected: &BinaryOperation{
-				Left:     &VariableReference{Name: "A", Line: 1},
-				Operator: "+",
-				Right:    &VariableReference{Name: "B", Line: 1},
-				Line:     1,
-			},
+			name:     "variables in expressions",
+			input:    "A + B",
+			expected: binaryOp(varRef("A", 1), "+", varRef("B", 1), 1),
 		},
 	}
 
