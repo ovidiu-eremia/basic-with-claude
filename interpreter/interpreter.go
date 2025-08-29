@@ -37,6 +37,8 @@ type Interpreter struct {
 	runtime   runtime.Runtime
 	variables map[string]Value     // Variable storage using proper Value types
 	lineIndex map[int]*parser.Line // Maps line numbers to Line nodes for GOTO
+	maxSteps  int                  // Maximum number of execution steps before infinite loop protection kicks in
+	stepCount int                  // Current step count during execution
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -45,11 +47,21 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		runtime:   rt,
 		variables: make(map[string]Value),
 		lineIndex: make(map[int]*parser.Line),
+		maxSteps:  1000, // Default maximum steps
+		stepCount: 0,
 	}
+}
+
+// SetMaxSteps sets the maximum number of execution steps before infinite loop protection
+func (i *Interpreter) SetMaxSteps(maxSteps int) {
+	i.maxSteps = maxSteps
 }
 
 // Execute runs a BASIC program
 func (i *Interpreter) Execute(program *parser.Program) error {
+	// Reset step counter for new execution
+	i.stepCount = 0
+
 	// Build line number index for GOTO statements
 	i.buildLineIndex(program)
 
@@ -77,6 +89,12 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 		line := program.Lines[currentLineIndex]
 
 		for _, stmt := range line.Statements {
+			// Increment step counter and check for infinite loop protection
+			i.stepCount++
+			if i.maxSteps > 0 && i.stepCount > i.maxSteps {
+				return fmt.Errorf("?INFINITE LOOP ERROR")
+			}
+
 			err := i.executeStatement(stmt)
 			if err != nil {
 				return i.wrapErrorWithLine(err, line.Number)

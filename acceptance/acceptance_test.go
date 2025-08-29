@@ -23,10 +23,16 @@ type AcceptanceTest struct {
 	expected    []string
 	wantErr     bool
 	errContains string
+	maxSteps    int // Custom max steps limit, 0 means use default
 }
 
 // executeBasicProgram parses and executes a BASIC program string, returning the output
 func executeBasicProgram(t *testing.T, program string) ([]string, error) {
+	return executeBasicProgramWithMaxSteps(t, program, 0) // Use default max steps
+}
+
+// executeBasicProgramWithMaxSteps parses and executes a BASIC program string with custom max steps
+func executeBasicProgramWithMaxSteps(t *testing.T, program string, maxSteps int) ([]string, error) {
 	t.Helper()
 
 	// Parse the program
@@ -45,6 +51,11 @@ func executeBasicProgram(t *testing.T, program string) ([]string, error) {
 	// Create test runtime and interpreter
 	testRuntime := runtime.NewTestRuntime()
 	interp := interpreter.NewInterpreter(testRuntime)
+
+	// Set custom max steps if specified
+	if maxSteps > 0 {
+		interp.SetMaxSteps(maxSteps)
+	}
 
 	// Execute the program
 	err := interp.Execute(ast)
@@ -263,11 +274,63 @@ func TestAcceptance(t *testing.T) {
 				"26\n",
 			},
 		},
+		{
+			name:        "InfiniteLoopProtection_SimpleLoop",
+			program:     `10 GOTO 10`,
+			wantErr:     true,
+			errContains: "?INFINITE LOOP ERROR",
+		},
+		{
+			name: "InfiniteLoopProtection_ComplexLoop",
+			program: `10 A = A + 1
+20 GOTO 10`,
+			wantErr:     true,
+			errContains: "?INFINITE LOOP ERROR",
+		},
+		{
+			name: "InfiniteLoopProtection_LongButFinite",
+			program: `10 A = A + 1
+20 PRINT A
+30 STOP`,
+			expected: []string{
+				"1\n",
+			},
+		},
+		{
+			name: "InfiniteLoopProtection_BackwardJump",
+			program: `10 B = B + 1
+20 PRINT B
+30 GOTO 10`,
+			wantErr:     true,
+			errContains: "?INFINITE LOOP ERROR",
+		},
+		{
+			name: "InfiniteLoopProtection_NestedGotos",
+			program: `10 GOTO 30
+20 GOTO 10
+30 GOTO 20`,
+			wantErr:     true,
+			errContains: "?INFINITE LOOP ERROR",
+		},
+		{
+			name: "InfiniteLoopProtection_CustomMaxSteps",
+			program: `10 A = A + 1
+20 GOTO 10`,
+			wantErr:     true,
+			errContains: "?INFINITE LOOP ERROR",
+			maxSteps:    5, // Custom low limit
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			output, err := executeBasicProgram(t, tt.program)
+			var output []string
+			var err error
+			if tt.maxSteps > 0 {
+				output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.maxSteps)
+			} else {
+				output, err = executeBasicProgram(t, tt.program)
+			}
 
 			if tt.wantErr {
 				assert.Error(t, err)

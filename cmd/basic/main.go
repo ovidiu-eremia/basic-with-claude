@@ -4,6 +4,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 
@@ -14,12 +15,22 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintf(os.Stderr, "Usage: %s <filename.bas>\n", os.Args[0])
+	// Define command-line flags
+	maxSteps := flag.Int("max-steps", 1000, "Maximum number of execution steps before infinite loop protection triggers")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [options] <filename.bas>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nOptions:\n")
+		flag.PrintDefaults()
+	}
+	flag.Parse()
+
+	// Check for required filename argument
+	if flag.NArg() != 1 {
+		flag.Usage()
 		os.Exit(1)
 	}
 
-	filename := os.Args[1]
+	filename := flag.Arg(0)
 
 	content, err := readBasicFile(filename)
 	if err != nil {
@@ -48,6 +59,11 @@ func main() {
 	// Create runtime and interpreter
 	stdRuntime := runtime.NewStandardRuntime()
 	interp := interpreter.NewInterpreter(stdRuntime)
+
+	// Configure infinite loop protection
+	if *maxSteps > 0 {
+		interp.SetMaxSteps(*maxSteps)
+	}
 
 	// Execute the program
 	err = interp.Execute(program)
