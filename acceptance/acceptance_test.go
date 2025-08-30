@@ -98,11 +98,6 @@ func loadTestFile(t *testing.T, filePath string) []AcceptanceTest {
 	return tests
 }
 
-// executeBasicProgram parses and executes a BASIC program string, returning the output
-func executeBasicProgram(t *testing.T, program string, inputs []string) ([]string, error) {
-	return executeBasicProgramWithMaxSteps(t, program, inputs, 0) // Use default max steps
-}
-
 // executeBasicProgramWithMaxSteps parses and executes a BASIC program string with custom max steps
 func executeBasicProgramWithMaxSteps(t *testing.T, program string, inputs []string, maxSteps int) ([]string, error) {
 	t.Helper()
@@ -142,6 +137,8 @@ func executeBasicProgramWithMaxSteps(t *testing.T, program string, inputs []stri
 	return testRuntime.GetOutput(), nil
 }
 
+const DEFAULT_MAX_STEPS = 1000
+
 func TestAcceptance(t *testing.T) {
 	tests := loadTestsFromYAML(t)
 
@@ -150,10 +147,9 @@ func TestAcceptance(t *testing.T) {
 			var output []string
 			var err error
 			if tt.maxSteps > 0 {
-				output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.inputs, tt.maxSteps)
-			} else {
-				output, err = executeBasicProgram(t, tt.program, tt.inputs)
+				tt.maxSteps = DEFAULT_MAX_STEPS
 			}
+			output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.inputs, tt.maxSteps)
 
 			if tt.wantErr {
 				assert.Error(t, err)
