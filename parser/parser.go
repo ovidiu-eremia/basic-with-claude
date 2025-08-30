@@ -101,13 +101,6 @@ func (p *Parser) addErrorAt(line int, msg string) {
 	}
 }
 
-// skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
-func (p *Parser) skipToNextLineOrEOF() {
-	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
-		p.nextToken()
-	}
-}
-
 // ParseProgram parses the entire program
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
@@ -140,14 +133,12 @@ func (p *Parser) ParseProgram() *Program {
 func (p *Parser) parseLine() *Line {
 	if p.currentToken.Type != lexer.NUMBER {
 		p.addTokenError("line number", p.currentToken.Type)
-		p.skipToNextLineOrEOF()
 		return nil
 	}
 
 	lineNum, err := strconv.Atoi(p.currentToken.Literal)
 	if err != nil {
 		p.addLiteralError("invalid line number", p.currentToken.Literal)
-		p.skipToNextLineOrEOF()
 		return nil
 	}
 
@@ -162,15 +153,13 @@ func (p *Parser) parseLine() *Line {
 	// Parse statements on this line. On first error, skip rest of the line.
 	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
 		stmt := p.parseStatement()
-		if stmt != nil {
-			line.Statements = append(line.Statements, stmt)
-			// Advance token after parsing a successful statement
-			p.nextToken()
-			continue
+		if stmt == nil {
+			// An error occurred; stop here
+			break
 		}
-		// An error occurred: skip remaining tokens on this line
-		p.skipToNextLineOrEOF()
-		break
+		line.Statements = append(line.Statements, stmt)
+		// Advance token after parsing a successful statement
+		p.nextToken()
 	}
 
 	return line
@@ -201,7 +190,7 @@ func (p *Parser) parseStatement() Statement {
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
 	default:
-		p.addTokenError("valid statement", p.currentToken.Type)
+		p.addTokenError("unrecognized statement", p.currentToken.Type)
 		return nil
 	}
 }
