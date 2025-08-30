@@ -100,7 +100,7 @@ Each milestone follows this pattern:
 ### Error Handling Philosophy
 - **Implement proper errors from the start**: No panics or "not implemented"
 - **Only parse what we support**: Parser rejects unsupported syntax with clear errors  
-- **C64-style error messages**: See `design.md` for complete error handling strategy
+- **C64-style error messages**: See `CLAUDE.md` Error Handling Strategy section for complete details
 - **Graceful degradation**: Unknown keywords produce syntax errors, not crashes
 
 ## Implementation Principles
@@ -112,10 +112,10 @@ Each milestone follows this pattern:
 4. **No Premature Abstraction**: Build what's needed for current milestone
 
 ### AST Design
-See `design.md` for complete AST structure and interface definitions.
+See `CLAUDE.md` Complete Architecture Documentation section for AST structure and interface definitions.
 
 ### Value System
-See `design.md` for detailed Value types and variable storage implementation.
+See `CLAUDE.md` Complete Architecture Documentation section for detailed Value types and variable storage implementation.
 
 ### Execution Model
 1. **Tree-walking interpreter**: Direct AST execution

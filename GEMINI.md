@@ -74,7 +74,6 @@ The project is organized into the following packages:
 ## Key Files for Context
 
 -   `spec.md`: The complete language specification for the BASIC dialect being implemented.
--   `design.md`: The architectural design of the interpreter.
+-   `CLAUDE.md`: The complete architectural design and project guidance for the interpreter.
 -   `implementation-strategy.md`: The incremental development plan and milestones.
 -   `todo.md`: The current status of the project and the list of implemented and pending features.
--   `CLAUDE.md`: Contains project-specific guidance, which is also relevant for Gemini.
