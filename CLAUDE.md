@@ -39,51 +39,62 @@ Each milestone follows this pattern:
 - [ ] Code reviewed/refactored
 - [ ] Documentation updated
 
-## Implementation Rules
-- NEVER implement features beyond current step scope
-- If demo files need unsupported features, update the demo file, don't add features
-- NEVER use infinite loops - always advance tokens/iterators
-- Parser infinite loops: ensure `nextToken()` is called in all code paths
+## Testing Strategy
 
-## Error Handling Philosophy
-- **Implement proper errors from the start**: No panics or "not implemented"
-- **Only parse what we support**: Parser rejects unsupported syntax with clear errors
-- **Graceful degradation**: Unknown keywords produce syntax errors, not crashes
-- **C64-style error messages**: Format as "?ERROR_TYPE ERROR IN LINE_NUMBER"
+### Test Types
+- **Unit Tests**: Lexer token generation, parser AST creation, expression evaluation, statement execution
+- **Integration Tests**: Complete BASIC programs, control flow scenarios, error conditions, C64 compatibility
+- **Test Programs**: Classic BASIC examples (Hello World, loops), edge cases (nested loops, deep recursion), error triggering programs
 
-## Implementation Principles
+## Development Guidelines
+
+### Core Principles
 - **Single Responsibility**: Each package has one clear purpose
-- **Interface Boundaries**: Clean interfaces between components
+- **Interface Boundaries**: Clean interfaces between components  
 - **Testability First**: Design for testing from the beginning
 - **No Premature Abstraction**: Build what's needed for current milestone
 
-## Common Go Pitfalls to Avoid
-- Parser loops: always advance position in loops
-- Token advancement: check both `currentToken` and `peekToken` progression
-- Error recovery: skip to safe tokens (NEWLINE, EOF) when parsing fails
+### Implementation Rules
+- **NEVER implement features beyond current step scope**
+- **If demo files need unsupported features, update the demo file, don't add features**
+- **NEVER use infinite loops** - always advance tokens/iterators
+- **Parser infinite loops**: ensure `nextToken()` is called in all code paths
 
-## Code Quality Patterns
+### Go-Specific Patterns & Pitfalls
 
-### Naming Conventions
+#### Naming Conventions
 - Use descriptive names over abbreviations: `currentChar` not `ch`, `currentToken` not `curToken`
 - Named return values for clarity: `(content string, terminated bool)` not `(string, bool)`
 - Consistent field naming: avoid conflicts between fields and methods
 
-### Duplication Elimination
-- Extract helper methods for repetitive operations (e.g., `createToken()`)
-- Consolidate similar parsing methods with shared logic
-- Move constants to package level to avoid recreation
+#### Parser Safety
+- **Parser loops**: always advance position in loops
+- **Token advancement**: check both `currentToken` and `peekToken` progression
+- **Error recovery**: skip to safe tokens (NEWLINE, EOF) when parsing fails
 
-### Parser Patterns
-- Unified assignment parsing: handle `LET A = 42` and `A = 42` with shared logic
-- Token creation helpers reduce boilerplate in lexer
-- Clear separation between parsing and validation logic
+#### Code Quality
+- **Extract helper methods** for repetitive operations (e.g., `createToken()`)
+- **Consolidate similar parsing methods** with shared logic
+- **Move constants to package level** to avoid recreation
+- **Unified assignment parsing**: handle `LET A = 42` and `A = 42` with shared logic
+- **Clear separation** between parsing and validation logic
 
-## Project Overview
+### Key Constraints & Patterns
+- **AST Node Interface**: All nodes implement Execute(interpreter) + GetLineNumber()
+- **Variable names**: 2 significant characters max (C64 compatible)
+- **String variables**: End with $ (A$, NAME$) - lexer handles automatically
+- **Line numbers**: 0-63999 range
+- **Runtime interface**: All I/O must go through RuntimeEnvironment interface for testability
+- **Variable storage**: Unified `map[string]string` works for both numeric and string variables
+- **String concatenation**: Uses `+` operator (not `&` like some BASIC variants)
 
-This is a BASIC interpreter written in Go implementing Commodore 64 BASIC V2 subset. Uses lexer → parser → AST → tree-walking interpreter architecture.
+### Critical Pitfalls to Avoid
+- **No partial features**: Each milestone must work completely end-to-end
+- **Test error cases**: Verify C64-compatible error messages ("?SYNTAX ERROR IN 10")
+- **Preserve line numbers**: Carry line info through lexer → parser → interpreter
+- **Never direct console I/O**: Always use Runtime interface
 
-## Complete Architecture Documentation
+## Architecture Overview
 
 This interpreter uses a traditional multi-phase architecture: lexical analysis → parsing to AST → direct tree-walking execution.
 
@@ -125,14 +136,8 @@ type ASTNode interface {
 #### Node Types
 - **Program**: Root node containing all program lines
 - **Line**: Container for one or more statements on a line
-- **Statement Nodes**:
-  - `PrintNode`: PRINT statement
-  - `GotoNode`: GOTO statement
-  - etc...
-- **Expression Nodes**:
-  - `BinaryOpNode`: Binary operations (+, -, *, /, ^, etc.)
-  - `UnaryOpNode`: Unary operations (-, NOT)
-  - etc...
+- **Statement Nodes**: PrintNode, GotoNode, GosubNode, ReturnNode, IfNode, ForNode, NextNode, InputNode, LetNode, DimNode, DataNode, ReadNode, RestoreNode, RemNode, EndNode, StopNode, RunNode
+- **Expression Nodes**: BinaryOpNode, UnaryOpNode, NumberNode, StringNode, VariableNode, ArrayRefNode, FunctionCallNode
 
 #### Node Properties
 - Each node stores its source line number for error reporting and GOTO targets
@@ -235,38 +240,25 @@ type RuntimeEnvironment interface {
 ```
 
 #### Implementations
+- **StandardRuntime**: Production implementation using os.Stdout/Stdin
+- **TestRuntime**: Mock implementation that buffers output and provides scripted input for testing
 
-##### StandardRuntime
-- Real implementation for production use
-- Uses os.Stdout for output
-- Uses os.Stdin for input
-- Direct console I/O
+### 6. Error Handling
 
-##### TestRuntime
-- Mock implementation for testing
-- Buffers output for assertion checking
-- Provides pre-programmed input sequences
-- Enables deterministic testing of interactive programs
-
-#### Benefits
-- Complete isolation of I/O from interpreter logic
-- Testable PRINT and INPUT statements
-- Can simulate complex user interaction scenarios
-- Enables testing without actual console I/O
-
-### 6. Error Handling Strategy
-
-#### Approach
-- Return errors from all execution methods (idiomatic Go error handling)
-- Propagate errors up through call chain
-- Format errors in C64 BASIC style at top level
-- Include line number in error messages
+#### Philosophy & Approach
+- **Implement proper errors from the start**: No panics or "not implemented"
+- **Only parse what we support**: Parser rejects unsupported syntax with clear errors
+- **Graceful degradation**: Unknown keywords produce syntax errors, not crashes
+- **Return errors from all execution methods** (idiomatic Go error handling)
+- **Propagate errors up through call chain**
+- **Format errors in C64 BASIC style at top level**: "?ERROR_TYPE ERROR IN LINE_NUMBER"
+- **Include line number in error messages**
 
 #### Error Types
-- Syntax errors (caught during parsing)
-- Runtime errors:
+- **Syntax errors** (caught during parsing)
+- **Runtime errors**:
   - Type mismatch
-  - Undefined line number (GOTO/GOSUB)
+  - Undefined line number (GOTO/GOSUB)  
   - Division by zero
   - Out of data (READ)
   - Return without GOSUB
@@ -275,15 +267,8 @@ type RuntimeEnvironment interface {
   - String too long (>255 chars)
 
 ### 7. Built-in Functions
-
-#### Implementation
-- Each function has dedicated evaluation logic
-- Type checking on arguments
-- Return appropriate type (numeric or string)
-
-#### Function Registry
-- Map of function names to implementation functions
-- Called during expression evaluation
+- **Function Registry**: Map of function names to implementation functions
+- **Type Safety**: Each function performs type checking on arguments and returns appropriate type
 
 ### Data Flow
 ```
@@ -319,37 +304,7 @@ Output / Results
 8. **Stack-based call/loop management**: Natural for nested structures
 9. **Runtime environment interface**: Enables testing and I/O abstraction
 
-### Testing Strategy
 
-#### Unit Tests
-- Lexer: Token generation for various inputs
-- Parser: AST generation for each statement type
-- Expression evaluation: Arithmetic, comparison, logical
-- Individual statement execution
-
-#### Integration Tests
-- Complete BASIC programs
-- Control flow scenarios
-- Error conditions
-- C64 BASIC compatibility tests
-
-#### Test Programs
-- Classic BASIC examples (Hello World, loops, etc.)
-- Edge cases (nested loops, deep recursion)
-- Error triggering programs
-
-## Quick References
-
-- **Language specification**: See `spec.md` for complete BASIC language features, operators, functions, and error types
-- **Complete architecture**: See "Complete Architecture Documentation" section above for all component design details
-- **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
-
-## File Consultation Guide
-
-- **Adding new BASIC statement**: Check `spec.md` for syntax, add AST node type from section above, implement Execute() method
-- **Understanding error handling**: Go error returns, format as "?ERROR_TYPE ERROR IN LINE_NUMBER" (see Error Handling Strategy above)
-- **Planning development approach**: See "Development Philosophy" and "Milestone Structure" sections above
-- **Implementation patterns**: Use patterns below and complete architecture details above
 
 ## Development Commands
 
@@ -368,26 +323,9 @@ go test ./acceptance
 go run ./cmd/basic program.bas
 ```
 
-## Essential Implementation Patterns
+## File Consultation Guide
 
-### Quick Reference Patterns
-- **AST Node Interface**: All nodes implement Execute(interpreter) + GetLineNumber()
-- **Error Handling Rules**: Return Go errors, format as C64 style with line numbers at top level
-- **Value System**: Unified string storage for both numeric and string variables
-- **Runtime Interface**: All I/O goes through RuntimeEnvironment interface for testability
-
-### Key Constraints
-- Variable names: 2 significant characters max (C64 compatible)
-- String variables end with $ (A$, NAME$) - lexer handles this automatically
-- Line numbers: 0-63999
-- I/O must go through Runtime interface for testability
-- Variable storage: Unified `map[string]string` works for both numeric and string variables
-
-## Common Pitfalls
-
-- **No partial features**: Each milestone must work completely end-to-end
-- **Test error cases**: Verify C64-compatible error messages ("?SYNTAX ERROR IN 10")
-- **Preserve line numbers**: Carry line info through lexer → parser → interpreter
-- **Variable names**: Remember 2-character limit when implementing symbol table
-- **String concatenation**: Uses `+` operator (not `&` like some BASIC variants)
-- **Runtime interface**: All I/O must go through interface, never direct console access
+- **Adding new BASIC statement**: Check `spec.md` for syntax, add AST node type from architecture section, implement Execute() method
+- **Understanding error handling**: See "Error Handling" section in architecture above
+- **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
+- **Implementation guidance**: See "Development Guidelines" section above
