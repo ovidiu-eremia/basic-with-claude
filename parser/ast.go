@@ -11,13 +11,11 @@ type Node interface {
 // Statement represents any statement node
 type Statement interface {
 	Node
-	statementNode()
 }
 
 // Expression represents any expression node
 type Expression interface {
 	Node
-	expressionNode()
 }
 
 // Program represents the root of the AST - a complete BASIC program
@@ -47,7 +45,6 @@ type PrintStatement struct {
 	Line       int        // Source line number
 }
 
-func (ps *PrintStatement) statementNode()     {}
 func (ps *PrintStatement) GetLineNumber() int { return ps.Line }
 
 // StringLiteral represents a string literal expression
@@ -56,7 +53,6 @@ type StringLiteral struct {
 	Line  int    // Source line number
 }
 
-func (sl *StringLiteral) expressionNode()    {}
 func (sl *StringLiteral) GetLineNumber() int { return sl.Line }
 
 // EndStatement represents an END statement
@@ -64,7 +60,6 @@ type EndStatement struct {
 	Line int // Source line number
 }
 
-func (es *EndStatement) statementNode()     {}
 func (es *EndStatement) GetLineNumber() int { return es.Line }
 
 // LetStatement represents a LET assignment statement
@@ -74,7 +69,6 @@ type LetStatement struct {
 	Line       int        // Source line number
 }
 
-func (ls *LetStatement) statementNode()     {}
 func (ls *LetStatement) GetLineNumber() int { return ls.Line }
 
 // VariableReference represents a variable reference in an expression
@@ -83,7 +77,6 @@ type VariableReference struct {
 	Line int    // Source line number
 }
 
-func (vr *VariableReference) expressionNode()    {}
 func (vr *VariableReference) GetLineNumber() int { return vr.Line }
 
 // NumberLiteral represents a numeric literal expression
@@ -92,7 +85,6 @@ type NumberLiteral struct {
 	Line  int    // Source line number
 }
 
-func (nl *NumberLiteral) expressionNode()    {}
 func (nl *NumberLiteral) GetLineNumber() int { return nl.Line }
 
 // BinaryOperation represents a binary arithmetic operation
@@ -103,7 +95,6 @@ type BinaryOperation struct {
 	Line     int        // Source line number
 }
 
-func (bo *BinaryOperation) expressionNode()    {}
 func (bo *BinaryOperation) GetLineNumber() int { return bo.Line }
 
 // RunStatement represents a RUN statement
@@ -111,7 +102,6 @@ type RunStatement struct {
 	Line int // Source line number
 }
 
-func (rs *RunStatement) statementNode()     {}
 func (rs *RunStatement) GetLineNumber() int { return rs.Line }
 
 // StopStatement represents a STOP statement
@@ -119,7 +109,6 @@ type StopStatement struct {
 	Line int // Source line number
 }
 
-func (ss *StopStatement) statementNode()     {}
 func (ss *StopStatement) GetLineNumber() int { return ss.Line }
 
 // InputStatement represents an INPUT statement
@@ -128,7 +117,6 @@ type InputStatement struct {
 	Line     int    // Source line number
 }
 
-func (ins *InputStatement) statementNode()     {}
 func (ins *InputStatement) GetLineNumber() int { return ins.Line }
 
 // GotoStatement represents a GOTO statement
@@ -137,7 +125,6 @@ type GotoStatement struct {
 	Line       int // Source line number
 }
 
-func (gs *GotoStatement) statementNode()     {}
 func (gs *GotoStatement) GetLineNumber() int { return gs.Line }
 
 // IfStatement represents an IF...THEN statement
@@ -147,7 +134,6 @@ type IfStatement struct {
 	Line      int        // Source line number
 }
 
-func (is *IfStatement) statementNode()     {}
 func (is *IfStatement) GetLineNumber() int { return is.Line }
 
 // UnaryOperation represents a unary arithmetic operation
@@ -157,7 +143,6 @@ type UnaryOperation struct {
 	Line     int        // Source line number
 }
 
-func (uo *UnaryOperation) expressionNode()    {}
 func (uo *UnaryOperation) GetLineNumber() int { return uo.Line }
 
 // ComparisonExpression represents a comparison operation (=, <>, <, >, <=, >=)
@@ -168,5 +153,4 @@ type ComparisonExpression struct {
 	Line     int        // Source line number
 }
 
-func (ce *ComparisonExpression) expressionNode()    {}
 func (ce *ComparisonExpression) GetLineNumber() int { return ce.Line }

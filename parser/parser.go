@@ -67,11 +67,6 @@ func (p *Parser) ParseError() *ParseError {
 	return p.error
 }
 
-// addError adds an error message
-func (p *Parser) addError(msg string) {
-	p.addErrorAt(p.currentToken.Line, msg)
-}
-
 // addErrorf adds a formatted error message with current token context
 func (p *Parser) addErrorf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
@@ -394,51 +389,6 @@ func (p *Parser) parseIfStatement() *IfStatement {
 	}
 
 	return stmt
-}
-
-// parseComparisonExpression parses a comparison expression (left op right)
-func (p *Parser) parseComparisonExpression() Expression {
-	// Parse left side - for comparisons, we want to allow arithmetic expressions
-	left := p.parseExpressionWithPrecedence(LOWEST) // Parse full expressions
-	if left == nil {
-		return nil
-	}
-
-	// Check if current token is a comparison operator
-	operator := ""
-	switch p.currentToken.Type {
-	case lexer.ASSIGN: // = for comparison
-		operator = "="
-	case lexer.NE: // <>
-		operator = "<>"
-	case lexer.LT: // <
-		operator = "<"
-	case lexer.GT: // >
-		operator = ">"
-	case lexer.LE: // <=
-		operator = "<="
-	case lexer.GE: // >=
-		operator = ">="
-	default:
-		p.addTokenError("comparison operator", p.currentToken.Type)
-		return nil
-	}
-
-	line := p.currentToken.Line
-	p.nextToken() // consume comparison operator
-
-	// Parse right side as an expression
-	right := p.parseExpressionWithPrecedence(LOWEST) // Parse full expressions
-	if right == nil {
-		return nil
-	}
-
-	return &ComparisonExpression{
-		Left:     left,
-		Operator: operator,
-		Right:    right,
-		Line:     line,
-	}
 }
 
 // parseStringLiteral parses a string literal
