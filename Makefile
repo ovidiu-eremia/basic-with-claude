@@ -1,13 +1,17 @@
-.PHONY: help loc-prod loc-test loc-history
+.PHONY: help test loc-prod loc-test loc-history
 
 .DEFAULT_GOAL := help
 
 help:
 	@echo "Available commands:"
 	@echo "  help         Show this help message"
+	@echo "  test         Run all tests"
 	@echo "  loc-prod     Count production lines of code (excludes tests)"
 	@echo "  loc-test     Count test lines of code"
 	@echo "  loc-history  Show production LOC by commit in chronological order"
+
+test:
+	go test ./...
 
 loc-prod:
 	@cloc --exclude-content='testing\.T' --include-ext=go . --quiet | awk '/^Go/ {print "Production LOC:", $$5}'
