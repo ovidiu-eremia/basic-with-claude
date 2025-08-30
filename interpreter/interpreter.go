@@ -118,10 +118,6 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 					return i.wrapErrorWithLine(err, line.Number)
 				}
 			case *parser.StopStatement:
-				err := i.executeStopStatement(s)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
-				}
 				return nil
 			case *parser.EndStatement:
 				return nil
@@ -197,7 +193,8 @@ func (i *Interpreter) executeStatement(stmt parser.Statement) error {
 	case *parser.RunStatement:
 		return i.executeRunStatement(s)
 	case *parser.StopStatement:
-		return i.executeStopStatement(s)
+		// STOP statement - just return, handled in executeWithProgramCounter
+		return nil
 	case *parser.GotoStatement:
 		// GOTO statement - handled in executeWithProgramCounter
 		return nil
@@ -403,12 +400,6 @@ func (i *Interpreter) executeRunStatement(stmt *parser.RunStatement) error {
 	// In a C64 BASIC, RUN would start program execution from the beginning,
 	// but in our current architecture, we're already executing the program
 	// so RUN is effectively a no-op when encountered in program flow
-	return nil
-}
-
-// executeStopStatement executes a STOP statement
-func (i *Interpreter) executeStopStatement(stmt *parser.StopStatement) error {
-	// STOP statement - execution handled in Execute method
 	return nil
 }
 
