@@ -305,7 +305,7 @@ func (i *Interpreter) evaluateComparisonExpression(expr *parser.ComparisonExpres
 	}
 
 	// Perform the comparison based on operator
-	result, err := i.compareValues(left, right, expr.Operator)
+	result, err := left.Compare(right, expr.Operator)
 	if err != nil {
 		return Value{}, err
 	}
@@ -315,61 +315,6 @@ func (i *Interpreter) evaluateComparisonExpression(expr *parser.ComparisonExpres
 		return NewNumberValue(1), nil
 	} else {
 		return NewNumberValue(0), nil
-	}
-}
-
-// compareValues compares two values using the specified operator
-func (i *Interpreter) compareValues(left, right Value, operator string) (bool, error) {
-	// Handle comparison based on types
-	if left.Type == NumberType && right.Type == NumberType {
-		// Numeric comparison
-		return i.compareNumbers(left.Number, right.Number, operator), nil
-	} else if left.Type == StringType && right.Type == StringType {
-		// String comparison
-		return i.compareStrings(left.String, right.String, operator), nil
-	} else {
-		// Type mismatch
-		return false, fmt.Errorf("TYPE MISMATCH ERROR")
-	}
-}
-
-// compareNumbers performs numeric comparison
-func (i *Interpreter) compareNumbers(left, right float64, operator string) bool {
-	switch operator {
-	case "=":
-		return left == right
-	case "<>":
-		return left != right
-	case "<":
-		return left < right
-	case ">":
-		return left > right
-	case "<=":
-		return left <= right
-	case ">=":
-		return left >= right
-	default:
-		return false // Invalid operator
-	}
-}
-
-// compareStrings performs string comparison
-func (i *Interpreter) compareStrings(left, right string, operator string) bool {
-	switch operator {
-	case "=":
-		return left == right
-	case "<>":
-		return left != right
-	case "<":
-		return left < right
-	case ">":
-		return left > right
-	case "<=":
-		return left <= right
-	case ">=":
-		return left >= right
-	default:
-		return false // Invalid operator
 	}
 }
 

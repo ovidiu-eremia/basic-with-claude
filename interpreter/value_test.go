@@ -184,3 +184,50 @@ func TestValue_IsTrue(t *testing.T) {
 		})
 	}
 }
+
+func TestValue_Compare(t *testing.T) {
+	tests := []struct {
+		name        string
+		left        Value
+		right       Value
+		operator    string
+		expected    bool
+		expectError bool
+	}{
+		// Numeric comparisons
+		{"equal numbers", NewNumberValue(5), NewNumberValue(5), "=", true, false},
+		{"unequal numbers", NewNumberValue(5), NewNumberValue(3), "=", false, false},
+		{"not equal numbers", NewNumberValue(5), NewNumberValue(3), "<>", true, false},
+		{"less than", NewNumberValue(3), NewNumberValue(5), "<", true, false},
+		{"greater than", NewNumberValue(5), NewNumberValue(3), ">", true, false},
+		{"less than or equal", NewNumberValue(3), NewNumberValue(3), "<=", true, false},
+		{"greater than or equal", NewNumberValue(5), NewNumberValue(5), ">=", true, false},
+
+		// String comparisons
+		{"equal strings", NewStringValue("hello"), NewStringValue("hello"), "=", true, false},
+		{"unequal strings", NewStringValue("hello"), NewStringValue("world"), "=", false, false},
+		{"string less than", NewStringValue("apple"), NewStringValue("banana"), "<", true, false},
+		{"string greater than", NewStringValue("zebra"), NewStringValue("apple"), ">", true, false},
+
+		// Type mismatch errors
+		{"number vs string", NewNumberValue(5), NewStringValue("hello"), "=", false, true},
+		{"string vs number", NewStringValue("hello"), NewNumberValue(5), "<", false, true},
+
+		// Invalid operator
+		{"invalid operator", NewNumberValue(5), NewNumberValue(3), "&", false, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := tt.left.Compare(tt.right, tt.operator)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "TYPE MISMATCH ERROR")
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}

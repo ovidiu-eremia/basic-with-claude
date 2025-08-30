@@ -186,3 +186,58 @@ func (v Value) IsTrue() bool {
 		return false
 	}
 }
+
+// Compare compares this value with another value using the specified operator
+func (v Value) Compare(other Value, operator string) (bool, error) {
+	// Handle comparison based on types
+	if v.Type == NumberType && other.Type == NumberType {
+		// Numeric comparison
+		return compareNumbers(v.Number, other.Number, operator), nil
+	} else if v.Type == StringType && other.Type == StringType {
+		// String comparison
+		return compareStrings(v.String, other.String, operator), nil
+	} else {
+		// Type mismatch
+		return false, fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+}
+
+// compareNumbers performs numeric comparison
+func compareNumbers(left, right float64, operator string) bool {
+	switch operator {
+	case "=":
+		return left == right
+	case "<>":
+		return left != right
+	case "<":
+		return left < right
+	case ">":
+		return left > right
+	case "<=":
+		return left <= right
+	case ">=":
+		return left >= right
+	default:
+		return false // Invalid operator
+	}
+}
+
+// compareStrings performs string comparison
+func compareStrings(left, right string, operator string) bool {
+	switch operator {
+	case "=":
+		return left == right
+	case "<>":
+		return left != right
+	case "<":
+		return left < right
+	case ">":
+		return left > right
+	case "<=":
+		return left <= right
+	case ">=":
+		return left >= right
+	default:
+		return false // Invalid operator
+	}
+}
