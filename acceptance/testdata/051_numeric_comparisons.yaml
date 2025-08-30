@@ -105,3 +105,35 @@ tests:
       - "A LESS OR EQUAL C\n"
       - "B GREATER OR EQUAL A\n"
       - "ALL TESTS PASSED\n"
+
+  - name: "MixedArithmeticComparison_Precedence"
+    program: |
+      10 A = 2
+      20 B = 3
+      30 C = 4
+      40 IF A + B > C THEN PRINT "SUM GREATER"
+      50 IF A * B < C ^ 2 THEN PRINT "PRODUCT LESS"
+      60 IF A + B * C = 14 THEN PRINT "PRECEDENCE CORRECT"
+      70 IF A ^ 2 + B ^ 2 > C * 2 THEN PRINT "POWERS GREATER"
+      80 PRINT "PRECEDENCE TESTS DONE"
+    expected:
+      - "SUM GREATER\n"    # 2 + 3 = 5 > 4
+      - "PRODUCT LESS\n"   # 2 * 3 = 6 < 4 ^ 2 = 16
+      - "PRECEDENCE CORRECT\n"  # 2 + 3 * 4 = 2 + 12 = 14
+      - "POWERS GREATER\n" # 2^2 + 3^2 = 4 + 9 = 13 > 4 * 2 = 8
+      - "PRECEDENCE TESTS DONE\n"
+
+  - name: "ComplexExpressionComparisons"
+    program: |
+      10 X = 3
+      20 Y = 4
+      30 Z = 5
+      40 IF X * Y + Z = Z * Y - X THEN PRINT "EQUAL COMPLEX"
+      50 IF (X + Y) * Z > X + Y + Z THEN PRINT "PARENS GREATER"
+      60 IF X ^ 2 + Y ^ 2 = Z ^ 2 THEN PRINT "PYTHAGOREAN"
+      70 PRINT "COMPLEX TESTS DONE"
+    expected:
+      - "EQUAL COMPLEX\n"     # 3*4+5 = 17 = 5*4-3 = 17
+      - "PARENS GREATER\n"    # (3+4)*5 = 35 > 3+4+5 = 12
+      - "PYTHAGOREAN\n"       # 3^2+4^2 = 9+16 = 25 = 5^2 = 25
+      - "COMPLEX TESTS DONE\n"

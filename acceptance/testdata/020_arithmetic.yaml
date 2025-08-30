@@ -37,3 +37,85 @@ tests:
       - "-5\n"
       - "5\n"
       - "26\n"
+
+  - name: "LeftAssociativityTests"
+    program: |
+      10 PRINT 10 - 3 - 2
+      20 PRINT 20 / 4 / 2
+      30 PRINT 8 - 3 + 1
+      40 A = 10
+      50 B = 3
+      60 C = 2
+      70 PRINT A - B - C
+    expected:
+      - "5\n"    # 10 - 3 - 2 = (10 - 3) - 2 = 7 - 2 = 5 (left associative)
+      - "2.5\n"  # 20 / 4 / 2 = (20 / 4) / 2 = 5 / 2 = 2.5 (left associative)
+      - "6\n"    # 8 - 3 + 1 = (8 - 3) + 1 = 5 + 1 = 6 (left associative)
+      - "5\n"    # A - B - C = 10 - 3 - 2 = 5 (variables with left associativity)
+
+  - name: "RightAssociativityTests"
+    program: |
+      10 PRINT 2 ^ 3 ^ 2
+      20 PRINT 3 ^ 2 ^ 2
+      30 A = 2
+      40 B = 3
+      50 C = 2
+      60 PRINT A ^ B ^ C
+    expected:
+      - "512\n"  # 2 ^ 3 ^ 2 = 2 ^ (3 ^ 2) = 2 ^ 9 = 512 (right associative)
+      - "81\n"   # 3 ^ 2 ^ 2 = 3 ^ (2 ^ 2) = 3 ^ 4 = 81 (right associative)
+      - "512\n"  # A ^ B ^ C = 2 ^ 3 ^ 2 = 512 (variables with right associativity)
+
+  - name: "UnaryOperatorComplexTests"
+    program: |
+      10 PRINT -2 ^ 3
+      20 PRINT -(2 ^ 3)
+      21 PRINT (-2) ^ 3
+      30 PRINT -2 * 3 + 4
+      40 PRINT -(2 * 3) + 4
+      50 A = 5
+      60 PRINT -A ^ 2
+      70 PRINT (-A) ^ 2
+    expected:
+      - "-8\n"   # -2 ^ 3 = -(2 ^ 3) = -8 (unary has lower precedence than power)
+      - "-8\n"   # -(2 ^ 3) = -8
+      - "-8\n"   # (-2) ^ 3 = -8 (parentheses force grouping)
+      - "-2\n"   # -2 * 3 + 4 = (-2) * 3 + 4 = -6 + 4 = -2
+      - "-2\n"   # -(2 * 3) + 4 = -6 + 4 = -2
+      - "-25\n"  # -A ^ 2 = -(A ^ 2) = -(5 ^ 2) = -25
+      - "25\n"   # (-A) ^ 2 = (-5) ^ 2 = 25
+
+  - name: "PowerPrecedenceEdgeCases"
+    program: |
+      10 PRINT 2 * 3 ^ 4
+      20 PRINT (2 * 3) ^ 4
+      30 PRINT 2 + 3 ^ 2
+      40 PRINT (2 + 3) ^ 2
+      50 PRINT 10 / 2 ^ 2
+      60 A = 2
+      70 B = 3
+      80 PRINT A * B ^ 2
+    expected:
+      - "162\n"  # 2 * 3 ^ 4 = 2 * (3 ^ 4) = 2 * 81 = 162 (power higher than multiply)
+      - "1296\n" # (2 * 3) ^ 4 = 6 ^ 4 = 1296
+      - "11\n"   # 2 + 3 ^ 2 = 2 + (3 ^ 2) = 2 + 9 = 11 (power higher than add)
+      - "25\n"   # (2 + 3) ^ 2 = 5 ^ 2 = 25
+      - "2.5\n"  # 10 / 2 ^ 2 = 10 / (2 ^ 2) = 10 / 4 = 2.5 (power higher than divide)
+      - "18\n"   # A * B ^ 2 = 2 * (3 ^ 2) = 2 * 9 = 18
+
+  - name: "DeepNestingStressTests"
+    program: |
+      10 PRINT (((1 + 2) * 3) - 4) / 5
+      20 PRINT ((2 ^ 3) * (4 + 5))
+      30 PRINT (1 + (2 * (3 + (4 * 5))))
+      40 A = 1
+      50 B = 2
+      60 C = 3
+      70 PRINT (A + B) * (B + C) - (A * C)
+      80 PRINT A + B * C ^ 2 - A ^ B + C
+    expected:
+      - "1\n"    # (((1+2)*3)-4)/5 = ((3*3)-4)/5 = (9-4)/5 = 5/5 = 1
+      - "72\n"   # ((2^3)*(4+5)) = (8*9) = 72
+      - "47\n"   # 1+(2*(3+(4*5))) = 1+(2*(3+20)) = 1+(2*23) = 1+46 = 47
+      - "12\n"   # (1+2)*(2+3)-(1*3) = 3*5-3 = 15-3 = 12
+      - "21\n"   # 1+2*3^2-1^2+3 = 1+2*9-1+3 = 1+18-1+3 = 21

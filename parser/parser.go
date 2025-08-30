@@ -221,12 +221,18 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 
 	for p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.precedence.GetPrecedence(p.peekToken.Type) > minPrec {
 		operator := p.peekToken.Literal
+		operatorType := p.peekToken.Type
 		operatorPrec := p.precedence.GetPrecedence(p.peekToken.Type)
 
 		p.nextToken() // consume the operator
 		p.nextToken() // move to right operand
 
-		right := p.parseExpressionWithPrecedence(operatorPrec)
+		// Handle right associativity for power operator
+		rightPrec := operatorPrec
+		if operatorType == lexer.POWER {
+			rightPrec = operatorPrec - 1 // Right associative
+		}
+		right := p.parseExpressionWithPrecedence(rightPrec)
 		if right == nil {
 			return nil
 		}

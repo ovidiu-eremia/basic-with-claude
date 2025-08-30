@@ -14,8 +14,8 @@ const (
 	COMPARE // =, <>, <, >, <=, >=
 	SUM     // +, -
 	PRODUCT // *, /
+	PREFIX  // -X or +X (lower precedence than power in BASIC)
 	POWER   // ^
-	PREFIX  // -X or +X
 	CALL    // functions (future use)
 )
 
