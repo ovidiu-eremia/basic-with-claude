@@ -37,6 +37,7 @@ Each milestone follows this pattern:
 - [ ] Error cases tested
 - [ ] Previous tests still pass
 - [ ] Code reviewed/refactored
+- [ ] Methods placed with their data (no interpreter bloat)
 - [ ] Documentation updated
 
 ## Testing Strategy
@@ -59,6 +60,9 @@ Each milestone follows this pattern:
 - **If demo files need unsupported features, update the demo file, don't add features**
 - **NEVER use infinite loops** - always advance tokens/iterators
 - **Parser infinite loops**: ensure `nextToken()` is called in all code paths
+- **Place methods with their data** - Operations should live on the types they operate on
+- **Extract pure functions** - Utility functions with no state dependencies go to package level
+- **Avoid "manager bloat"** - Large switch statements often indicate missing method dispatch
 
 ### Go-Specific Patterns & Pitfalls
 
@@ -78,6 +82,12 @@ Each milestone follows this pattern:
 - **Move constants to package level** to avoid recreation
 - **Unified assignment parsing**: handle `LET A = 42` and `A = 42` with shared logic
 - **Clear separation** between parsing and validation logic
+
+#### Method Placement
+- **Value operations** → Value type methods (`left.Compare(right, op)` not `compareValues(left, right, op)`)
+- **Pure utilities** → Package-level functions (`NormalizeVariableName()` not receiver method)
+- **Type-specific logic** → Respective types (AST nodes execute themselves)
+- **Refactoring signal**: Methods taking specific types as main parameters should move to those types
 
 ### Key Constraints & Patterns
 - **AST Node Interface**: All nodes implement Execute(interpreter) + GetLineNumber()
