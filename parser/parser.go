@@ -29,7 +29,7 @@ type Parser struct {
 	currentToken lexer.Token
 	peekToken    lexer.Token
 
-	errors []*ParseError
+	error *ParseError
 }
 
 // New creates a new parser instance
@@ -37,7 +37,7 @@ func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
 		lexer:      l,
 		precedence: NewPrecedenceTable(),
-		errors:     []*ParseError{},
+		error:      nil,
 	}
 
 	// Read two tokens, so currentToken and peekToken are both set
@@ -56,16 +56,15 @@ func (p *Parser) nextToken() {
 // Errors returns parsing errors
 // Errors returns parsing errors as human-readable strings (kept for compatibility)
 func (p *Parser) Errors() []string {
-	out := make([]string, 0, len(p.errors))
-	for _, e := range p.errors {
-		out = append(out, fmt.Sprintf("line %d: %s", e.Position.Line, e.Message))
+	if p.error == nil {
+		return []string{}
 	}
-	return out
+	return []string{fmt.Sprintf("line %d: %s", p.error.Position.Line, p.error.Message)}
 }
 
-// ParseErrors returns structured parse errors with positions
-func (p *Parser) ParseErrors() []*ParseError {
-	return p.errors
+// ParseError returns the parse error if any
+func (p *Parser) ParseError() *ParseError {
+	return p.error
 }
 
 // addError adds an error message
@@ -89,15 +88,17 @@ func (p *Parser) addLiteralError(prefix string, literal string) {
 	p.addErrorAt(p.currentToken.Line, fmt.Sprintf("%s: %s", prefix, literal))
 }
 
-// addErrorAt appends a ParseError with an explicit line
+// addErrorAt sets a ParseError with an explicit line (only if no error exists yet)
 func (p *Parser) addErrorAt(line int, msg string) {
-	p.errors = append(p.errors, &ParseError{
-		Message: msg,
-		Position: lexer.Position{
-			Line:   line,
-			Column: 0, // Column tracking not implemented yet
-		},
-	})
+	if p.error == nil {
+		p.error = &ParseError{
+			Message: msg,
+			Position: lexer.Position{
+				Line:   line,
+				Column: 0, // Column tracking not implemented yet
+			},
+		}
+	}
 }
 
 // skipToNextLineOrEOF advances tokens until reaching newline or EOF for error recovery
@@ -122,6 +123,11 @@ func (p *Parser) ParseProgram() *Program {
 		line := p.parseLine()
 		if line != nil {
 			program.Lines = append(program.Lines, line)
+		}
+
+		// Stop parsing if we encountered any error
+		if p.error != nil {
+			break
 		}
 
 		// parseLine() leaves us at NEWLINE or EOF, no need to advance

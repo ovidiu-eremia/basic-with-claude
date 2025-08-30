@@ -43,21 +43,19 @@ func main() {
 	p := parser.New(l)
 	program := p.ParseProgram()
 
-	// Check for parsing errors (structured with line numbers)
-	if perrs := p.ParseErrors(); len(perrs) > 0 {
-		fmt.Fprintf(os.Stderr, "Parsing errors:\n")
+	// Check for parsing error
+	if e := p.ParseError(); e != nil {
 		// Prepare source lines for context printing (1-based indexing)
 		// Normalize newlines in case of Windows files
 		normalized := strings.ReplaceAll(content, "\r\n", "\n")
 		lines := strings.Split(normalized, "\n")
-		for _, e := range perrs {
-			// Print offending source line if available (line numbers are 1-based)
-			if e.Position.Line >= 1 && e.Position.Line <= len(lines) {
-				offending := lines[e.Position.Line-1]
-				fmt.Fprintf(os.Stderr, "  %s\n", offending)
-			}
-			fmt.Fprintf(os.Stderr, "  line %d: %s\n", e.Position.Line, e.Message)
+
+		// Print offending source line if available (line numbers are 1-based)
+		if e.Position.Line >= 1 && e.Position.Line <= len(lines) {
+			offending := lines[e.Position.Line-1]
+			fmt.Fprintf(os.Stderr, "%s\n", offending)
 		}
+		fmt.Fprintf(os.Stderr, "line %d: %s\n", e.Position.Line, e.Message)
 		os.Exit(1)
 	}
 
