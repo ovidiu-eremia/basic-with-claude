@@ -329,3 +329,4 @@ go run ./cmd/basic program.bas
 - **Understanding error handling**: See "Error Handling" section in architecture above
 - **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
 - **Implementation guidance**: See "Development Guidelines" section above
+- find test basic files in the testdata directory in the top folder
