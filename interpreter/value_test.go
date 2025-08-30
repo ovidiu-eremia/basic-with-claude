@@ -161,3 +161,26 @@ func TestValue_ArithmeticOperations(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+
+func TestValue_IsTrue(t *testing.T) {
+	tests := []struct {
+		name     string
+		value    Value
+		expected bool
+	}{
+		{"zero number", NewNumberValue(0), false},
+		{"positive number", NewNumberValue(42), true},
+		{"negative number", NewNumberValue(-5), true},
+		{"float number", NewNumberValue(3.14), true},
+		{"empty string", NewStringValue(""), false},
+		{"non-empty string", NewStringValue("hello"), true},
+		{"space string", NewStringValue(" "), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.value.IsTrue()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

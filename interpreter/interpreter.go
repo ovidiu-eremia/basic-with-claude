@@ -137,7 +137,7 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				}
 
 				// If condition is true, execute the THEN statement
-				if i.isConditionTrue(condition) {
+				if condition.IsTrue() {
 					// Check if THEN statement is a GOTO for control flow
 					if gotoStmt, ok := s.ThenStmt.(*parser.GotoStatement); ok {
 						// Execute the GOTO
@@ -412,25 +412,13 @@ func (i *Interpreter) executeIfStatement(stmt *parser.IfStatement) error {
 	}
 
 	// Check if condition is true
-	if i.isConditionTrue(condition) {
+	if condition.IsTrue() {
 		// Execute the THEN statement
 		return i.executeStatement(stmt.ThenStmt)
 	}
 
 	// Condition is false, do nothing
 	return nil
-}
-
-// isConditionTrue determines if a condition value evaluates to true
-func (i *Interpreter) isConditionTrue(value Value) bool {
-	switch value.Type {
-	case NumberType:
-		return value.Number != 0 // Non-zero numbers are true
-	case StringType:
-		return value.String != "" // Non-empty strings are true
-	default:
-		return false
-	}
 }
 
 // normalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)

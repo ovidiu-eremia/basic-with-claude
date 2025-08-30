@@ -174,3 +174,15 @@ func (v Value) Power(other Value) (Value, error) {
 		return math.Pow(left, right)
 	})
 }
+
+// IsTrue determines if a value evaluates to true in BASIC conditional contexts
+func (v Value) IsTrue() bool {
+	switch v.Type {
+	case NumberType:
+		return v.Number != 0 // Non-zero numbers are true
+	case StringType:
+		return v.String != "" // Non-empty strings are true
+	default:
+		return false
+	}
+}
