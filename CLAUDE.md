@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Development Philosophy
+
+### Core Philosophy
+Build a working BASIC interpreter incrementally, where each milestone delivers a complete, tested interpreter that runs a subset of the BASIC language. Each step builds upon the previous one, gradually expanding the language support.
+
+### Incremental Development Approach
+- **Breadth-first with complete features**: Add simple versions of features that work completely, rather than partial implementations of complex features
+- **Start minimal**: First milestone is simplest possible working interpreter  
+- **Build confidence**: Working interpreter at each step, always have something that runs
+- **Maintain velocity**: Small, achievable milestones with quick feedback loops
+- **Avoid big bangs**: No milestone requires major refactoring, architecture grows organically
+
 ## TDD Workflow (STRICTLY FOLLOW THIS)
 1. Write failing test first
 2. Write MINIMAL code to make test compile (but still fail for right reasons)
@@ -10,11 +22,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 5. Refactor if needed
 6. Repeat
 
+## Milestone Structure
+Each milestone follows this pattern:
+1. Extend lexer to recognize new tokens
+2. Extend parser to build AST nodes  
+3. Extend interpreter to execute new nodes
+4. Write acceptance tests first (TDD)
+5. Implement until tests pass
+6. Add error handling tests
+
+## Definition of Done per Milestone
+- [ ] Acceptance tests pass
+- [ ] Unit tests for new code
+- [ ] Error cases tested
+- [ ] Previous tests still pass
+- [ ] Code reviewed/refactored
+- [ ] Documentation updated
+
 ## Implementation Rules
 - NEVER implement features beyond current step scope
 - If demo files need unsupported features, update the demo file, don't add features
 - NEVER use infinite loops - always advance tokens/iterators
 - Parser infinite loops: ensure `nextToken()` is called in all code paths
+
+## Error Handling Philosophy
+- **Implement proper errors from the start**: No panics or "not implemented"
+- **Only parse what we support**: Parser rejects unsupported syntax with clear errors
+- **Graceful degradation**: Unknown keywords produce syntax errors, not crashes
+- **C64-style error messages**: Format as "?ERROR_TYPE ERROR IN LINE_NUMBER"
+
+## Implementation Principles
+- **Single Responsibility**: Each package has one clear purpose
+- **Interface Boundaries**: Clean interfaces between components
+- **Testability First**: Design for testing from the beginning
+- **No Premature Abstraction**: Build what's needed for current milestone
 
 ## Common Go Pitfalls to Avoid
 - Parser loops: always advance position in loops
@@ -301,13 +342,13 @@ Output / Results
 
 - **Language specification**: See `spec.md` for complete BASIC language features, operators, functions, and error types
 - **Complete architecture**: See "Complete Architecture Documentation" section above for all component design details
-- **Implementation strategy**: See `implementation-strategy.md` for milestone approach, testing philosophy, and development workflow
+- **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
 
 ## File Consultation Guide
 
 - **Adding new BASIC statement**: Check `spec.md` for syntax, add AST node type from section above, implement Execute() method
 - **Understanding error handling**: Go error returns, format as "?ERROR_TYPE ERROR IN LINE_NUMBER" (see Error Handling Strategy above)
-- **Planning development approach**: Refer to `implementation-strategy.md` for milestone philosophy
+- **Planning development approach**: See "Development Philosophy" and "Milestone Structure" sections above
 - **Implementation patterns**: Use patterns below and complete architecture details above
 
 ## Development Commands

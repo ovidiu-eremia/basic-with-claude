@@ -74,6 +74,5 @@ The project is organized into the following packages:
 ## Key Files for Context
 
 -   `spec.md`: The complete language specification for the BASIC dialect being implemented.
--   `CLAUDE.md`: The complete architectural design and project guidance for the interpreter.
--   `implementation-strategy.md`: The incremental development plan and milestones.
+-   `CLAUDE.md`: The complete architectural design, development philosophy, and project guidance for the interpreter.
 -   `todo.md`: The current status of the project and the list of implemented and pending features.
