@@ -1,0 +1,6 @@
+tests:
+  - name: "Bug_CaseInsensitiveKeywords"
+    program: |
+      10 print "hello"
+    expected:
+      - "hello\n"

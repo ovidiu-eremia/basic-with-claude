@@ -1,0 +1,45 @@
+tests:
+  - name: "InfiniteLoopProtection_SimpleLoop"
+    program: |
+      10 GOTO 10
+    wantErr: true
+    errContains: "?INFINITE LOOP ERROR"
+
+  - name: "InfiniteLoopProtection_ComplexLoop"
+    program: |
+      10 A = A + 1
+      20 GOTO 10
+    wantErr: true
+    errContains: "?INFINITE LOOP ERROR"
+
+  - name: "InfiniteLoopProtection_LongButFinite"
+    program: |
+      10 A = A + 1
+      20 PRINT A
+      30 STOP
+    expected:
+      - "1\n"
+
+  - name: "InfiniteLoopProtection_BackwardJump"
+    program: |
+      10 B = B + 1
+      20 PRINT B
+      30 GOTO 10
+    wantErr: true
+    errContains: "?INFINITE LOOP ERROR"
+
+  - name: "InfiniteLoopProtection_NestedGotos"
+    program: |
+      10 GOTO 30
+      20 GOTO 10
+      30 GOTO 20
+    wantErr: true
+    errContains: "?INFINITE LOOP ERROR"
+
+  - name: "InfiniteLoopProtection_CustomMaxSteps"
+    program: |
+      10 A = A + 1
+      20 GOTO 10
+    wantErr: true
+    errContains: "?INFINITE LOOP ERROR"
+    maxSteps: 5

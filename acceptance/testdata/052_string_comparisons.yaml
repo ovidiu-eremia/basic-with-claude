@@ -1,0 +1,107 @@
+tests:
+  - name: "StringComparisons_Equality"
+    program: |
+      10 A$ = "HELLO"
+      20 B$ = "WORLD"
+      30 C$ = "HELLO"
+      40 IF A$ = C$ THEN PRINT "A EQUALS C"
+      50 IF A$ = B$ THEN PRINT "NOT REACHED"
+      60 PRINT "DONE"
+    expected:
+      - "A EQUALS C\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_Inequality"
+    program: |
+      10 A$ = "HELLO"
+      20 B$ = "WORLD"
+      30 IF A$ <> B$ THEN PRINT "A NOT EQUAL B"
+      40 IF A$ <> "HELLO" THEN PRINT "NOT REACHED"
+      50 PRINT "DONE"
+    expected:
+      - "A NOT EQUAL B\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_LexicographicLess"
+    program: |
+      10 A$ = "APPLE"
+      20 B$ = "BANANA"
+      30 IF A$ < B$ THEN PRINT "APPLE BEFORE BANANA"
+      40 IF B$ < A$ THEN PRINT "NOT REACHED"
+      50 PRINT "DONE"
+    expected:
+      - "APPLE BEFORE BANANA\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_LexicographicGreater"
+    program: |
+      10 A$ = "ZEBRA"
+      20 B$ = "APPLE"
+      30 IF A$ > B$ THEN PRINT "ZEBRA AFTER APPLE"
+      40 IF B$ > A$ THEN PRINT "NOT REACHED"
+      50 PRINT "DONE"
+    expected:
+      - "ZEBRA AFTER APPLE\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_LessOrEqual"
+    program: |
+      10 A$ = "APPLE"
+      20 B$ = "APPLE"
+      30 C$ = "BANANA"
+      40 IF A$ <= B$ THEN PRINT "A LESS OR EQUAL B"
+      50 IF A$ <= C$ THEN PRINT "A LESS OR EQUAL C"
+      60 IF C$ <= A$ THEN PRINT "NOT REACHED"
+      70 PRINT "DONE"
+    expected:
+      - "A LESS OR EQUAL B\n"
+      - "A LESS OR EQUAL C\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_GreaterOrEqual"
+    program: |
+      10 A$ = "ZEBRA"
+      20 B$ = "APPLE"
+      30 C$ = "ZEBRA"
+      40 IF A$ >= B$ THEN PRINT "A GREATER OR EQUAL B"
+      50 IF A$ >= C$ THEN PRINT "A GREATER OR EQUAL C"
+      60 IF B$ >= A$ THEN PRINT "NOT REACHED"
+      70 PRINT "DONE"
+    expected:
+      - "A GREATER OR EQUAL B\n"
+      - "A GREATER OR EQUAL C\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_WithLiterals"
+    program: |
+      10 NAME$ = "ALICE"
+      20 IF NAME$ = "ALICE" THEN PRINT "HELLO ALICE"
+      30 IF NAME$ <> "BOB" THEN PRINT "NOT BOB"
+      40 IF "ALICE" = NAME$ THEN PRINT "LITERAL EQUALS VARIABLE"
+      50 PRINT "DONE"
+    expected:
+      - "HELLO ALICE\n"
+      - "NOT BOB\n"
+      - "LITERAL EQUALS VARIABLE\n"
+      - "DONE\n"
+
+  - name: "StringComparisons_AllOperators"
+    program: |
+      10 A$ = "APPLE"
+      20 B$ = "BANANA"
+      30 C$ = "APPLE"
+      40 IF A$ = C$ THEN PRINT "A EQUALS C"
+      50 IF A$ <> B$ THEN PRINT "A NOT EQUAL B"  
+      60 IF A$ < B$ THEN PRINT "A LESS THAN B"
+      70 IF B$ > A$ THEN PRINT "B GREATER THAN A"
+      80 IF A$ <= C$ THEN PRINT "A LESS OR EQUAL C"
+      90 IF B$ >= A$ THEN PRINT "B GREATER OR EQUAL A"
+      100 PRINT "ALL STRING TESTS PASSED"
+    expected:
+      - "A EQUALS C\n"
+      - "A NOT EQUAL B\n"
+      - "A LESS THAN B\n"
+      - "B GREATER THAN A\n"
+      - "A LESS OR EQUAL C\n"
+      - "B GREATER OR EQUAL A\n"
+      - "ALL STRING TESTS PASSED\n"

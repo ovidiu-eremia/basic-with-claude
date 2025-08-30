@@ -1,0 +1,18 @@
+tests:
+  - name: "Input_Numeric"
+    program: |
+      10 INPUT A
+      20 PRINT A
+    inputs:
+      - "5"
+    expected:
+      - "5\n"
+
+  - name: "Input_String"
+    program: |
+      10 INPUT A$
+      20 PRINT A$
+    inputs:
+      - "HELLO"
+    expected:
+      - "HELLO\n"

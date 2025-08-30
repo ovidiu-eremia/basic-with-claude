@@ -1,0 +1,48 @@
+tests:
+  - name: "HelloWorld"
+    program: |
+      10 PRINT "HELLO WORLD"
+      20 END
+    expected:
+      - "HELLO WORLD\n"
+
+  - name: "Variables"
+    program: |
+      10 LET A = 42
+      20 PRINT A
+      30 X = 123
+      40 PRINT X
+    expected:
+      - "42\n"
+      - "123\n"
+
+  - name: "ExecutionOrder"
+    program: |
+      10 PRINT "HELLO WORLD"
+      20 END
+      30 PRINT "THIS SHOULD NOT EXECUTE"
+    expected:
+      - "HELLO WORLD\n"
+
+  - name: "StringVariables"
+    program: |
+      10 LET A$ = "HELLO"
+      20 PRINT A$
+      30 NAME$ = "WORLD"
+      40 PRINT NAME$
+    expected:
+      - "HELLO\n"
+      - "WORLD\n"
+
+  - name: "MixedFeatures"
+    program: |
+      10 LET MESSAGE$ = "Numbers: "
+      20 A = 10
+      30 B = 5
+      40 PRINT MESSAGE$
+      50 PRINT A + B * 2
+      60 END
+      70 PRINT "This should not execute"
+    expected:
+      - "Numbers: \n"
+      - "20\n"

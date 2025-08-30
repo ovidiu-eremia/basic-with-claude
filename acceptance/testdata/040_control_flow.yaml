@@ -1,0 +1,42 @@
+tests:
+  - name: "StopStatement"
+    program: |
+      10 PRINT "START"
+      20 STOP
+      30 PRINT "NEVER REACHED"
+    expected:
+      - "START\n"
+
+  - name: "RunStatement"
+    program: |
+      10 PRINT "BEFORE RUN"
+      20 RUN
+      30 PRINT "AFTER RUN"
+    expected:
+      - "BEFORE RUN\n"
+      - "AFTER RUN\n"
+
+  - name: "GotoStatement"
+    program: |
+      10 PRINT "BEFORE JUMP"
+      20 GOTO 50
+      30 PRINT "SKIPPED"
+      40 PRINT "ALSO SKIPPED"
+      50 PRINT "AFTER JUMP"
+    expected:
+      - "BEFORE JUMP\n"
+      - "AFTER JUMP\n"
+
+  - name: "GotoBackward"
+    program: |
+      10 PRINT "FIRST"
+      20 GOTO 40
+      30 PRINT "NEVER"
+      40 PRINT "SECOND"
+      50 GOTO 70
+      60 PRINT "ALSO NEVER"
+      70 PRINT "THIRD"
+    expected:
+      - "FIRST\n"
+      - "SECOND\n"
+      - "THIRD\n"

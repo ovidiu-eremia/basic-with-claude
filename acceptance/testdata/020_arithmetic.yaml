@@ -1,0 +1,39 @@
+tests:
+  - name: "ArithmeticExpressions"
+    program: |
+      10 PRINT 2 + 3 * 4
+      20 PRINT (2 + 3) * 4
+      30 A = 5
+      40 B = 3
+      50 PRINT A * B + 1
+      60 PRINT A + B * 2
+      70 PRINT 10 / 2
+      80 PRINT 2 ^ 3
+    expected:
+      - "14\n"   # 2 + 3 * 4 = 2 + 12 = 14 (precedence test)
+      - "20\n"   # (2 + 3) * 4 = 5 * 4 = 20 (parentheses test)
+      - "16\n"   # A * B + 1 = 5 * 3 + 1 = 15 + 1 = 16 (variables in expressions)
+      - "11\n"   # A + B * 2 = 5 + 3 * 2 = 5 + 6 = 11 (precedence with variables)
+      - "5\n"    # 10 / 2 = 5 (division)
+      - "8\n"    # 2 ^ 3 = 8 (exponentiation)
+
+  - name: "ComplexArithmetic"
+    program: |
+      10 PRINT ((2 + 3) * 4 - 1) ^ 2
+      20 A = 2
+      30 B = 3  
+      40 C = 4
+      50 PRINT (A + B) * C - A ^ B
+    expected:
+      - "361\n"  # ((2 + 3) * 4 - 1) ^ 2 = (5 * 4 - 1) ^ 2 = (20 - 1) ^ 2 = 19 ^ 2 = 361
+      - "12\n"   # (A + B) * C - A ^ B = (2 + 3) * 4 - 2 ^ 3 = 5 * 4 - 8 = 20 - 8 = 12
+
+  - name: "ParserArithmetic"
+    program: |
+      10 PRINT -10 + 5
+      20 PRINT 2.5 * 2
+      30 PRINT 2 * 3 + 4 * 5
+    expected:
+      - "-5\n"
+      - "5\n"
+      - "26\n"

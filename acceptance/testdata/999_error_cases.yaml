@@ -1,0 +1,42 @@
+tests:
+  - name: "InvalidProgram"
+    program: "invalid content"
+    wantErr: true
+    errContains: ""
+
+  - name: "InvalidGoto"
+    program: |
+      10 PRINT "START"
+      20 GOTO 999
+      30 PRINT "END"
+    wantErr: true
+    errContains: "UNDEFINED STATEMENT ERROR"
+
+  - name: "Bug_DivisionByZeroErrorMessage"
+    program: |
+      10 PRINT 1/0
+    wantErr: true
+    errContains: "?DIVISION BY ZERO ERROR IN 10"
+
+  - name: "Bug_TypeMismatchOnAssignment"
+    program: |
+      10 A = "hello"
+    wantErr: true
+    errContains: "?TYPE MISMATCH ERROR IN 10"
+
+  - name: "Bug_TypeMismatchOnAddition"
+    program: |
+      10 A$ = "10"
+      20 B = 5
+      30 C = A$ + B
+    wantErr: true
+    errContains: "?TYPE MISMATCH ERROR IN 30"
+
+  - name: "MixedComparisons_TypeMismatch"
+    program: |
+      10 A = 5
+      20 B$ = "5"
+      30 IF A = B$ THEN PRINT "NOT REACHED"
+      40 PRINT "TYPE MISMATCH HANDLED"
+    wantErr: true
+    errContains: "?TYPE MISMATCH ERROR"

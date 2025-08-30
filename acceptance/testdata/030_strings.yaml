@@ -1,0 +1,26 @@
+tests:
+  - name: "StringConcatenation"
+    program: |
+      10 PRINT "HELLO" + " " + "WORLD"
+    expected:
+      - "HELLO WORLD\n"
+
+  - name: "PrintStatementWithoutArgs"
+    program: |
+      10 PRINT
+    expected:
+      - "\n"
+
+  - name: "UninitializedStringVariable"
+    program: |
+      10 PRINT A$
+    expected:
+      - "\n"
+
+  - name: "VariableNameLength"
+    program: |
+      10 VA = 5
+      20 VARA = 10
+      30 PRINT VA
+    expected:
+      - "10\n"
