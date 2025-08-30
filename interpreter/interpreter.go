@@ -95,14 +95,35 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				return fmt.Errorf("?INFINITE LOOP ERROR")
 			}
 
-			err := i.executeStatement(stmt)
-			if err != nil {
-				return i.wrapErrorWithLine(err, line.Number)
-			}
-
-			// Check for flow control statements
+			// Execute statement and handle control flow in one place
 			switch s := stmt.(type) {
-			case *parser.EndStatement, *parser.StopStatement:
+			case *parser.PrintStatement:
+				err := i.executePrintStatement(s)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+			case *parser.LetStatement:
+				err := i.executeLetStatement(s)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+			case *parser.InputStatement:
+				err := i.executeInputStatement(s)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+			case *parser.RunStatement:
+				err := i.executeRunStatement(s)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+			case *parser.StopStatement:
+				err := i.executeStopStatement(s)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+				return nil
+			case *parser.EndStatement:
 				return nil
 			case *parser.GotoStatement:
 				// Find the target line and jump to it
@@ -113,14 +134,16 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				currentLineIndex = targetLineIndex
 				goto nextLine // Skip to the target line
 			case *parser.IfStatement:
-				// IF statement might execute a GOTO, need to check if flow changed
-				if gotoStmt, ok := s.ThenStmt.(*parser.GotoStatement); ok {
-					// Check if condition is true
-					condition, err := i.evaluateExpression(s.Condition)
-					if err != nil {
-						return i.wrapErrorWithLine(err, line.Number)
-					}
-					if i.isConditionTrue(condition) {
+				// Evaluate the condition first
+				condition, err := i.evaluateExpression(s.Condition)
+				if err != nil {
+					return i.wrapErrorWithLine(err, line.Number)
+				}
+
+				// If condition is true, execute the THEN statement
+				if i.isConditionTrue(condition) {
+					// Check if THEN statement is a GOTO for control flow
+					if gotoStmt, ok := s.ThenStmt.(*parser.GotoStatement); ok {
 						// Execute the GOTO
 						targetLineIndex, found := i.findLineIndex(program, gotoStmt.TargetLine)
 						if !found {
@@ -128,8 +151,16 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 						}
 						currentLineIndex = targetLineIndex
 						goto nextLine // Skip to the target line
+					} else {
+						// Execute non-GOTO THEN statement
+						err := i.executeStatement(s.ThenStmt)
+						if err != nil {
+							return i.wrapErrorWithLine(err, line.Number)
+						}
 					}
 				}
+			default:
+				// For unknown statement types, do nothing (ignore)
 			}
 		}
 
