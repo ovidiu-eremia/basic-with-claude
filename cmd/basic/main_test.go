@@ -6,6 +6,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -48,6 +49,10 @@ func TestReadBasicFileNotFound(t *testing.T) {
 }
 
 func TestReadBasicFilePermissionDenied(t *testing.T) {
+	if runtime.GOOS == "windows" || os.Geteuid() == 0 {
+		t.Skip("permission tests not reliable on this platform or when running as root")
+	}
+
 	// Create a file with no read permissions
 	tmpDir := t.TempDir()
 	testFile := filepath.Join(tmpDir, "noperm.bas")
