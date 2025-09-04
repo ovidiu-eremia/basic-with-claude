@@ -1,7 +1,7 @@
 // ABOUTME: Value type system for BASIC variables and expressions
 // ABOUTME: Handles numeric and string values with proper type distinctions and conversions
 
-package interpreter
+package types
 
 import (
 	"fmt"
