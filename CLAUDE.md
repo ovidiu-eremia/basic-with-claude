@@ -106,7 +106,7 @@ Each milestone follows this pattern:
 
 ## Architecture Overview
 
-This interpreter uses a traditional multi-phase architecture: lexical analysis → parsing to AST → direct tree-walking execution.
+This interpreter uses a traditional multi-phase architecture with polymorphic execution: lexical analysis → parsing to AST → polymorphic tree-walking execution using double dispatch pattern.
 
 ### 1. Lexer (Tokenizer)
 - **Processing Model**: Line-by-line tokenization matching BASIC's line-oriented nature
@@ -122,7 +122,7 @@ This interpreter uses a traditional multi-phase architecture: lexical analysis �
 ### 2. Parser
 - **Type**: Recursive descent parser (well-understood, maintainable)
 - **Input**: Stream of tokens from lexer (one line at a time)
-- **Output**: AST nodes representing program statements
+- **Output**: AST nodes representing program statements with polymorphic execution methods
 - **Expression Parsing**:
   - Recursive descent with operator precedence
   - Handle arithmetic, comparison, logical operators
@@ -132,41 +132,111 @@ This interpreter uses a traditional multi-phase architecture: lexical analysis �
   - One or more statements per line (colon-separated)
   - Each statement type has dedicated parsing logic
   - Maintain line number information in AST nodes
+- **Polymorphic Interface**:
+  - Defines `InterpreterOperations` interface for double dispatch
+  - Contains control flow error types (`GotoControl`, `EndControl`, `StopControl`)
+  - Enables AST nodes to execute themselves without interpreter switch statements
 
-### 3. Abstract Syntax Tree (AST)
+### 3. Abstract Syntax Tree (AST) with Polymorphic Execution
 
-#### Core Structure
+#### Core Structure (Double Dispatch Pattern)
 ```go
-type ASTNode interface {
-    Execute(interpreter *Interpreter) error
+type Node interface {
     GetLineNumber() int
+}
+
+type Statement interface {
+    Node
+    Execute(ops InterpreterOperations) error
+}
+
+type Expression interface {
+    Node
+    Evaluate(ops InterpreterOperations) (types.Value, error)
+}
+
+type InterpreterOperations interface {
+    GetVariable(name string) (types.Value, error)
+    SetVariable(name string, value types.Value) error
+    PrintLine(text string) error
+    ReadInput(prompt string) (string, error)
+    RequestGoto(targetLine int) error
+    RequestEnd() error
+    RequestStop() error
+    NormalizeVariableName(name string) string
 }
 ```
 
 #### Node Types
 - **Program**: Root node containing all program lines
 - **Line**: Container for one or more statements on a line
-- **Statement Nodes**: PrintNode, GotoNode, GosubNode, ReturnNode, IfNode, ForNode, NextNode, InputNode, LetNode, DimNode, DataNode, ReadNode, RestoreNode, RemNode, EndNode, StopNode, RunNode
-- **Expression Nodes**: BinaryOpNode, UnaryOpNode, NumberNode, StringNode, VariableNode, ArrayRefNode, FunctionCallNode
+- **Statement Nodes**: PrintStatement, GotoStatement, GosubStatement, ReturnStatement, IfStatement, ForStatement, NextStatement, InputStatement, LetStatement, DimStatement, DataStatement, ReadStatement, RestoreStatement, RemStatement, EndStatement, StopStatement, RunStatement
+- **Expression Nodes**: BinaryOperation, UnaryOperation, NumberLiteral, StringLiteral, VariableReference, ArrayReference, FunctionCall
+
+#### Polymorphic Execution Model (Double Dispatch Pattern)
+
+**Double Dispatch Implementation:**
+1. **First Dispatch**: Interpreter calls `stmt.Execute(interpreter)` - polymorphic method dispatch
+2. **Second Dispatch**: AST node calls back to `interpreter.GetVariable()`, `interpreter.PrintLine()`, etc. - interface method dispatch
+3. **Result**: Clean separation without circular dependencies
+
+**Benefits:**
+- **Self-Executing Nodes**: Each AST node knows how to execute itself
+- **No Switch Statements**: Eliminates large switch statements in interpreter
+- **Type Safety**: Interface ensures all required operations are available
+- **Clean Separation**: AST defines behavior, interpreter provides operations
+- **Testability**: Can mock `InterpreterOperations` for unit testing AST nodes
+- **Extensibility**: Adding new statement types requires no interpreter changes
+
+**Example Flow:**
+```go
+// Interpreter (first dispatch)
+err := stmt.Execute(interpreter)
+
+// PrintStatement.Execute (second dispatch)
+func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
+    value, err := ps.Expression.Evaluate(ops)  // Recursive polymorphism
+    if err != nil {
+        return err
+    }
+    return ops.PrintLine(value.ToString())     // Callback to interpreter
+}
+```
 
 #### Node Properties
 - Each node stores its source line number for error reporting and GOTO targets
-- Expression nodes return values when evaluated
-- Statement nodes perform actions and control flow
+- Expression nodes evaluate themselves and return `types.Value`
+- Statement nodes execute themselves using interpreter operations
+- Control flow handled through special error types (`GotoControl`, `EndControl`, `StopControl`)
 
-### 4. Interpreter
+### 4. Types Package
+- **Responsibility**: Shared type system for values and operations
+- **Key Components**:
+  - `Value` type with `NumberType` and `StringType` variants
+  - Arithmetic operations (`Add`, `Subtract`, `Multiply`, `Divide`, `Power`)
+  - Comparison operations and type conversions
+  - String/numeric value parsing and formatting
+- **Dependencies**: None (foundation package)
+
+### 5. Interpreter
 
 #### Responsibility
-- Orchestrate program execution
+- Orchestrate program execution using polymorphic dispatch
+- Implement `InterpreterOperations` interface for AST nodes
 - Maintain execution state (program counter, stacks)
 - Coordinate between AST, runtime environment, and variable storage
-- Handle control flow and error propagation
+- Handle control flow through error-based signaling
 
 #### Core Components
 
+##### InterpreterOperations Implementation
+- Implements interface defined in parser package
+- Provides variable access, I/O operations, and control flow requests
+- Enables double dispatch from AST nodes back to interpreter
+
 ##### Program Counter
 - Points to current AST node being executed
-- Can be modified by GOTO, GOSUB, loops
+- Can be modified by GOTO, GOSUB, loops through control flow errors
 
 ##### Line Number Index
 - Map from line numbers to AST nodes
@@ -174,12 +244,19 @@ type ASTNode interface {
 - Built during parsing phase
 
 ##### Variable Storage
+- Uses `types.Value` for unified storage
 - Must support:
   - Numeric variables (floating point)
   - String variables (max 255 chars)
   - Numeric arrays
   - String arrays
   - 2-character significant variable names
+
+##### Polymorphic Execution Loop
+- Simple loop: `stmt.Execute(interpreter)` for each statement
+- No switch statements - each AST node executes itself
+- Control flow handled through special error types
+- Unified error handling and line number reporting
 
 ##### Call Stack (GOSUB/RETURN)
 - Stack of return addresses (AST nodes)
@@ -203,35 +280,37 @@ type ASTNode interface {
 
 #### Execution Model
 
-##### Main Execution Loop
+##### Polymorphic Execution Loop
 ```
 1. Start at first line of program
 2. While program counter is valid:
    a. Get current AST node
-   b. Execute node
-   c. Handle any control flow changes
-   d. Advance program counter (unless modified)
+   b. Call stmt.Execute(interpreter) - polymorphic dispatch
+   c. Handle control flow errors (GotoControl, EndControl, StopControl)
+   d. Advance program counter (unless control flow occurred)
 3. End when:
-   - END/STOP encountered
+   - END/STOP control flow error encountered
    - Program counter goes past last line
    - Runtime error occurs
 ```
 
-##### Expression Evaluation
-- Recursive evaluation of expression trees
-- Type checking (numeric vs string)
+##### Expression Evaluation (Polymorphic)
+- Each expression node evaluates itself: `expr.Evaluate(interpreter)`
+- Recursive evaluation of expression trees through double dispatch
+- Type checking (numeric vs string) using `types.Value`
 - Automatic numeric-to-string conversion where needed
 - String-to-numeric conversion for VAL()
 
-##### Control Flow
-- **GOTO**: Update program counter to target line
-- **GOSUB**: Push return address, jump to target
+##### Control Flow (Error-Based Signaling)
+- **GOTO**: AST node returns `GotoControl{TargetLine}` error
+- **GOSUB**: Push return address, jump to target (similar to GOTO)
 - **RETURN**: Pop return address, jump back
-- **IF...THEN**: Evaluate condition, conditionally execute
+- **IF...THEN**: Evaluate condition, conditionally execute THEN statement
 - **FOR**: Initialize loop variable, push loop context
 - **NEXT**: Update variable, check condition, loop or exit
+- **END/STOP**: Return `EndControl`/`StopControl` error to terminate
 
-### 5. Runtime Environment
+### 6. Runtime Environment
 
 #### Responsibility
 - Provide abstraction for all I/O operations
@@ -240,7 +319,7 @@ type ASTNode interface {
 
 #### Interface
 ```go
-type RuntimeEnvironment interface {
+type Runtime interface {
     Print(value string) error
     PrintLine(value string) error
     Input(prompt string) (string, error)
@@ -253,7 +332,7 @@ type RuntimeEnvironment interface {
 - **StandardRuntime**: Production implementation using os.Stdout/Stdin
 - **TestRuntime**: Mock implementation that buffers output and provides scripted input for testing
 
-### 6. Error Handling
+### 7. Error Handling
 
 #### Philosophy & Approach
 - **Implement proper errors from the start**: No panics or "not implemented"
@@ -276,43 +355,75 @@ type RuntimeEnvironment interface {
   - Array bounds exceeded
   - String too long (>255 chars)
 
-### 7. Built-in Functions
+### 8. Built-in Functions
 - **Function Registry**: Map of function names to implementation functions
 - **Type Safety**: Each function performs type checking on arguments and returns appropriate type
 
-### Data Flow
+### Data Flow (Polymorphic Architecture)
 ```
 Source File (.bas)
     ↓
 [Lexer] → Tokens (line by line)
     ↓
-[Parser] → AST Nodes
+[Parser] → Self-Executing AST Nodes + InterpreterOperations Interface
     ↓
 [Line Index Builder] → Line Number Map
     ↓
-[Interpreter]
-    ├─ Program Counter
-    ├─ Variable Store
-    ├─ Call Stack
-    ├─ Loop Stack
-    └─ Data Pointer
+[Polymorphic Execution Loop]
     ↓
-[Runtime Environment]
-    ↓
-Output / Results
+stmt.Execute(interpreter) ←→ [Interpreter as InterpreterOperations]
+    ↑                              ├─ Program Counter
+    │                              ├─ Variable Store (types.Value)
+    │                              ├─ Call Stack
+    │                              ├─ Loop Stack
+    │                              └─ Data Pointer
+    ↓                              ↓
+[Control Flow Errors]         [Runtime Environment]
+(GotoControl, EndControl)          ↓
+    ↓                         Output / Results
+[Program Counter Updates]
+```
+
+### Package Dependencies
+```
+types/           (foundation - no dependencies)
+    ↑
+parser/          (AST nodes + InterpreterOperations interface)
+    ↑
+interpreter/     (implements InterpreterOperations)
+    ↑
+cmd/basic        (main application)
 ```
 
 ### Key Design Decisions
 
 1. **Line-by-line lexing**: Matches BASIC's line-oriented nature
-2. **AST-based execution**: Clean separation of parsing and runtime
-3. **Direct tree walking**: Simple, sufficient for BASIC performance needs
-4. **Interface + structs for AST**: Flexible, type-safe Go pattern
-5. **Recursive descent parsing**: Well-understood, maintainable
-6. **Error returns (not panic)**: Idiomatic Go error handling
-7. **Separate indices for line numbers**: Efficient GOTO/GOSUB
-8. **Stack-based call/loop management**: Natural for nested structures
-9. **Runtime environment interface**: Enables testing and I/O abstraction
+2. **Polymorphic AST execution**: Each node executes itself using double dispatch
+3. **Double dispatch pattern**: Eliminates switch statements while maintaining clean separation
+4. **InterpreterOperations interface**: Enables AST nodes to call back to interpreter without circular dependencies
+5. **Control flow via errors**: GOTO/END/STOP use special error types for clean control flow
+6. **Unified Value type**: `types.Value` handles both numeric and string values with type safety
+7. **Simplified package structure**: Three packages (types, parser, interpreter) with linear dependencies
+8. **Interface + structs for AST**: Flexible, type-safe Go pattern with polymorphic methods
+9. **Recursive descent parsing**: Well-understood, maintainable
+10. **Error returns (not panic)**: Idiomatic Go error handling
+11. **Separate indices for line numbers**: Efficient GOTO/GOSUB
+12. **Stack-based call/loop management**: Natural for nested structures
+13. **Runtime environment interface**: Enables testing and I/O abstraction
+
+### Architectural Benefits
+
+**Polymorphic Design:**
+- **Maintainability**: Each AST node contains its own execution logic
+- **Extensibility**: New statement types require no interpreter changes
+- **Testability**: AST nodes can be unit tested with mock operations
+- **Code Quality**: Eliminates large switch statements and code duplication
+
+**Double Dispatch Pattern:**
+- **Clean Separation**: AST defines behavior, interpreter provides operations
+- **No Circular Dependencies**: Interface breaks dependency cycles
+- **Type Safety**: Compile-time verification of required operations
+- **Performance**: No runtime type checking or reflection needed
 
 
 
