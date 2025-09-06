@@ -1,14 +1,15 @@
-.PHONY: help test loc-prod loc-test loc-history
+.PHONY: help test loc-prod loc-test loc-history go-files-by-size
 
 .DEFAULT_GOAL := help
 
 help:
 	@echo "Available commands:"
-	@echo "  help         Show this help message"
-	@echo "  test         Run all tests"
-	@echo "  loc-prod     Count production lines of code (excludes tests)"
-	@echo "  loc-test     Count test lines of code"
-	@echo "  loc-history  Show production LOC by commit in chronological order"
+	@echo "  help             Show this help message"
+	@echo "  test             Run all tests"
+	@echo "  loc-prod         Count production lines of code (excludes tests)"
+	@echo "  loc-test         Count test lines of code"
+	@echo "  loc-history      Show production LOC by commit in chronological order"
+	@echo "  go-files-by-size List all Go files by descending order of size"
 
 test:
 	go test ./...
@@ -31,3 +32,6 @@ loc-history:
 		printf "%-14s %-19s %s\n" $$short_commit $$date $$loc; \
 	done; \
 	git checkout $$current_branch >/dev/null 2>&1
+
+go-files-by-size:
+	@cloc --by-file --include-ext=go . --quiet

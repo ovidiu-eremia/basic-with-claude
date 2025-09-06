@@ -24,15 +24,6 @@ func (re *RuntimeError) Error() string {
 	return fmt.Sprintf("runtime error at line %d, column %d: %s", re.Position.Line, re.Position.Column, re.Message)
 }
 
-// binaryOperations maps operator strings to their corresponding Value methods
-var binaryOperations = map[string]func(types.Value, types.Value) (types.Value, error){
-	"+": types.Value.Add,
-	"-": types.Value.Subtract,
-	"*": types.Value.Multiply,
-	"/": types.Value.Divide,
-	"^": types.Value.Power,
-}
-
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
 	runtime   runtime.Runtime
@@ -140,23 +131,6 @@ func (i *Interpreter) findLineIndex(program *parser.Program, lineNumber int) (in
 	return 0, false
 }
 
-
-
-
-
-// evaluateExpression evaluates an expression using polymorphic dispatch
-func (i *Interpreter) evaluateExpression(expr parser.Expression) (types.Value, error) {
-	return expr.Evaluate(i)
-}
-
-
-
-
-
-
-
-
-
 // wrapErrorWithLine wraps an error with C64 BASIC format including line number
 func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
 	// Check if it's already a C64 format error (starts with ?)
@@ -176,8 +150,6 @@ func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
 	}
 }
 
-
-
 // InterpreterOperations interface implementation
 // These methods enable double dispatch from AST nodes back to interpreter
 
@@ -187,7 +159,7 @@ func (i *Interpreter) GetVariable(name string) (types.Value, error) {
 	if value, exists := i.variables[normalizedName]; exists {
 		return value, nil
 	}
-	
+
 	// Default values
 	if strings.HasSuffix(name, "$") {
 		return types.NewStringValue(""), nil
@@ -205,7 +177,7 @@ func (i *Interpreter) SetVariable(name string, value types.Value) error {
 	if !isStringVariable && value.Type != types.NumberType {
 		return fmt.Errorf("TYPE MISMATCH ERROR")
 	}
-	
+
 	normalizedName := i.NormalizeVariableName(name)
 	i.variables[normalizedName] = value
 	return nil
