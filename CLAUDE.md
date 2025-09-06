@@ -162,7 +162,7 @@ This interpreter uses a traditional multi-phase architecture with polymorphic ex
   - Maintain line number information in AST nodes
 - **Polymorphic Interface**:
   - Defines `InterpreterOperations` interface for double dispatch
-  - Contains control flow error types (`GotoControl`, `EndControl`, `StopControl`)
+- Control flow for GOTO/END/STOP is stateful in the interpreter (no error types)
   - Enables AST nodes to execute themselves without interpreter switch statements
 
 ### 3. Abstract Syntax Tree (AST) with Polymorphic Execution
@@ -235,7 +235,7 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - Each node stores its source line number for error reporting and GOTO targets
 - Expression nodes evaluate themselves and return `types.Value`
 - Statement nodes execute themselves using interpreter operations
-- Control flow handled through special error types (`GotoControl`, `EndControl`, `StopControl`)
+- Control flow handled via interpreter state for GOTO/END/STOP; FOR/NEXT uses loop stack
 
 ### 4. Types Package
 - **Responsibility**: Shared type system for values and operations
@@ -314,7 +314,7 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 2. While program counter is valid:
    a. Get current AST node
    b. Call stmt.Execute(interpreter) - polymorphic dispatch
-   c. Handle control flow errors (GotoControl, EndControl, StopControl)
+   c. Apply interpreter state changes (jumps, halts) after statement execution
    d. Advance program counter (unless control flow occurred)
 3. End when:
    - END/STOP control flow error encountered
@@ -330,13 +330,13 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - String-to-numeric conversion for VAL()
 
 ##### Control Flow (Error-Based Signaling)
-- **GOTO**: AST node returns `GotoControl{TargetLine}` error
+- **GOTO**: `ops.RequestGoto(line)` sets interpreter `pc`/jump state (no error)
 - **GOSUB**: Push return address, jump to target (similar to GOTO)
 - **RETURN**: Pop return address, jump back
 - **IF...THEN**: Evaluate condition, conditionally execute THEN statement
 - **FOR**: Initialize loop variable, push loop context
 - **NEXT**: Update variable, check condition, loop or exit
-- **END/STOP**: Return `EndControl`/`StopControl` error to terminate
+- **END/STOP**: Interpreter sets a halted flag via ops (no errors)
 
 ### 6. Runtime Environment
 
@@ -407,7 +407,7 @@ stmt.Execute(interpreter) ←→ [Interpreter as InterpreterOperations]
     │                              └─ Data Pointer
     ↓                              ↓
 [Control Flow Errors]         [Runtime Environment]
-(GotoControl, EndControl)          ↓
+(stateful GOTO/END/STOP)           ↓
     ↓                         Output / Results
 [Program Counter Updates]
 ```

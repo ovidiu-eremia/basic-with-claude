@@ -91,17 +91,17 @@ func (m *MockInterpreterOperations) ReadInput(prompt string) (string, error) {
 func (m *MockInterpreterOperations) RequestGoto(targetLine int) error {
 	m.gotoRequested = true
 	m.gotoTarget = targetLine
-	return &GotoControl{TargetLine: targetLine}
+	return nil
 }
 
 func (m *MockInterpreterOperations) RequestEnd() error {
 	m.endRequested = true
-	return &EndControl{}
+	return nil
 }
 
 func (m *MockInterpreterOperations) RequestStop() error {
 	m.stopRequested = true
-	return &StopControl{}
+	return nil
 }
 
 func (m *MockInterpreterOperations) NormalizeVariableName(name string) string {
@@ -281,8 +281,7 @@ func TestEndStatement_Execute(t *testing.T) {
 
 	err := stmt.Execute(mock)
 
-	assert.Error(t, err)
-	assert.IsType(t, &EndControl{}, err)
+	assert.NoError(t, err)
 	assert.True(t, mock.endRequested)
 }
 
@@ -292,8 +291,7 @@ func TestStopStatement_Execute(t *testing.T) {
 
 	err := stmt.Execute(mock)
 
-	assert.Error(t, err)
-	assert.IsType(t, &StopControl{}, err)
+	assert.NoError(t, err)
 	assert.True(t, mock.stopRequested)
 }
 
@@ -312,8 +310,7 @@ func TestGotoStatement_Execute(t *testing.T) {
 
 	err := stmt.Execute(mock)
 
-	assert.Error(t, err)
-	assert.IsType(t, &GotoControl{}, err)
+	assert.NoError(t, err)
 	assert.True(t, mock.gotoRequested)
 	assert.Equal(t, 50, mock.gotoTarget)
 }

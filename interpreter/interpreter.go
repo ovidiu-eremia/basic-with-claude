@@ -37,9 +37,13 @@ type Interpreter struct {
 	runtime   runtime.Runtime
 	variables map[string]types.Value // Variable storage using proper Value types
 	lineIndex map[int]*parser.Line   // Maps line numbers to Line nodes for GOTO
+	linePos   map[int]int            // Maps line numbers to their index position
 	forStack  []ForLoopContext       // Stack of active FOR loops for nested loop support
 	maxSteps  int                    // Maximum number of execution steps before infinite loop protection kicks in
 	stepCount int                    // Current step count during execution
+	pc        int                    // Program counter: current line index
+	jumped    bool                   // Indicates a jump occurred during statement execution
+	halted    bool                   // Indicates END/STOP was requested
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -48,9 +52,13 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		runtime:   rt,
 		variables: make(map[string]types.Value),
 		lineIndex: make(map[int]*parser.Line),
+		linePos:   make(map[int]int),
 		forStack:  make([]ForLoopContext, 0),
 		maxSteps:  1000, // Default maximum steps
 		stepCount: 0,
+		pc:        0,
+		jumped:    false,
+		halted:    false,
 	}
 }
 
@@ -105,6 +113,8 @@ func (i *Interpreter) findForLoopByVariable(variable string) *ForLoopContext {
 func (i *Interpreter) Execute(program *parser.Program) error {
 	// Reset step counter for new execution
 	i.stepCount = 0
+	i.halted = false
+	i.jumped = false
 
 	// Build line number index for GOTO statements
 	i.buildLineIndex(program)
@@ -115,8 +125,11 @@ func (i *Interpreter) Execute(program *parser.Program) error {
 
 // buildLineIndex creates a map from line numbers to Line nodes
 func (i *Interpreter) buildLineIndex(program *parser.Program) {
-	for _, line := range program.Lines {
+	i.lineIndex = make(map[int]*parser.Line)
+	i.linePos = make(map[int]int)
+	for idx, line := range program.Lines {
 		i.lineIndex[line.Number] = line
+		i.linePos[line.Number] = idx
 	}
 }
 
@@ -127,10 +140,10 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 	}
 
 	// Start execution at the first line
-	currentLineIndex := 0
+	i.pc = 0
 
-	for currentLineIndex < len(program.Lines) {
-		line := program.Lines[currentLineIndex]
+	for i.pc < len(program.Lines) {
+		line := program.Lines[i.pc]
 
 		for _, stmt := range line.Statements {
 			// Increment step counter and check for infinite loop protection
@@ -143,36 +156,19 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 			err := stmt.Execute(i)
 			if err != nil {
 				// Handle control flow requests
-				if gotoCtrl, ok := err.(*parser.GotoControl); ok {
-					targetLineIndex, found := i.findLineIndex(program, gotoCtrl.TargetLine)
-					if !found {
-						return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
-					}
-					currentLineIndex = targetLineIndex
-					goto nextLine
-				}
-
-				if _, ok := err.(*parser.EndControl); ok {
-					return nil
-				}
-
-				if _, ok := err.(*parser.StopControl); ok {
-					return nil
-				}
-
 				// Handle FOR loop initialization
 				if forCtrl, ok := err.(*parser.ForControl); ok {
 					// Push FOR loop onto stack with default step of 1
 					stepValue := types.NewNumberValue(1)
 					// Jump target is the line after the FOR statement
-					i.pushForLoop(forCtrl.Variable, forCtrl.EndValue, stepValue, currentLineIndex+1)
+					i.pushForLoop(forCtrl.Variable, forCtrl.EndValue, stepValue, i.pc+1)
 					// Continue with next statement (don't jump anywhere)
 					continue
 				}
 
 				// Handle NEXT statement
 				if nextCtrl, ok := err.(*parser.NextControl); ok {
-					didJump, nerr := i.handleNextStatement(program, nextCtrl.Variable, &currentLineIndex)
+					didJump, nerr := i.handleNextStatement(program, nextCtrl.Variable, &i.pc)
 					if nerr != nil {
 						return nerr
 					}
@@ -186,24 +182,23 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				// Regular error - wrap with line number
 				return i.wrapErrorWithLine(err, line.Number)
 			}
+
+			// After successful execution, check for END/STOP or GOTO performed via ops
+			if i.halted {
+				return nil
+			}
+			if i.jumped {
+				i.jumped = false
+				goto nextLine
+			}
 		}
 
 		// Move to next line
-		currentLineIndex++
+		i.pc++
 	nextLine:
 	}
 
 	return nil
-}
-
-// findLineIndex finds the index of a line with the given line number
-func (i *Interpreter) findLineIndex(program *parser.Program, lineNumber int) (int, bool) {
-	for index, line := range program.Lines {
-		if line.Number == lineNumber {
-			return index, true
-		}
-	}
-	return 0, false
 }
 
 // wrapErrorWithLine wraps an error with C64 BASIC format including line number
@@ -270,17 +265,27 @@ func (i *Interpreter) ReadInput(prompt string) (string, error) {
 
 // RequestGoto requests a GOTO control flow change
 func (i *Interpreter) RequestGoto(targetLine int) error {
-	return &parser.GotoControl{TargetLine: targetLine}
+	// Resolve target line to index and set jump state
+	targetLineIndex, found := i.linePos[targetLine]
+	if !found {
+		// We don't have the source line number here; the caller's line will wrap this error
+		return fmt.Errorf("?UNDEFINED STATEMENT ERROR")
+	}
+	i.pc = targetLineIndex
+	i.jumped = true
+	return nil
 }
 
 // RequestEnd requests program termination
 func (i *Interpreter) RequestEnd() error {
-	return &parser.EndControl{}
+	i.halted = true
+	return nil
 }
 
 // RequestStop requests program stop
 func (i *Interpreter) RequestStop() error {
-	return &parser.StopControl{}
+	i.halted = true
+	return nil
 }
 
 // NormalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)

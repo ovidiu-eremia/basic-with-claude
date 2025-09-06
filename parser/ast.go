@@ -35,26 +35,7 @@ type InterpreterOperations interface {
 	NormalizeVariableName(name string) string
 }
 
-// Control flow error types for handling GOTO, END, STOP
-type GotoControl struct {
-	TargetLine int
-}
-
-func (gc *GotoControl) Error() string {
-	return "goto control flow"
-}
-
-type EndControl struct{}
-
-func (ec *EndControl) Error() string {
-	return "end control flow"
-}
-
-type StopControl struct{}
-
-func (sc *StopControl) Error() string {
-	return "stop control flow"
-}
+// (No control error types are used for END/STOP; interpreter handles them statefully.)
 
 // ForControl represents a FOR loop initialization request
 type ForControl struct {
