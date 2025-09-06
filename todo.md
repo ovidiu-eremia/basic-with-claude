@@ -93,9 +93,9 @@ Add user input capabilities.
 Add iterative control structures.
 
 #### Step 12: FOR...NEXT Loops
-- [ ] **Goal**: Support basic FOR loops with default step
-- [ ] **Demo**: `10 FOR I = 1 TO 5` with `30 NEXT I` counts 1 to 5
-- [ ] **Tests**: Loop initialization, iteration, termination conditions
+- [x] **Goal**: Support basic FOR loops with default step
+- [x] **Demo**: `10 FOR I = 1 TO 5` with `30 NEXT I` counts 1 to 5
+- [x] **Tests**: Loop initialization, iteration, termination conditions
 
 #### Step 13: FOR...NEXT with STEP
 - [ ] **Goal**: Support custom step values in FOR loops

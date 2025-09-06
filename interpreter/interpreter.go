@@ -13,6 +13,14 @@ import (
 	"basic-interpreter/types"
 )
 
+// ForLoopContext represents an active FOR loop state
+type ForLoopContext struct {
+	Variable     string      // Loop variable name
+	EndValue     types.Value // Target end value
+	StepValue    types.Value // Step value (default 1)
+	ForLineIndex int         // Index of the FOR statement line in program
+}
+
 // RuntimeError represents an error that occurred during program execution
 type RuntimeError struct {
 	Message  string
@@ -29,6 +37,7 @@ type Interpreter struct {
 	runtime   runtime.Runtime
 	variables map[string]types.Value // Variable storage using proper Value types
 	lineIndex map[int]*parser.Line   // Maps line numbers to Line nodes for GOTO
+	forStack  []ForLoopContext       // Stack of active FOR loops for nested loop support
 	maxSteps  int                    // Maximum number of execution steps before infinite loop protection kicks in
 	stepCount int                    // Current step count during execution
 }
@@ -39,6 +48,7 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		runtime:   rt,
 		variables: make(map[string]types.Value),
 		lineIndex: make(map[int]*parser.Line),
+		forStack:  make([]ForLoopContext, 0),
 		maxSteps:  1000, // Default maximum steps
 		stepCount: 0,
 	}
@@ -47,6 +57,46 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 // SetMaxSteps sets the maximum number of execution steps before infinite loop protection
 func (i *Interpreter) SetMaxSteps(maxSteps int) {
 	i.maxSteps = maxSteps
+}
+
+// pushForLoop pushes a new FOR loop context onto the stack
+func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepValue types.Value, forLineIndex int) {
+	forLoop := ForLoopContext{
+		Variable:     variable,
+		EndValue:     endValue,
+		StepValue:    stepValue,
+		ForLineIndex: forLineIndex,
+	}
+	i.forStack = append(i.forStack, forLoop)
+}
+
+// popForLoop removes the top FOR loop from the stack
+func (i *Interpreter) popForLoop() *ForLoopContext {
+	if len(i.forStack) == 0 {
+		return nil
+	}
+	top := i.forStack[len(i.forStack)-1]
+	i.forStack = i.forStack[:len(i.forStack)-1]
+	return &top
+}
+
+// peekForLoop returns the top FOR loop without removing it
+func (i *Interpreter) peekForLoop() *ForLoopContext {
+	if len(i.forStack) == 0 {
+		return nil
+	}
+	return &i.forStack[len(i.forStack)-1]
+}
+
+// findForLoopByVariable finds a FOR loop on the stack by variable name
+func (i *Interpreter) findForLoopByVariable(variable string) *ForLoopContext {
+	// Search from top of stack (most recent) to bottom
+	for j := len(i.forStack) - 1; j >= 0; j-- {
+		if i.forStack[j].Variable == variable {
+			return &i.forStack[j]
+		}
+	}
+	return nil
 }
 
 // Execute runs a BASIC program
@@ -106,6 +156,30 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 
 				if _, ok := err.(*parser.StopControl); ok {
 					return nil
+				}
+
+				// Handle FOR loop initialization
+				if forCtrl, ok := err.(*parser.ForControl); ok {
+					// Push FOR loop onto stack with default step of 1
+					stepValue := types.NewNumberValue(1)
+					i.pushForLoop(forCtrl.Variable, forCtrl.EndValue, stepValue, currentLineIndex)
+					// Continue with next statement (don't jump anywhere)
+					continue
+				}
+
+				// Handle NEXT statement
+				if nextCtrl, ok := err.(*parser.NextControl); ok {
+					err := i.handleNextStatement(program, nextCtrl.Variable, &currentLineIndex)
+					if err != nil {
+						// Check if it's a loop jump
+						if loopCtrl, ok := err.(*parser.LoopControl); ok {
+							currentLineIndex = loopCtrl.TargetLineIndex
+							goto nextLine
+						}
+						return err
+					}
+					// Loop finished normally - continue to next line with increment
+					break // Exit the statement loop to allow normal line increment
 				}
 
 				// Regular error - wrap with line number
@@ -214,4 +288,58 @@ func (i *Interpreter) NormalizeVariableName(name string) string {
 		return name[:2]
 	}
 	return name
+}
+
+// handleNextStatement handles NEXT statement execution and loop iteration
+func (i *Interpreter) handleNextStatement(program *parser.Program, variableName string, currentLineIndex *int) error {
+	// Find the appropriate FOR loop context
+	var forLoop *ForLoopContext
+	if variableName != "" {
+		// NEXT with variable name - find specific loop
+		forLoop = i.findForLoopByVariable(variableName)
+		if forLoop == nil {
+			return fmt.Errorf("?NEXT WITHOUT FOR ERROR")
+		}
+	} else {
+		// NEXT without variable name - use most recent loop
+		forLoop = i.peekForLoop()
+		if forLoop == nil {
+			return fmt.Errorf("?NEXT WITHOUT FOR ERROR")
+		}
+	}
+
+	// Get current value of loop variable
+	currentValue, err := i.GetVariable(forLoop.Variable)
+	if err != nil {
+		return err
+	}
+
+	// Increment the loop variable by the step value (default 1)
+	newValue, err := currentValue.Add(forLoop.StepValue)
+	if err != nil {
+		return err
+	}
+
+	// Check if loop should continue
+	shouldContinue, err := newValue.Compare(forLoop.EndValue, "<=")
+	if err != nil {
+		return err
+	}
+
+	if shouldContinue {
+		// Update loop variable and jump back to the line after FOR
+		err = i.SetVariable(forLoop.Variable, newValue)
+		if err != nil {
+			return err
+		}
+		// Jump back to the line after the FOR statement
+		targetIndex := forLoop.ForLineIndex + 1
+		// Return LoopControl to indicate loop jump
+		return &parser.LoopControl{TargetLineIndex: targetIndex}
+	} else {
+		// Loop finished - pop the loop from stack
+		i.popForLoop()
+		// Continue with next statement after NEXT
+		return nil
+	}
 }

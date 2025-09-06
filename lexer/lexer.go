@@ -39,6 +39,9 @@ const (
 	GE        TokenType = ">="
 	LE        TokenType = "<="
 	SEMICOLON TokenType = ";"
+	FOR       TokenType = "FOR"
+	TO        TokenType = "TO"
+	NEXT      TokenType = "NEXT"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -52,6 +55,9 @@ var keywords = map[string]TokenType{
 	"INPUT": INPUT,
 	"IF":    IF,
 	"THEN":  THEN,
+	"FOR":   FOR,
+	"TO":    TO,
+	"NEXT":  NEXT,
 }
 
 // Position represents a position in the source code

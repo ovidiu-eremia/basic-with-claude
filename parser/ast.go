@@ -56,6 +56,35 @@ func (sc *StopControl) Error() string {
 	return "stop control flow"
 }
 
+// ForControl represents a FOR loop initialization request
+type ForControl struct {
+	Variable         string
+	EndValue         types.Value
+	CurrentLineIndex int
+}
+
+func (fc *ForControl) Error() string {
+	return "for control flow"
+}
+
+// NextControl represents a NEXT statement request
+type NextControl struct {
+	Variable string // Optional variable name
+}
+
+func (nc *NextControl) Error() string {
+	return "next control flow"
+}
+
+// LoopControl represents a FOR loop jump back
+type LoopControl struct {
+	TargetLineIndex int
+}
+
+func (lc *LoopControl) Error() string {
+	return "loop control flow"
+}
+
 // Statement represents any statement node
 type Statement interface {
 	Node
@@ -361,5 +390,56 @@ func (ce *ComparisonExpression) Evaluate(ops InterpreterOperations) (types.Value
 		return types.NewNumberValue(1), nil
 	} else {
 		return types.NewNumberValue(0), nil
+	}
+}
+
+// ForStatement represents a FOR loop statement
+type ForStatement struct {
+	Variable   string     // Loop variable name
+	StartValue Expression // Starting value
+	EndValue   Expression // Ending value
+	Line       int        // Source line number
+}
+
+func (fs *ForStatement) GetLineNumber() int { return fs.Line }
+
+func (fs *ForStatement) Execute(ops InterpreterOperations) error {
+	startVal, err := fs.StartValue.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+
+	endVal, err := fs.EndValue.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+
+	// Initialize loop variable
+	err = ops.SetVariable(fs.Variable, startVal)
+	if err != nil {
+		return err
+	}
+
+	// Always return ForControl to set up the loop context
+	// The NEXT statement will handle whether the loop should execute
+	return &ForControl{
+		Variable:         fs.Variable,
+		EndValue:         endVal,
+		CurrentLineIndex: 0, // Will be set by the interpreter
+	}
+}
+
+// NextStatement represents a NEXT statement
+type NextStatement struct {
+	Variable string // Optional loop variable name (can be empty)
+	Line     int    // Source line number
+}
+
+func (ns *NextStatement) GetLineNumber() int { return ns.Line }
+
+func (ns *NextStatement) Execute(ops InterpreterOperations) error {
+	// Return NextControl to signal the interpreter to handle the loop iteration
+	return &NextControl{
+		Variable: ns.Variable,
 	}
 }

@@ -181,6 +181,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseGotoStatement()
 	case lexer.IF:
 		return p.parseIfStatement()
+	case lexer.FOR:
+		return p.parseForStatement()
+	case lexer.NEXT:
+		return p.parseNextStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -473,5 +477,71 @@ func (p *Parser) parseInputStatement() *InputStatement {
 		return nil
 	}
 	stmt.Variable = p.currentToken.Literal
+	return stmt
+}
+
+// parseForStatement parses a FOR statement: FOR I = 1 TO 5
+func (p *Parser) parseForStatement() *ForStatement {
+	stmt := &ForStatement{Line: p.currentToken.Line}
+
+	p.nextToken() // consume FOR
+
+	// Expect variable name
+	if p.currentToken.Type != lexer.IDENT {
+		p.addTokenError("variable name", p.currentToken.Type)
+		return nil
+	}
+	stmt.Variable = p.currentToken.Literal
+
+	p.nextToken() // consume variable name
+
+	// Expect equals sign
+	if p.currentToken.Type != lexer.ASSIGN {
+		p.addTokenError("'=' after variable name", p.currentToken.Type)
+		return nil
+	}
+
+	p.nextToken() // consume '='
+
+	// Parse start value expression
+	stmt.StartValue = p.parseExpression()
+	if stmt.StartValue == nil {
+		return nil
+	}
+
+	// For simple expressions without operators, we need to advance past the primary expression
+	if p.currentToken.Type != lexer.TO && p.peekToken.Type == lexer.TO {
+		p.nextToken()
+	}
+
+	// Expect TO keyword
+	if p.currentToken.Type != lexer.TO {
+		p.addTokenError("TO keyword", p.currentToken.Type)
+		return nil
+	}
+
+	p.nextToken() // consume TO
+
+	// Parse end value expression
+	stmt.EndValue = p.parseExpression()
+	if stmt.EndValue == nil {
+		return nil
+	}
+
+	return stmt
+}
+
+// parseNextStatement parses a NEXT statement: NEXT I or NEXT
+func (p *Parser) parseNextStatement() *NextStatement {
+	stmt := &NextStatement{Line: p.currentToken.Line}
+
+	p.nextToken() // consume NEXT
+
+	// Check if there's a variable name (optional in NEXT)
+	if p.currentToken.Type == lexer.IDENT {
+		stmt.Variable = p.currentToken.Literal
+		// Token will be consumed by the main parser loop
+	}
+
 	return stmt
 }
