@@ -14,13 +14,18 @@ Build a working BASIC interpreter incrementally, where each milestone delivers a
 - **Maintain velocity**: Small, achievable milestones with quick feedback loops
 - **Avoid big bangs**: No milestone requires major refactoring, architecture grows organically
 
-## TDD Workflow (STRICTLY FOLLOW THIS)
-1. Write failing test first
-2. Write MINIMAL code to make test compile (but still fail for right reasons)
-3. Verify test fails for expected reasons, not compilation errors
-4. Implement just enough to make test pass
-5. Refactor if needed
-6. Repeat
+## TDD Workflow
+
+### Implementation Process (STRICTLY FOLLOW THIS)
+1. Write a failing test that defines a desired function or improvement
+2. Write just enough code to make the code compile
+3. Run the test to confirm it fails as expected (not due to compilation errors)
+4. Write the simplest code to make the test pass
+5. Run the test to confirm success
+6. **Use test failures as learning opportunities**: When tests fail unexpectedly, investigate the root cause rather than just fixing the assertion
+7. Refactor code to improve design while keeping tests green
+8. **Consider test organization**: As test suites grow, refactor test code for maintainability too
+9. Repeat the cycle for each new feature or bugfix
 
 ## Milestone Structure
 Each milestone follows this pattern:
@@ -47,6 +52,18 @@ Each milestone follows this pattern:
 - **Integration Tests**: Complete BASIC programs, control flow scenarios, error conditions, C64 compatibility
 - **Test Programs**: Classic BASIC examples (Hello World, loops), edge cases (nested loops, deep recursion), error triggering programs
 
+### Test Organization Patterns
+- **Tabular tests for similar scenarios**: Group related test cases in table-driven tests with clear sections by functionality
+- **Separate concerns**: Keep parsing tests, error tests, and execution tests in separate functions with distinct purposes
+- **Mock interfaces for isolation**: Create focused unit tests using mock implementations of key interfaces (e.g., `InterpreterOperations`)
+- **Consolidate when beneficial**: Refactor multiple similar test functions into comprehensive tabular tests for maintainability
+
+### Polymorphic Testing
+- **Test both dispatch levels**: For double dispatch patterns, test both the polymorphic method call and the callback operations
+- **Mock interfaces for isolation**: Use mock implementations (e.g., `InterpreterOperations`) to isolate components under test
+- **Error injection testing**: Verify error handling by injecting failures in mock dependencies to test edge cases
+- **Behavioral verification**: Test that AST nodes call the correct interface methods with expected parameters
+
 ## Development Guidelines
 
 ### Core Principles
@@ -60,8 +77,6 @@ Each milestone follows this pattern:
 - **If demo files need unsupported features, update the demo file, don't add features**
 - **NEVER use infinite loops** - always advance tokens/iterators
 - **Parser infinite loops**: ensure `nextToken()` is called in all code paths
-- **Place methods with their data** - Operations should live on the types they operate on
-- **Extract pure functions** - Utility functions with no state dependencies go to package level
 - **Avoid "manager bloat"** - Large switch statements often indicate missing method dispatch
 
 ### Go-Specific Patterns & Pitfalls
@@ -83,19 +98,18 @@ Each milestone follows this pattern:
 - **Unified assignment parsing**: handle `LET A = 42` and `A = 42` with shared logic
 - **Clear separation** between parsing and validation logic
 
-#### Method Placement
-- **Value operations** → Value type methods (`left.Compare(right, op)` not `compareValues(left, right, op)`)
+#### Method Placement & Architecture
+- **Operations on data** → Methods on types that own the data (`left.Compare(right, op)` not `compareValues(left, right, op)`)
 - **Pure utilities** → Package-level functions (`NormalizeVariableName()` not receiver method)
-- **Type-specific logic** → Respective types (AST nodes execute themselves)
+- **Polymorphic behavior** → AST nodes execute themselves via double dispatch pattern
 - **Refactoring signal**: Methods taking specific types as main parameters should move to those types
 
 ### Key Constraints & Patterns
-- **AST Node Interface**: All nodes implement Execute(interpreter) + GetLineNumber()
 - **Variable names**: 2 significant characters max (C64 compatible)
 - **String variables**: End with $ (A$, NAME$) - lexer handles automatically
 - **Line numbers**: 0-63999 range
-- **Runtime interface**: All I/O must go through RuntimeEnvironment interface for testability
-- **Variable storage**: Unified `map[string]string` works for both numeric and string variables
+- **Runtime interface**: All I/O must go through Runtime interface for testability
+- **Variable storage**: Unified `types.Value` handles both numeric and string variables with type safety
 - **String concatenation**: Uses `+` operator (not `&` like some BASIC variants)
 
 ### Critical Pitfalls to Avoid
@@ -103,6 +117,20 @@ Each milestone follows this pattern:
 - **Test error cases**: Verify C64-compatible error messages ("?SYNTAX ERROR IN 10")
 - **Preserve line numbers**: Carry line info through lexer → parser → interpreter
 - **Never direct console I/O**: Always use Runtime interface
+
+## Code Quality Workflow
+
+### Pre-commit Integration
+- **Embrace tool feedback**: Treat linter/formatter suggestions as learning opportunities
+- **Fix root causes**: When tools flag issues, understand why rather than just fixing the immediate problem
+- **Iterative improvement**: Use tool feedback to incrementally improve code quality
+- **Never bypass quality checks**: Avoid using `--no-verify` when committing code
+
+### Refactoring Guidelines
+- **Apply to all code**: Refactor test code for maintainability, not just implementation code
+- **Preserve coverage**: When refactoring tests, ensure identical coverage is maintained
+- **Consistent patterns**: Use consistent patterns across similar test scenarios
+- **Clean up proactively**: Remove unused functions, variables, and imports as flagged by linters
 
 ## Architecture Overview
 
