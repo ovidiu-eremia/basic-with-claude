@@ -4,7 +4,7 @@
 package types
 
 import (
-	"fmt"
+	"errors"
 	"math"
 	"strconv"
 )
@@ -23,6 +23,12 @@ type Value struct {
 	Number float64
 	String string
 }
+
+// Predefined errors for consistent C64 error messages
+var (
+	ErrTypeMismatch   = errors.New("?TYPE MISMATCH ERROR")
+	ErrDivisionByZero = errors.New("?DIVISION BY ZERO ERROR")
+)
 
 // NewNumberValue creates a numeric value
 func NewNumberValue(n float64) Value {
@@ -68,11 +74,11 @@ func (v Value) ToNumber() (float64, error) {
 	case StringType:
 		num, err := strconv.ParseFloat(v.String, 64)
 		if err != nil {
-			return 0, fmt.Errorf("cannot convert string '%s' to number", v.String)
+			return 0, ErrTypeMismatch
 		}
 		return num, nil
 	default:
-		return 0, fmt.Errorf("invalid value type")
+		return 0, ErrTypeMismatch
 	}
 }
 
@@ -135,7 +141,7 @@ func (v Value) Add(other Value) (Value, error) {
 
 	// If one is string and other is number, this is a type mismatch error in BASIC
 	if v.Type == StringType || other.Type == StringType {
-		return Value{}, fmt.Errorf("TYPE MISMATCH ERROR")
+		return Value{}, ErrTypeMismatch
 	}
 
 	// Both are numbers, perform arithmetic addition
@@ -162,7 +168,7 @@ func (v Value) Multiply(other Value) (Value, error) {
 func (v Value) Divide(other Value) (Value, error) {
 	return v.binaryArithmeticOpWithError(other, func(left, right float64) (float64, error) {
 		if right == 0 {
-			return 0, fmt.Errorf("division by zero")
+			return 0, ErrDivisionByZero
 		}
 		return left / right, nil
 	})
@@ -198,7 +204,7 @@ func (v Value) Compare(other Value, operator string) (bool, error) {
 		return compareStrings(v.String, other.String, operator), nil
 	} else {
 		// Type mismatch
-		return false, fmt.Errorf("TYPE MISMATCH ERROR")
+		return false, ErrTypeMismatch
 	}
 }
 

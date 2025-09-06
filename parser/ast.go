@@ -242,7 +242,7 @@ func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 	} else {
 		parsed, err := types.ParseValue(input)
 		if err != nil || parsed.Type != types.NumberType {
-			return fmt.Errorf("TYPE MISMATCH ERROR")
+			return types.ErrTypeMismatch
 		}
 		value = parsed
 	}

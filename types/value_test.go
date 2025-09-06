@@ -135,7 +135,7 @@ func TestValue_ArithmeticOperations(t *testing.T) {
 		v2 := NewNumberValue(0)
 		_, err := v1.Divide(v2)
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "division by zero")
+		assert.Contains(t, err.Error(), "DIVISION BY ZERO ERROR")
 	})
 
 	t.Run("power", func(t *testing.T) {

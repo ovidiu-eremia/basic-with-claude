@@ -13,6 +13,13 @@ import (
 	"basic-interpreter/types"
 )
 
+// Predefined errors for interpreter-level conditions
+var (
+	ErrIllegalQuantity    = fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+	ErrNextWithoutFor     = fmt.Errorf("?NEXT WITHOUT FOR ERROR")
+	ErrUndefinedStatement = fmt.Errorf("?UNDEFINED STATEMENT ERROR")
+)
+
 // ForLoopContext represents an active FOR loop state
 type ForLoopContext struct {
 	Variable      string      // Normalized loop variable name
@@ -179,23 +186,15 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 
 // wrapErrorWithLine wraps an error with C64 BASIC format including line number
 func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
-	// Check if it's already a C64 format error (starts with ?)
-	errMsg := err.Error()
-	if len(errMsg) > 0 && errMsg[0] == '?' {
-		return err // Already formatted
+	msg := err.Error()
+	if len(msg) > 0 && msg[0] == '?' {
+		// If already C64-style, append line if not present
+		if strings.Contains(msg, " IN ") {
+			return err
+		}
+		return fmt.Errorf("%s IN %d", msg, lineNumber)
 	}
-
-	// Convert common errors to C64 BASIC format
-	switch {
-	case strings.Contains(errMsg, "division by zero"):
-		return fmt.Errorf("?DIVISION BY ZERO ERROR IN %d", lineNumber)
-	case strings.Contains(errMsg, "TYPE MISMATCH ERROR"):
-		return fmt.Errorf("?TYPE MISMATCH ERROR IN %d", lineNumber)
-	case strings.Contains(errMsg, "ILLEGAL QUANTITY ERROR"):
-		return fmt.Errorf("?ILLEGAL QUANTITY ERROR IN %d", lineNumber)
-	default:
-		return fmt.Errorf("?ERROR IN %d: %s", lineNumber, errMsg)
-	}
+	return fmt.Errorf("?ERROR IN %d: %s", lineNumber, msg)
 }
 
 // InterpreterOperations interface implementation
@@ -220,10 +219,10 @@ func (i *Interpreter) SetVariable(name string, value types.Value) error {
 	// Type check: string variables can only hold strings, numeric variables can only hold numbers
 	isStringVariable := strings.HasSuffix(name, "$")
 	if isStringVariable && value.Type != types.StringType {
-		return fmt.Errorf("TYPE MISMATCH ERROR")
+		return types.ErrTypeMismatch
 	}
 	if !isStringVariable && value.Type != types.NumberType {
-		return fmt.Errorf("TYPE MISMATCH ERROR")
+		return types.ErrTypeMismatch
 	}
 
 	normalizedName := i.NormalizeVariableName(name)
@@ -247,7 +246,7 @@ func (i *Interpreter) RequestGoto(targetLine int) error {
 	targetLineIndex, found := i.linePos[targetLine]
 	if !found {
 		// We don't have the source line number here; the caller's line will wrap this error
-		return fmt.Errorf("?UNDEFINED STATEMENT ERROR")
+		return ErrUndefinedStatement
 	}
 	i.pc = targetLineIndex
 	i.jumped = true
@@ -278,7 +277,7 @@ func (i *Interpreter) NormalizeVariableName(name string) string {
 func (i *Interpreter) BeginFor(variable string, end types.Value, step types.Value) error {
 	// Validate step (cannot be zero)
 	if step.Type != types.NumberType || step.Number == 0 {
-		return fmt.Errorf("ILLEGAL QUANTITY ERROR")
+		return ErrIllegalQuantity
 	}
 	// Jump back target is the line after the FOR statement
 	i.pushForLoop(variable, end, step, i.pc+1)
@@ -293,13 +292,13 @@ func (i *Interpreter) IterateFor(variableName string) error {
 		// NEXT with variable name - find specific loop
 		forLoop = i.findForLoopByVariable(variableName)
 		if forLoop == nil {
-			return fmt.Errorf("?NEXT WITHOUT FOR ERROR")
+			return ErrNextWithoutFor
 		}
 	} else {
 		// NEXT without variable name - use most recent loop
 		forLoop = i.peekForLoop()
 		if forLoop == nil {
-			return fmt.Errorf("?NEXT WITHOUT FOR ERROR")
+			return ErrNextWithoutFor
 		}
 	}
 
