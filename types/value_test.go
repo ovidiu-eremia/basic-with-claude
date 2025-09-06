@@ -1,4 +1,4 @@
-package interpreter
+package types
 
 import (
 	"testing"

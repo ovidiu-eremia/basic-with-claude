@@ -10,6 +10,7 @@ import (
 	"basic-interpreter/lexer"
 	"basic-interpreter/parser"
 	"basic-interpreter/runtime"
+	"basic-interpreter/types"
 )
 
 // RuntimeError represents an error that occurred during program execution
@@ -24,28 +25,28 @@ func (re *RuntimeError) Error() string {
 }
 
 // binaryOperations maps operator strings to their corresponding Value methods
-var binaryOperations = map[string]func(Value, Value) (Value, error){
-	"+": Value.Add,
-	"-": Value.Subtract,
-	"*": Value.Multiply,
-	"/": Value.Divide,
-	"^": Value.Power,
+var binaryOperations = map[string]func(types.Value, types.Value) (types.Value, error){
+	"+": types.Value.Add,
+	"-": types.Value.Subtract,
+	"*": types.Value.Multiply,
+	"/": types.Value.Divide,
+	"^": types.Value.Power,
 }
 
 // Interpreter executes BASIC programs by walking the AST
 type Interpreter struct {
 	runtime   runtime.Runtime
-	variables map[string]Value     // Variable storage using proper Value types
-	lineIndex map[int]*parser.Line // Maps line numbers to Line nodes for GOTO
-	maxSteps  int                  // Maximum number of execution steps before infinite loop protection kicks in
-	stepCount int                  // Current step count during execution
+	variables map[string]types.Value // Variable storage using proper Value types
+	lineIndex map[int]*parser.Line   // Maps line numbers to Line nodes for GOTO
+	maxSteps  int                    // Maximum number of execution steps before infinite loop protection kicks in
+	stepCount int                    // Current step count during execution
 }
 
 // NewInterpreter creates a new interpreter instance
 func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	return &Interpreter{
 		runtime:   rt,
-		variables: make(map[string]Value),
+		variables: make(map[string]types.Value),
 		lineIndex: make(map[int]*parser.Line),
 		maxSteps:  1000, // Default maximum steps
 		stepCount: 0,
@@ -76,7 +77,7 @@ func (i *Interpreter) buildLineIndex(program *parser.Program) {
 	}
 }
 
-// executeWithProgramCounter executes program with support for GOTO jumps
+// executeWithProgramCounter executes program with support for GOTO jumps using polymorphic dispatch
 func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 	if len(program.Lines) == 0 {
 		return nil
@@ -95,68 +96,29 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				return fmt.Errorf("?INFINITE LOOP ERROR")
 			}
 
-			// Execute statement and handle control flow in one place
-			switch s := stmt.(type) {
-			case *parser.PrintStatement:
-				err := i.executePrintStatement(s)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
-				}
-			case *parser.LetStatement:
-				err := i.executeLetStatement(s)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
-				}
-			case *parser.InputStatement:
-				err := i.executeInputStatement(s)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
-				}
-			case *parser.RunStatement:
-				err := i.executeRunStatement(s)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
-				}
-			case *parser.StopStatement:
-				return nil
-			case *parser.EndStatement:
-				return nil
-			case *parser.GotoStatement:
-				// Find the target line and jump to it
-				targetLineIndex, found := i.findLineIndex(program, s.TargetLine)
-				if !found {
-					return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
-				}
-				currentLineIndex = targetLineIndex
-				goto nextLine // Skip to the target line
-			case *parser.IfStatement:
-				// Evaluate the condition first
-				condition, err := i.evaluateExpression(s.Condition)
-				if err != nil {
-					return i.wrapErrorWithLine(err, line.Number)
+			// Polymorphic dispatch - AST node executes itself using double dispatch
+			err := stmt.Execute(i)
+			if err != nil {
+				// Handle control flow requests
+				if gotoCtrl, ok := err.(*parser.GotoControl); ok {
+					targetLineIndex, found := i.findLineIndex(program, gotoCtrl.TargetLine)
+					if !found {
+						return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
+					}
+					currentLineIndex = targetLineIndex
+					goto nextLine
 				}
 
-				// If condition is true, execute the THEN statement
-				if condition.IsTrue() {
-					// Check if THEN statement is a GOTO for control flow
-					if gotoStmt, ok := s.ThenStmt.(*parser.GotoStatement); ok {
-						// Execute the GOTO
-						targetLineIndex, found := i.findLineIndex(program, gotoStmt.TargetLine)
-						if !found {
-							return fmt.Errorf("?UNDEFINED STATEMENT ERROR IN %d", line.Number)
-						}
-						currentLineIndex = targetLineIndex
-						goto nextLine // Skip to the target line
-					} else {
-						// Execute non-GOTO THEN statement
-						err := i.executeStatement(s.ThenStmt)
-						if err != nil {
-							return i.wrapErrorWithLine(err, line.Number)
-						}
-					}
+				if _, ok := err.(*parser.EndControl); ok {
+					return nil
 				}
-			default:
-				// For unknown statement types, do nothing (ignore)
+
+				if _, ok := err.(*parser.StopControl); ok {
+					return nil
+				}
+
+				// Regular error - wrap with line number
+				return i.wrapErrorWithLine(err, line.Number)
 			}
 		}
 
@@ -178,201 +140,22 @@ func (i *Interpreter) findLineIndex(program *parser.Program, lineNumber int) (in
 	return 0, false
 }
 
-// executeStatement executes a single statement
-func (i *Interpreter) executeStatement(stmt parser.Statement) error {
-	switch s := stmt.(type) {
-	case *parser.PrintStatement:
-		return i.executePrintStatement(s)
-	case *parser.LetStatement:
-		return i.executeLetStatement(s)
-	case *parser.InputStatement:
-		return i.executeInputStatement(s)
-	case *parser.EndStatement:
-		// END statement - just return, handled in executeWithProgramCounter
-		return nil
-	case *parser.RunStatement:
-		return i.executeRunStatement(s)
-	case *parser.StopStatement:
-		// STOP statement - just return, handled in executeWithProgramCounter
-		return nil
-	case *parser.GotoStatement:
-		// GOTO statement - handled in executeWithProgramCounter
-		return nil
-	case *parser.IfStatement:
-		return i.executeIfStatement(s)
-	default:
-		// For now, ignore unknown statement types
-		return nil
-	}
+
+
+
+
+// evaluateExpression evaluates an expression using polymorphic dispatch
+func (i *Interpreter) evaluateExpression(expr parser.Expression) (types.Value, error) {
+	return expr.Evaluate(i)
 }
 
-// executePrintStatement executes a PRINT statement
-func (i *Interpreter) executePrintStatement(stmt *parser.PrintStatement) error {
-	value, err := i.evaluateExpression(stmt.Expression)
-	if err != nil {
-		return err
-	}
 
-	return i.runtime.PrintLine(value.ToString())
-}
 
-// evaluateExpression evaluates an expression and returns its Value
-func (i *Interpreter) evaluateExpression(expr parser.Expression) (Value, error) {
-	switch e := expr.(type) {
-	case *parser.StringLiteral:
-		return NewStringValue(e.Value), nil
-	case *parser.NumberLiteral:
-		val, err := ParseValue(e.Value)
-		if err != nil {
-			return Value{}, err
-		}
-		return val, nil
-	case *parser.VariableReference:
-		normalizedName := i.normalizeVariableName(e.Name)
-		if value, exists := i.variables[normalizedName]; exists {
-			return value, nil
-		}
-		// Default value for uninitialized variables depends on type
-		if strings.HasSuffix(e.Name, "$") {
-			return NewStringValue(""), nil // String variables default to empty string
-		}
-		return NewNumberValue(0), nil // Numeric variables default to 0
-	case *parser.BinaryOperation:
-		return i.evaluateBinaryOperation(e)
-	case *parser.UnaryOperation:
-		return i.evaluateUnaryOperation(e)
-	case *parser.ComparisonExpression:
-		return i.evaluateComparisonExpression(e)
-	default:
-		return Value{}, fmt.Errorf("unknown expression type")
-	}
-}
 
-// evaluateBinaryOperation evaluates a binary arithmetic operation
-func (i *Interpreter) evaluateBinaryOperation(expr *parser.BinaryOperation) (Value, error) {
-	left, err := i.evaluateExpression(expr.Left)
-	if err != nil {
-		return Value{}, err
-	}
 
-	right, err := i.evaluateExpression(expr.Right)
-	if err != nil {
-		return Value{}, err
-	}
 
-	if operation, exists := binaryOperations[expr.Operator]; exists {
-		return operation(left, right)
-	}
 
-	return Value{}, fmt.Errorf("unknown operator: %s", expr.Operator)
-}
 
-// evaluateUnaryOperation evaluates a unary arithmetic operation
-func (i *Interpreter) evaluateUnaryOperation(expr *parser.UnaryOperation) (Value, error) {
-	operand, err := i.evaluateExpression(expr.Right)
-	if err != nil {
-		return Value{}, err
-	}
-
-	switch expr.Operator {
-	case "-":
-		// Negate the operand
-		if operand.Type == NumberType {
-			return NewNumberValue(-operand.Number), nil
-		}
-		return Value{}, fmt.Errorf("cannot negate non-numeric value")
-	case "+":
-		// Unary plus - just return the operand
-		if operand.Type == NumberType {
-			return operand, nil
-		}
-		return Value{}, fmt.Errorf("cannot apply unary plus to non-numeric value")
-	default:
-		return Value{}, fmt.Errorf("unknown unary operator: %s", expr.Operator)
-	}
-}
-
-// evaluateComparisonExpression evaluates a comparison operation
-func (i *Interpreter) evaluateComparisonExpression(expr *parser.ComparisonExpression) (Value, error) {
-	left, err := i.evaluateExpression(expr.Left)
-	if err != nil {
-		return Value{}, err
-	}
-
-	right, err := i.evaluateExpression(expr.Right)
-	if err != nil {
-		return Value{}, err
-	}
-
-	// Perform the comparison based on operator
-	result, err := left.Compare(right, expr.Operator)
-	if err != nil {
-		return Value{}, err
-	}
-
-	// Return 1 for true, 0 for false (C64 BASIC convention)
-	if result {
-		return NewNumberValue(1), nil
-	} else {
-		return NewNumberValue(0), nil
-	}
-}
-
-// executeLetStatement executes a LET statement (variable assignment)
-func (i *Interpreter) executeLetStatement(stmt *parser.LetStatement) error {
-	value, err := i.evaluateExpression(stmt.Expression)
-	if err != nil {
-		return err
-	}
-
-	// Type check: string variables can only hold strings, numeric variables can only hold numbers
-	isStringVariable := strings.HasSuffix(stmt.Variable, "$")
-	if isStringVariable && value.Type != StringType {
-		return fmt.Errorf("TYPE MISMATCH ERROR")
-	}
-	if !isStringVariable && value.Type != NumberType {
-		return fmt.Errorf("TYPE MISMATCH ERROR")
-	}
-
-	normalizedName := i.normalizeVariableName(stmt.Variable)
-	i.variables[normalizedName] = value
-	return nil
-}
-
-// executeRunStatement executes a RUN statement
-func (i *Interpreter) executeRunStatement(stmt *parser.RunStatement) error {
-	// RUN statement doesn't do anything during normal program execution
-	// In a C64 BASIC, RUN would start program execution from the beginning,
-	// but in our current architecture, we're already executing the program
-	// so RUN is effectively a no-op when encountered in program flow
-	return nil
-}
-
-// executeIfStatement executes an IF...THEN statement
-func (i *Interpreter) executeIfStatement(stmt *parser.IfStatement) error {
-	// Evaluate the condition
-	condition, err := i.evaluateExpression(stmt.Condition)
-	if err != nil {
-		return err
-	}
-
-	// Check if condition is true
-	if condition.IsTrue() {
-		// Execute the THEN statement
-		return i.executeStatement(stmt.ThenStmt)
-	}
-
-	// Condition is false, do nothing
-	return nil
-}
-
-// normalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)
-func (i *Interpreter) normalizeVariableName(name string) string {
-	if len(name) > 2 {
-		return name[:2]
-	}
-	return name
-}
 
 // wrapErrorWithLine wraps an error with C64 BASIC format including line number
 func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
@@ -393,30 +176,70 @@ func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
 	}
 }
 
-// executeInputStatement executes an INPUT statement (reads user input into a variable)
-func (i *Interpreter) executeInputStatement(stmt *parser.InputStatement) error {
-	// Determine if target is string or numeric based on variable name suffix
-	isString := strings.HasSuffix(stmt.Variable, "$")
 
-	// Prompt is empty for Step 10
-	input, err := i.runtime.Input("")
-	if err != nil {
-		return err
+
+// InterpreterOperations interface implementation
+// These methods enable double dispatch from AST nodes back to interpreter
+
+// GetVariable retrieves a variable value by name
+func (i *Interpreter) GetVariable(name string) (types.Value, error) {
+	normalizedName := i.NormalizeVariableName(name)
+	if value, exists := i.variables[normalizedName]; exists {
+		return value, nil
 	}
-
-	var value Value
-	if isString {
-		value = NewStringValue(input)
-	} else {
-		// Parse numeric input
-		parsed, err := ParseValue(input)
-		if err != nil || parsed.Type != NumberType {
-			return fmt.Errorf("TYPE MISMATCH ERROR")
-		}
-		value = parsed
+	
+	// Default values
+	if strings.HasSuffix(name, "$") {
+		return types.NewStringValue(""), nil
 	}
+	return types.NewNumberValue(0), nil
+}
 
-	normalized := i.normalizeVariableName(stmt.Variable)
-	i.variables[normalized] = value
+// SetVariable sets a variable value with type checking
+func (i *Interpreter) SetVariable(name string, value types.Value) error {
+	// Type check: string variables can only hold strings, numeric variables can only hold numbers
+	isStringVariable := strings.HasSuffix(name, "$")
+	if isStringVariable && value.Type != types.StringType {
+		return fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+	if !isStringVariable && value.Type != types.NumberType {
+		return fmt.Errorf("TYPE MISMATCH ERROR")
+	}
+	
+	normalizedName := i.NormalizeVariableName(name)
+	i.variables[normalizedName] = value
 	return nil
+}
+
+// PrintLine outputs text to the runtime environment
+func (i *Interpreter) PrintLine(text string) error {
+	return i.runtime.PrintLine(text)
+}
+
+// ReadInput reads input from the runtime environment
+func (i *Interpreter) ReadInput(prompt string) (string, error) {
+	return i.runtime.Input(prompt)
+}
+
+// RequestGoto requests a GOTO control flow change
+func (i *Interpreter) RequestGoto(targetLine int) error {
+	return &parser.GotoControl{TargetLine: targetLine}
+}
+
+// RequestEnd requests program termination
+func (i *Interpreter) RequestEnd() error {
+	return &parser.EndControl{}
+}
+
+// RequestStop requests program stop
+func (i *Interpreter) RequestStop() error {
+	return &parser.StopControl{}
+}
+
+// NormalizeVariableName truncates variable name to first 2 characters (C64 BASIC behavior)
+func (i *Interpreter) NormalizeVariableName(name string) string {
+	if len(name) > 2 {
+		return name[:2]
+	}
+	return name
 }
