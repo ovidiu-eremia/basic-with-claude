@@ -26,10 +26,14 @@ type InterpreterOperations interface {
 	PrintLine(text string) error
 	ReadInput(prompt string) (string, error)
 
-	// Control flow requests (returned as special errors)
+	// Control flow requests
 	RequestGoto(targetLine int) error
 	RequestEnd() error
 	RequestStop() error
+
+	// Loop control for FOR/NEXT
+	BeginFor(variable string, end types.Value, step types.Value) error
+	IterateFor(variable string) error
 
 	// Utility operations
 	NormalizeVariableName(name string) string
@@ -37,24 +41,7 @@ type InterpreterOperations interface {
 
 // (No control error types are used for END/STOP; interpreter handles them statefully.)
 
-// ForControl represents a FOR loop initialization request
-type ForControl struct {
-	Variable string
-	EndValue types.Value
-}
-
-func (fc *ForControl) Error() string {
-	return "for control flow"
-}
-
-// NextControl represents a NEXT statement request
-type NextControl struct {
-	Variable string // Optional variable name
-}
-
-func (nc *NextControl) Error() string {
-	return "next control flow"
-}
+// (No control error types for FOR/NEXT; interpreter handles via BeginFor/IterateFor.)
 
 // Statement represents any statement node
 type Statement interface {
@@ -391,12 +378,8 @@ func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 		return err
 	}
 
-	// Always return ForControl to set up the loop context
-	// The NEXT statement will handle whether the loop should execute
-	return &ForControl{
-		Variable: fs.Variable,
-		EndValue: endVal,
-	}
+	// Begin the FOR loop with default step of 1
+	return ops.BeginFor(fs.Variable, endVal, types.NewNumberValue(1))
 }
 
 // NextStatement represents a NEXT statement
@@ -408,8 +391,6 @@ type NextStatement struct {
 func (ns *NextStatement) GetLineNumber() int { return ns.Line }
 
 func (ns *NextStatement) Execute(ops InterpreterOperations) error {
-	// Return NextControl to signal the interpreter to handle the loop iteration
-	return &NextControl{
-		Variable: ns.Variable,
-	}
+	// Iterate the FOR loop via interpreter operations
+	return ops.IterateFor(ns.Variable)
 }

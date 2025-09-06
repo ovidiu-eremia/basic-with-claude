@@ -253,7 +253,7 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - Implement `InterpreterOperations` interface for AST nodes
 - Maintain execution state (program counter, stacks)
 - Coordinate between AST, runtime environment, and variable storage
-- Handle control flow through error-based signaling
+- Handle control flow via interpreter-managed state (pc, flags, stacks)
 
 #### Core Components
 
@@ -263,8 +263,8 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - Enables double dispatch from AST nodes back to interpreter
 
 ##### Program Counter
-- Points to current AST node being executed
-- Can be modified by GOTO, GOSUB, loops through control flow errors
+- Points to current line being executed
+- Modified directly by GOTO, loops, and returns via interpreter ops
 
 ##### Line Number Index
 - Map from line numbers to AST nodes
@@ -283,7 +283,7 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 ##### Polymorphic Execution Loop
 - Simple loop: `stmt.Execute(interpreter)` for each statement
 - No switch statements - each AST node executes itself
-- Control flow handled through special error types
+- Control flow applied by interpreter state after each statement (jumps, halts)
 - Unified error handling and line number reporting
 
 ##### Call Stack (GOSUB/RETURN)
@@ -293,11 +293,11 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 
 ##### Loop Stack (FOR/NEXT)
 - Stores active FOR loop contexts:
-  - Loop variable name
+  - Normalized loop variable name
   - End value
   - Step value
-  - AST node of FOR statement
-- NEXT statement updates variable and checks condition
+  - After-FOR line index (jump target)
+- NEXT updates variable and checks condition via ops
 - Nested loops supported via stack (natural for nested structures)
 
 ##### Data Management
@@ -317,7 +317,7 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
    c. Apply interpreter state changes (jumps, halts) after statement execution
    d. Advance program counter (unless control flow occurred)
 3. End when:
-   - END/STOP control flow error encountered
+   - END/STOP requested (halt flag set)
    - Program counter goes past last line
    - Runtime error occurs
 ```
@@ -329,13 +329,13 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - Automatic numeric-to-string conversion where needed
 - String-to-numeric conversion for VAL()
 
-##### Control Flow (Error-Based Signaling)
-- **GOTO**: `ops.RequestGoto(line)` sets interpreter `pc`/jump state (no error)
+##### Control Flow (Interpreter State)
+- **GOTO**: `ops.RequestGoto(line)` sets interpreter `pc`/jump state
 - **GOSUB**: Push return address, jump to target (similar to GOTO)
 - **RETURN**: Pop return address, jump back
 - **IF...THEN**: Evaluate condition, conditionally execute THEN statement
-- **FOR**: Initialize loop variable, push loop context
-- **NEXT**: Update variable, check condition, loop or exit
+- **FOR**: Initializes variable; calls `BeginFor(var, end, step)` to push loop context
+- **NEXT**: Calls `IterateFor([var])` which updates variable and either jumps or exits loop
 - **END/STOP**: Interpreter sets a halted flag via ops (no errors)
 
 ### 6. Runtime Environment
@@ -406,8 +406,8 @@ stmt.Execute(interpreter) ←→ [Interpreter as InterpreterOperations]
     │                              ├─ Loop Stack
     │                              └─ Data Pointer
     ↓                              ↓
-[Control Flow Errors]         [Runtime Environment]
-(stateful GOTO/END/STOP)           ↓
+[Control Flow State]          [Runtime Environment]
+(GOTO/END/STOP via ops; FOR/NEXT via ops)
     ↓                         Output / Results
 [Program Counter Updates]
 ```
@@ -429,7 +429,7 @@ cmd/basic        (main application)
 2. **Polymorphic AST execution**: Each node executes itself using double dispatch
 3. **Double dispatch pattern**: Eliminates switch statements while maintaining clean separation
 4. **InterpreterOperations interface**: Enables AST nodes to call back to interpreter without circular dependencies
-5. **Control flow via errors**: GOTO/END/STOP use special error types for clean control flow
+5. **Control flow via interpreter state**: GOTO/END/STOP and FOR/NEXT use ops that adjust pc/flags/stacks
 6. **Unified Value type**: `types.Value` handles both numeric and string values with type safety
 7. **Simplified package structure**: Three packages (types, parser, interpreter) with linear dependencies
 8. **Interface + structs for AST**: Flexible, type-safe Go pattern with polymorphic methods

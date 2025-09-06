@@ -109,6 +109,15 @@ func (m *MockInterpreterOperations) NormalizeVariableName(name string) string {
 	return name
 }
 
+// Loop control no-ops for AST unit testing
+func (m *MockInterpreterOperations) BeginFor(variable string, end types.Value, step types.Value) error {
+	return nil
+}
+
+func (m *MockInterpreterOperations) IterateFor(variable string) error {
+	return nil
+}
+
 // Helper methods for testing
 func (m *MockInterpreterOperations) setInput(inputs []string) {
 	m.inputQueue = inputs
