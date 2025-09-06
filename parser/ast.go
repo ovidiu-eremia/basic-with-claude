@@ -58,9 +58,8 @@ func (sc *StopControl) Error() string {
 
 // ForControl represents a FOR loop initialization request
 type ForControl struct {
-	Variable         string
-	EndValue         types.Value
-	CurrentLineIndex int
+	Variable string
+	EndValue types.Value
 }
 
 func (fc *ForControl) Error() string {
@@ -74,15 +73,6 @@ type NextControl struct {
 
 func (nc *NextControl) Error() string {
 	return "next control flow"
-}
-
-// LoopControl represents a FOR loop jump back
-type LoopControl struct {
-	TargetLineIndex int
-}
-
-func (lc *LoopControl) Error() string {
-	return "loop control flow"
 }
 
 // Statement represents any statement node
@@ -423,9 +413,8 @@ func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 	// Always return ForControl to set up the loop context
 	// The NEXT statement will handle whether the loop should execute
 	return &ForControl{
-		Variable:         fs.Variable,
-		EndValue:         endVal,
-		CurrentLineIndex: 0, // Will be set by the interpreter
+		Variable: fs.Variable,
+		EndValue: endVal,
 	}
 }
 
