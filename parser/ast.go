@@ -356,6 +356,7 @@ type ForStatement struct {
 	Variable   string     // Loop variable name
 	StartValue Expression // Starting value
 	EndValue   Expression // Ending value
+	StepValue  Expression // Optional step value (defaults to 1)
 	Line       int        // Source line number
 }
 
@@ -372,14 +373,29 @@ func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 		return err
 	}
 
+	// Evaluate step value if provided, otherwise default to 1
+	var stepVal types.Value
+	if fs.StepValue != nil {
+		s, err := fs.StepValue.Evaluate(ops)
+		if err != nil {
+			return err
+		}
+		if s.Type != types.NumberType {
+			return fmt.Errorf("TYPE MISMATCH ERROR")
+		}
+		stepVal = s
+	} else {
+		stepVal = types.NewNumberValue(1)
+	}
+
 	// Initialize loop variable
 	err = ops.SetVariable(fs.Variable, startVal)
 	if err != nil {
 		return err
 	}
 
-	// Begin the FOR loop with default step of 1
-	return ops.BeginFor(fs.Variable, endVal, types.NewNumberValue(1))
+	// Begin the FOR loop with provided step
+	return ops.BeginFor(fs.Variable, endVal, stepVal)
 }
 
 // NextStatement represents a NEXT statement

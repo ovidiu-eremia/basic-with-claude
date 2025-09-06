@@ -98,9 +98,9 @@ Add iterative control structures.
 - [x] **Tests**: Loop initialization, iteration, termination conditions
 
 #### Step 13: FOR...NEXT with STEP
-- [ ] **Goal**: Support custom step values in FOR loops
-- [ ] **Demo**: `10 FOR I = 10 TO 1 STEP -2` counts down by 2
-- [ ] **Tests**: Custom step values, negative steps, nested loops
+- [x] **Goal**: Support custom step values in FOR loops
+- [x] **Demo**: `10 FOR I = 10 TO 1 STEP -2` counts down by 2
+- [x] **Tests**: Custom step values, negative steps, nested loops
 
 ### Phase 6: Subroutines (Steps 14-15)
 Add subroutine capabilities.

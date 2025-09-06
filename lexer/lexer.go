@@ -42,6 +42,7 @@ const (
 	FOR       TokenType = "FOR"
 	TO        TokenType = "TO"
 	NEXT      TokenType = "NEXT"
+	STEP      TokenType = "STEP"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -58,6 +59,7 @@ var keywords = map[string]TokenType{
 	"FOR":   FOR,
 	"TO":    TO,
 	"NEXT":  NEXT,
+	"STEP":  STEP,
 }
 
 // Position represents a position in the source code

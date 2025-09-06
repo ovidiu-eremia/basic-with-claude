@@ -480,7 +480,7 @@ func (p *Parser) parseInputStatement() *InputStatement {
 	return stmt
 }
 
-// parseForStatement parses a FOR statement: FOR I = 1 TO 5
+// parseForStatement parses a FOR statement: FOR I = 1 TO 5 [STEP X]
 func (p *Parser) parseForStatement() *ForStatement {
 	stmt := &ForStatement{Line: p.currentToken.Line}
 
@@ -526,6 +526,20 @@ func (p *Parser) parseForStatement() *ForStatement {
 	stmt.EndValue = p.parseExpression()
 	if stmt.EndValue == nil {
 		return nil
+	}
+
+	// For simple expressions without operators, we may need to advance to STEP if present
+	if p.currentToken.Type != lexer.STEP && p.peekToken.Type == lexer.STEP {
+		p.nextToken()
+	}
+
+	// Optional STEP clause
+	if p.currentToken.Type == lexer.STEP {
+		p.nextToken() // consume STEP
+		stmt.StepValue = p.parseExpression()
+		if stmt.StepValue == nil {
+			return nil
+		}
 	}
 
 	return stmt

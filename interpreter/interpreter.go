@@ -191,6 +191,8 @@ func (i *Interpreter) wrapErrorWithLine(err error, lineNumber int) error {
 		return fmt.Errorf("?DIVISION BY ZERO ERROR IN %d", lineNumber)
 	case strings.Contains(errMsg, "TYPE MISMATCH ERROR"):
 		return fmt.Errorf("?TYPE MISMATCH ERROR IN %d", lineNumber)
+	case strings.Contains(errMsg, "ILLEGAL QUANTITY ERROR"):
+		return fmt.Errorf("?ILLEGAL QUANTITY ERROR IN %d", lineNumber)
 	default:
 		return fmt.Errorf("?ERROR IN %d: %s", lineNumber, errMsg)
 	}
@@ -274,6 +276,10 @@ func (i *Interpreter) NormalizeVariableName(name string) string {
 
 // BeginFor starts a FOR loop by pushing a loop context
 func (i *Interpreter) BeginFor(variable string, end types.Value, step types.Value) error {
+	// Validate step (cannot be zero)
+	if step.Type != types.NumberType || step.Number == 0 {
+		return fmt.Errorf("ILLEGAL QUANTITY ERROR")
+	}
 	// Jump back target is the line after the FOR statement
 	i.pushForLoop(variable, end, step, i.pc+1)
 	return nil
@@ -303,14 +309,18 @@ func (i *Interpreter) IterateFor(variableName string) error {
 		return err
 	}
 
-	// Increment the loop variable by the step value (default 1)
+	// Increment the loop variable by the step value
 	newValue, err := currentValue.Add(forLoop.StepValue)
 	if err != nil {
 		return err
 	}
 
-	// Check if loop should continue (default behavior assumes positive step)
-	shouldContinue, err := newValue.Compare(forLoop.EndValue, "<=")
+	// Determine comparison based on step direction
+	cmpOp := "<="
+	if forLoop.StepValue.Number < 0 {
+		cmpOp = ">="
+	}
+	shouldContinue, err := newValue.Compare(forLoop.EndValue, cmpOp)
 	if err != nil {
 		return err
 	}
