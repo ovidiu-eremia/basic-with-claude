@@ -4,9 +4,9 @@
 package parser
 
 import (
+	"basic-interpreter/types"
 	"fmt"
 	"strings"
-	"basic-interpreter/types"
 )
 
 // Node represents any node in the AST
@@ -21,16 +21,16 @@ type InterpreterOperations interface {
 	// Variable operations
 	GetVariable(name string) (types.Value, error)
 	SetVariable(name string, value types.Value) error
-	
-	// I/O operations  
+
+	// I/O operations
 	PrintLine(text string) error
 	ReadInput(prompt string) (string, error)
-	
+
 	// Control flow requests (returned as special errors)
 	RequestGoto(targetLine int) error
 	RequestEnd() error
 	RequestStop() error
-	
+
 	// Utility operations
 	NormalizeVariableName(name string) string
 }
@@ -184,12 +184,12 @@ func (bo *BinaryOperation) Evaluate(ops InterpreterOperations) (types.Value, err
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	right, err := bo.Right.Evaluate(ops)
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	// Use the binary operations map from interpreter package
 	switch bo.Operator {
 	case "+":
@@ -246,7 +246,7 @@ func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// Parse input based on variable type
 	var value types.Value
 	if strings.HasSuffix(ins.Variable, "$") {
@@ -258,7 +258,7 @@ func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 		}
 		value = parsed
 	}
-	
+
 	return ops.SetVariable(ins.Variable, value)
 }
 
@@ -288,7 +288,7 @@ func (is *IfStatement) Execute(ops InterpreterOperations) error {
 	if err != nil {
 		return err
 	}
-	
+
 	if condition.IsTrue() {
 		return is.ThenStmt.Execute(ops)
 	}
@@ -309,7 +309,7 @@ func (uo *UnaryOperation) Evaluate(ops InterpreterOperations) (types.Value, erro
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	switch uo.Operator {
 	case "-":
 		// Negate the operand
@@ -343,18 +343,18 @@ func (ce *ComparisonExpression) Evaluate(ops InterpreterOperations) (types.Value
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	right, err := ce.Right.Evaluate(ops)
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	// Perform the comparison based on operator
 	result, err := left.Compare(right, ce.Operator)
 	if err != nil {
 		return types.Value{}, err
 	}
-	
+
 	// Return 1 for true, 0 for false (C64 BASIC convention)
 	if result {
 		return types.NewNumberValue(1), nil
