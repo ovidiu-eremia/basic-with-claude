@@ -50,3 +50,12 @@ tests:
       - "ENTER YOUR AGE"
       - "25\n"
       - "100\n"
+
+  - name: "Input_With_Prompt_Invalid_Numeric"
+    program: |
+      10 INPUT "ENTER A NUMBER"; N
+      20 PRINT N
+    inputs:
+      - "hello"
+    wantErr: true
+    errContains: "TYPE MISMATCH ERROR"
