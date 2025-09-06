@@ -454,6 +454,20 @@ func (p *Parser) parseInputStatement() *InputStatement {
 	stmt := &InputStatement{Line: p.currentToken.Line}
 	p.nextToken() // consume INPUT
 
+	// Check if we have a prompt string
+	if p.currentToken.Type == lexer.STRING {
+		stmt.Prompt = p.currentToken.Literal
+		p.nextToken() // consume prompt string
+
+		// Expect semicolon after prompt
+		if p.currentToken.Type != lexer.SEMICOLON {
+			p.addTokenError("semicolon", p.currentToken.Type)
+			return nil
+		}
+		p.nextToken() // consume semicolon
+	}
+
+	// Expect variable name
 	if p.currentToken.Type != lexer.IDENT {
 		p.addTokenError("variable name", p.currentToken.Type)
 		return nil

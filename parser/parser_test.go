@@ -129,6 +129,23 @@ func TestParser_StatementParsing(t *testing.T) {
 				line(10, 1, ifStmt(num("1", 1), printStmt(str("TRUE", 1), 1), 1)),
 			),
 		},
+
+		// INPUT statements
+		{
+			name:     "INPUT without prompt",
+			input:    "10 INPUT A",
+			expected: program(line(10, 1, inputStmt("", "A", 1))),
+		},
+		{
+			name:     "INPUT with prompt",
+			input:    "10 INPUT \"ENTER A NUMBER\"; N",
+			expected: program(line(10, 1, inputStmt("ENTER A NUMBER", "N", 1))),
+		},
+		{
+			name:     "INPUT with string variable and prompt",
+			input:    "10 INPUT \"WHAT IS YOUR NAME\"; NAME$",
+			expected: program(line(10, 1, inputStmt("WHAT IS YOUR NAME", "NAME$", 1))),
+		},
 	}
 
 	for _, tt := range tests {

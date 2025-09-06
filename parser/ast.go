@@ -235,6 +235,7 @@ func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 
 // InputStatement represents an INPUT statement
 type InputStatement struct {
+	Prompt   string // Optional prompt string (empty for no prompt)
 	Variable string // Variable name to read into
 	Line     int    // Source line number
 }
@@ -242,7 +243,7 @@ type InputStatement struct {
 func (ins *InputStatement) GetLineNumber() int { return ins.Line }
 
 func (ins *InputStatement) Execute(ops InterpreterOperations) error {
-	input, err := ops.ReadInput("")
+	input, err := ops.ReadInput(ins.Prompt)
 	if err != nil {
 		return err
 	}

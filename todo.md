@@ -85,9 +85,9 @@ Add user input capabilities.
 - [x] **Tests**: Input parsing, user interaction, variable assignment from input
 
 #### Step 11: INPUT with Prompts
-- [ ] **Goal**: Support INPUT with custom prompts
-- [ ] **Demo**: `10 INPUT "ENTER YOUR NAME"; A$` shows custom prompt
-- [ ] **Tests**: Prompt display, mixed input types (numeric/string)
+- [x] **Goal**: Support INPUT with custom prompts
+- [x] **Demo**: `10 INPUT "ENTER YOUR NAME"; A$` shows custom prompt
+- [x] **Tests**: Prompt display, mixed input types (numeric/string)
 
 ### Phase 5: Loops (Steps 12-13)
 Add iterative control structures.

@@ -479,3 +479,4 @@ go run ./cmd/basic program.bas
 - **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
 - **Implementation guidance**: See "Development Guidelines" section above
 - find test basic files in the testdata directory in the top folder
+- feel free to write small throwaway test files for testing the interpreter

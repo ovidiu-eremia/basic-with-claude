@@ -10,34 +10,35 @@ type TokenType string
 
 // Token types for BASIC language
 const (
-	ILLEGAL  TokenType = "ILLEGAL"
-	EOF      TokenType = "EOF"
-	NUMBER   TokenType = "NUMBER"
-	STRING   TokenType = "STRING"
-	IDENT    TokenType = "IDENT"
-	ASSIGN   TokenType = "="
-	PRINT    TokenType = "PRINT"
-	LET      TokenType = "LET"
-	END      TokenType = "END"
-	RUN      TokenType = "RUN"
-	STOP     TokenType = "STOP"
-	GOTO     TokenType = "GOTO"
-	INPUT    TokenType = "INPUT"
-	NEWLINE  TokenType = "NEWLINE"
-	PLUS     TokenType = "+"
-	MINUS    TokenType = "-"
-	MULTIPLY TokenType = "*"
-	DIVIDE   TokenType = "/"
-	POWER    TokenType = "^"
-	LPAREN   TokenType = "("
-	RPAREN   TokenType = ")"
-	IF       TokenType = "IF"
-	THEN     TokenType = "THEN"
-	GT       TokenType = ">"
-	LT       TokenType = "<"
-	NE       TokenType = "<>"
-	GE       TokenType = ">="
-	LE       TokenType = "<="
+	ILLEGAL   TokenType = "ILLEGAL"
+	EOF       TokenType = "EOF"
+	NUMBER    TokenType = "NUMBER"
+	STRING    TokenType = "STRING"
+	IDENT     TokenType = "IDENT"
+	ASSIGN    TokenType = "="
+	PRINT     TokenType = "PRINT"
+	LET       TokenType = "LET"
+	END       TokenType = "END"
+	RUN       TokenType = "RUN"
+	STOP      TokenType = "STOP"
+	GOTO      TokenType = "GOTO"
+	INPUT     TokenType = "INPUT"
+	NEWLINE   TokenType = "NEWLINE"
+	PLUS      TokenType = "+"
+	MINUS     TokenType = "-"
+	MULTIPLY  TokenType = "*"
+	DIVIDE    TokenType = "/"
+	POWER     TokenType = "^"
+	LPAREN    TokenType = "("
+	RPAREN    TokenType = ")"
+	IF        TokenType = "IF"
+	THEN      TokenType = "THEN"
+	GT        TokenType = ">"
+	LT        TokenType = "<"
+	NE        TokenType = "<>"
+	GE        TokenType = ">="
+	LE        TokenType = "<="
+	SEMICOLON TokenType = ";"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -129,6 +130,8 @@ func (l *Lexer) NextToken() Token {
 		return l.createSingleCharToken(LPAREN)
 	case ')':
 		return l.createSingleCharToken(RPAREN)
+	case ';':
+		return l.createSingleCharToken(SEMICOLON)
 	case '<':
 		return l.readComparisonOperator('<')
 	case '>':

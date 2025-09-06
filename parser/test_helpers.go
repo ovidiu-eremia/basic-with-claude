@@ -39,6 +39,10 @@ func ifStmt(condition Expression, thenStmt Statement, line int) *IfStatement {
 	return &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: line}
 }
 
+func inputStmt(prompt string, variable string, line int) *InputStatement {
+	return &InputStatement{Prompt: prompt, Variable: variable, Line: line}
+}
+
 func str(value string, line int) *StringLiteral {
 	return &StringLiteral{Value: value, Line: line}
 }

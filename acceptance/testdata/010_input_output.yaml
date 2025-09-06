@@ -16,3 +16,37 @@ tests:
       - "HELLO"
     expected:
       - "HELLO\n"
+
+  - name: "Input_With_Numeric_Prompt"
+    program: |
+      10 INPUT "ENTER A NUMBER"; N
+      20 PRINT N
+    inputs:
+      - "42"
+    expected:
+      - "ENTER A NUMBER"
+      - "42\n"
+
+  - name: "Input_With_String_Prompt"
+    program: |
+      10 INPUT "WHAT IS YOUR NAME"; NAME$
+      20 PRINT NAME$
+    inputs:
+      - "ALICE"
+    expected:
+      - "WHAT IS YOUR NAME"
+      - "ALICE\n"
+
+  - name: "Input_Mixed_Prompts_And_No_Prompts"
+    program: |
+      10 INPUT "ENTER YOUR AGE"; AGE
+      20 INPUT SCORE
+      30 PRINT AGE
+      40 PRINT SCORE
+    inputs:
+      - "25"
+      - "100"
+    expected:
+      - "ENTER YOUR AGE"
+      - "25\n"
+      - "100\n"
