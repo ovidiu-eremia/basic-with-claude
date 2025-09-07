@@ -6,6 +6,9 @@ import (
 	"basic-interpreter/types"
 )
 
+// Compile-time assertion that MockInterpreterOperations implements InterpreterOperations
+var _ InterpreterOperations = (*MockInterpreterOperations)(nil)
+
 // MockInterpreterOperations implements InterpreterOperations for testing AST nodes
 type MockInterpreterOperations struct {
 	// Variables storage
