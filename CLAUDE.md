@@ -1,6 +1,6 @@
-# CLAUDE.md
+# Instructions for coding agents
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents such as Claude Code or Codex when working with code in this repository.
 
 ## Development Philosophy
 
