@@ -52,8 +52,8 @@ type Interpreter struct {
 	variables    map[string]types.Value // Variable storage using proper Value types
 	lineIndex    map[int]*parser.Line   // Maps line numbers to Line nodes for GOTO
 	linePos      map[int]int            // Maps line numbers to their index position
-	forStack     []ForLoopContext       // Stack of active FOR loops for nested loop support
-	callStack    []CallContext          // Stack of active GOSUB calls for nested subroutine support
+	forStack     *Stack[ForLoopContext] // Stack of active FOR loops for nested loop support
+	callStack    *Stack[CallContext]    // Stack of active GOSUB calls for nested subroutine support
 	maxSteps     int                    // Maximum number of execution steps before infinite loop protection kicks in
 	maxCallDepth int                    // Maximum call stack depth before stack overflow error
 	stepCount    int                    // Current step count during execution
@@ -64,15 +64,16 @@ type Interpreter struct {
 
 // NewInterpreter creates a new interpreter instance
 func NewInterpreter(rt runtime.Runtime) *Interpreter {
+	maxCallDepth := 100 // Default maximum call depth
 	return &Interpreter{
 		runtime:      rt,
 		variables:    make(map[string]types.Value),
 		lineIndex:    make(map[int]*parser.Line),
 		linePos:      make(map[int]int),
-		forStack:     make([]ForLoopContext, 0),
-		callStack:    make([]CallContext, 0),
+		forStack:     NewStack[ForLoopContext](maxCallDepth), // Use same limit for FOR loops
+		callStack:    NewStack[CallContext](maxCallDepth),
 		maxSteps:     1000, // Default maximum steps
-		maxCallDepth: 100,  // Default maximum call depth
+		maxCallDepth: maxCallDepth,
 		stepCount:    0,
 		pc:           0,
 		jumped:       false,
@@ -86,7 +87,7 @@ func (i *Interpreter) SetMaxSteps(maxSteps int) {
 }
 
 // pushForLoop pushes a new FOR loop context onto the stack
-func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepValue types.Value, afterForIndex int) {
+func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepValue types.Value, afterForIndex int) error {
 	norm := i.NormalizeVariableName(variable)
 	forLoop := ForLoopContext{
 		Variable:      norm,
@@ -94,55 +95,38 @@ func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepVal
 		StepValue:     stepValue,
 		AfterForIndex: afterForIndex,
 	}
-	i.forStack = append(i.forStack, forLoop)
+	return i.forStack.Push(forLoop)
 }
 
 // popForLoop removes the top FOR loop from the stack
 func (i *Interpreter) popForLoop() *ForLoopContext {
-	if len(i.forStack) == 0 {
-		return nil
-	}
-	top := i.forStack[len(i.forStack)-1]
-	i.forStack = i.forStack[:len(i.forStack)-1]
-	return &top
+	return i.forStack.Pop()
 }
 
 // peekForLoop returns the top FOR loop without removing it
 func (i *Interpreter) peekForLoop() *ForLoopContext {
-	if len(i.forStack) == 0 {
-		return nil
-	}
-	return &i.forStack[len(i.forStack)-1]
+	return i.forStack.Peek()
 }
 
 // findForLoopByVariable finds a FOR loop on the stack by variable name
 func (i *Interpreter) findForLoopByVariable(variable string) *ForLoopContext {
-	// Search from top of stack (most recent) to bottom
 	norm := i.NormalizeVariableName(variable)
-	for j := len(i.forStack) - 1; j >= 0; j-- {
-		if i.forStack[j].Variable == norm {
-			return &i.forStack[j]
-		}
-	}
-	return nil
+	return i.forStack.FindByPredicate(func(ctx ForLoopContext) bool {
+		return ctx.Variable == norm
+	})
 }
 
 // pushCallContext pushes a new call context onto the call stack
-func (i *Interpreter) pushCallContext(returnLineIndex int) {
+func (i *Interpreter) pushCallContext(returnLineIndex int) error {
 	callContext := CallContext{
 		ReturnLineIndex: returnLineIndex,
 	}
-	i.callStack = append(i.callStack, callContext)
+	return i.callStack.Push(callContext)
 }
 
 // popCallContext removes the top call context from the stack
 func (i *Interpreter) popCallContext() *CallContext {
-	if len(i.callStack) == 0 {
-		return nil
-	}
-	top := i.callStack[len(i.callStack)-1]
-	i.callStack = i.callStack[:len(i.callStack)-1]
-	return &top
+	return i.callStack.Pop()
 }
 
 // Execute runs a BASIC program
@@ -296,13 +280,10 @@ func (i *Interpreter) RequestStop() error {
 
 // RequestGosub requests a GOSUB jump to a target line
 func (i *Interpreter) RequestGosub(targetLine int) error {
-	// Check for stack overflow
-	if len(i.callStack) >= i.maxCallDepth {
-		return ErrStackOverflow
-	}
-
 	// First, push current position + 1 to call stack for RETURN
-	i.pushCallContext(i.pc + 1)
+	if err := i.pushCallContext(i.pc + 1); err != nil {
+		return err
+	}
 
 	// Then request jump to target line
 	return i.RequestGoto(targetLine)
@@ -337,8 +318,7 @@ func (i *Interpreter) BeginFor(variable string, end types.Value, step types.Valu
 		return ErrIllegalQuantity
 	}
 	// Jump back target is the line after the FOR statement
-	i.pushForLoop(variable, end, step, i.pc+1)
-	return nil
+	return i.pushForLoop(variable, end, step, i.pc+1)
 }
 
 // IterateFor performs a NEXT iteration; variable may be empty to use the most recent loop
