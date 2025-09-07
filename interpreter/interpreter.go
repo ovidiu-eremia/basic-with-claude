@@ -25,10 +25,11 @@ var (
 
 // ForLoopContext represents an active FOR loop state
 type ForLoopContext struct {
-	Variable      string      // Normalized loop variable name
-	EndValue      types.Value // Target end value
-	StepValue     types.Value // Step value (default 1)
-	AfterForIndex int         // Target line index to jump back to (line after FOR)
+	Variable          string      // Normalized loop variable name
+	EndValue          types.Value // Target end value
+	StepValue         types.Value // Step value (default 1)
+	AfterForLineIndex int         // Target line index to jump back to
+	AfterForStmtIndex int         // Target statement index within the line (for colon-separated statements)
 }
 
 // CallContext represents an active GOSUB call state
@@ -59,8 +60,10 @@ type Interpreter struct {
 	maxCallDepth int                    // Maximum call stack depth before stack overflow error
 	stepCount    int                    // Current step count during execution
 	pc           int                    // Program counter: current line index
+	stmtIndex    int                    // Current statement index within current line
 	jumped       bool                   // Indicates a jump occurred during statement execution
 	halted       bool                   // Indicates END/STOP was requested
+	stmtJumped   bool                   // Indicates a statement-level jump occurred (for FOR loop completion)
 
 	// DATA/READ state
 	dataValues  []types.Value // Collected DATA values
@@ -81,8 +84,10 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		maxCallDepth: maxCallDepth,
 		stepCount:    0,
 		pc:           0,
+		stmtIndex:    0,
 		jumped:       false,
 		halted:       false,
+		stmtJumped:   false,
 	}
 }
 
@@ -92,13 +97,14 @@ func (i *Interpreter) SetMaxSteps(maxSteps int) {
 }
 
 // pushForLoop pushes a new FOR loop context onto the stack
-func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepValue types.Value, afterForIndex int) error {
+func (i *Interpreter) pushForLoop(variable string, endValue types.Value, stepValue types.Value, afterForLineIndex int, afterForStmtIndex int) error {
 	norm := i.NormalizeVariableName(variable)
 	forLoop := ForLoopContext{
-		Variable:      norm,
-		EndValue:      endValue,
-		StepValue:     stepValue,
-		AfterForIndex: afterForIndex,
+		Variable:          norm,
+		EndValue:          endValue,
+		StepValue:         stepValue,
+		AfterForLineIndex: afterForLineIndex,
+		AfterForStmtIndex: afterForStmtIndex,
 	}
 	return i.forStack.Push(forLoop)
 }
@@ -187,11 +193,22 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 
 	// Start execution at the first line
 	i.pc = 0
+	i.stmtIndex = 0
 
 	for i.pc < len(program.Lines) {
 		line := program.Lines[i.pc]
 
-		for _, stmt := range line.Statements {
+		// Handle statement-level jumps (from FOR loop completion)
+		if i.stmtJumped {
+			i.stmtJumped = false
+			// stmtIndex is already set by the jump, continue from there
+		} else {
+			i.stmtIndex = 0
+		}
+
+		for i.stmtIndex < len(line.Statements) {
+			stmt := line.Statements[i.stmtIndex]
+
 			// Increment step counter and check for infinite loop protection
 			i.stepCount++
 			if i.maxSteps > 0 && i.stepCount > i.maxSteps {
@@ -213,6 +230,12 @@ func (i *Interpreter) executeWithProgramCounter(program *parser.Program) error {
 				i.jumped = false
 				goto nextLine
 			}
+			if i.stmtJumped {
+				goto nextLine // Continue from the jumped-to position
+			}
+
+			// Move to next statement
+			i.stmtIndex++
 		}
 
 		// Move to next line
@@ -353,8 +376,8 @@ func (i *Interpreter) BeginFor(variable string, end types.Value, step types.Valu
 	if step.Type != types.NumberType || step.Number == 0 {
 		return ErrIllegalQuantity
 	}
-	// Jump back target is the line after the FOR statement
-	return i.pushForLoop(variable, end, step, i.pc+1)
+	// Jump back target is the next statement after the FOR statement on the same line
+	return i.pushForLoop(variable, end, step, i.pc, i.stmtIndex+1)
 }
 
 // IterateFor performs a NEXT iteration; variable may be empty to use the most recent loop
@@ -398,18 +421,19 @@ func (i *Interpreter) IterateFor(variableName string) error {
 	}
 
 	if shouldContinue {
-		// Update loop variable and jump back to the line after FOR
+		// Update loop variable and jump back to the statement after FOR
 		err = i.SetVariable(forLoop.Variable, newValue)
 		if err != nil {
 			return err
 		}
-		// Signal jump to AfterForIndex
-		i.pc = forLoop.AfterForIndex
-		i.jumped = true
+		// Signal statement-level jump to AfterForLineIndex:AfterForStmtIndex
+		i.pc = forLoop.AfterForLineIndex
+		i.stmtIndex = forLoop.AfterForStmtIndex
+		i.stmtJumped = true
 		return nil
 	}
 
-	// Loop finished - pop the loop from stack
+	// Loop finished - pop the loop from stack and continue normally
 	i.popForLoop()
 	return nil
 }

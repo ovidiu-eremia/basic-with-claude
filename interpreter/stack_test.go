@@ -43,10 +43,11 @@ func TestStack_ForLoopContext_Overflow(t *testing.T) {
 
 	// Create a FOR loop context
 	forLoop := ForLoopContext{
-		Variable:      "I",
-		EndValue:      types.NewNumberValue(10),
-		StepValue:     types.NewNumberValue(1),
-		AfterForIndex: 1,
+		Variable:          "I",
+		EndValue:          types.NewNumberValue(10),
+		StepValue:         types.NewNumberValue(1),
+		AfterForLineIndex: 1,
+		AfterForStmtIndex: 0,
 	}
 
 	// Push first context - should succeed

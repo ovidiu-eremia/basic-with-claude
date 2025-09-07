@@ -1,0 +1,148 @@
+tests:
+  - name: "SimpleForLoopWithColonSeparatedStatements"
+    program: |
+      10 FOR I=1 TO 3:PRINT I:NEXT I
+    expected:
+      - "1\n"
+      - "2\n"
+      - "3\n"
+
+  - name: "ForLoopWithStatementsAfterNext"
+    program: |
+      10 FOR I = 1 TO 2: PRINT I: NEXT I: PRINT "DONE"
+    expected:
+      - "1\n"
+      - "2\n"
+      - "DONE\n"
+
+  - name: "ForLoopWithStatementsBeforeAndAfter"
+    program: |
+      10 PRINT "START": FOR I = 1 TO 2: PRINT I: NEXT I: PRINT "END"
+    expected:
+      - "START\n"
+      - "1\n"
+      - "2\n"
+      - "END\n"
+
+  - name: "ForLoopSpanningMultipleLinesWithColonContinuation"
+    program: |
+      10 FOR I = 1 TO 2: PRINT I
+      20 NEXT I: PRINT "FINISHED"
+    expected:
+      - "1\n"
+      - "2\n"
+      - "FINISHED\n"
+
+  - name: "MultipleStatementsAfterNext"
+    program: |
+      10 FOR I = 1 TO 2: PRINT "LOOP": PRINT I: NEXT I: PRINT "AFTER": PRINT "FINAL"
+    expected:
+      - "LOOP\n"
+      - "1\n"
+      - "LOOP\n"
+      - "2\n"
+      - "AFTER\n"
+      - "FINAL\n"
+
+  - name: "NestedForLoopsWithColons"
+    program: |
+      10 FOR I = 1 TO 2: FOR J = 1 TO 2: PRINT I: PRINT J: NEXT J: NEXT I: PRINT "DONE"
+    expected:
+      - "1\n"
+      - "1\n"
+      - "1\n"
+      - "2\n"
+      - "2\n"
+      - "1\n"
+      - "2\n"
+      - "2\n"
+      - "DONE\n"
+
+  - name: "ForLoopWithVariableAssignment"
+    program: |
+      10 FOR I = 1 TO 3: A = I * 10: PRINT A: NEXT I: PRINT "TOTAL": PRINT A
+    expected:
+      - "10\n"
+      - "20\n"
+      - "30\n"
+      - "TOTAL\n"
+      - "30\n"
+
+  - name: "ComplexColonSeparatedForLoop"
+    program: |
+      10 PRINT "BEGIN": FOR X = 2 TO 4: PRINT "X=": PRINT X: Y = X + 1: PRINT "Y=": PRINT Y: NEXT X: PRINT "COMPLETE"
+    expected:
+      - "BEGIN\n"
+      - "X=\n"
+      - "2\n"
+      - "Y=\n"
+      - "3\n"
+      - "X=\n"
+      - "3\n"
+      - "Y=\n"
+      - "4\n"
+      - "X=\n"
+      - "4\n"
+      - "Y=\n"
+      - "5\n"
+      - "COMPLETE\n"
+
+  - name: "ForLoopWithIfStatementAndColons"
+    program: |
+      10 FOR I = 1 TO 4: IF I = 3 THEN PRINT "THREE": PRINT I: NEXT I
+    expected:
+      - "1\n"
+      - "2\n"
+      - "THREE\n"
+      - "3\n"
+      - "4\n"
+
+  - name: "MultipleForLoopsOnSameLine"
+    program: |
+      10 FOR I = 1 TO 2: PRINT I: NEXT I: FOR J = 5 TO 6: PRINT J: NEXT J
+    expected:
+      - "1\n"
+      - "2\n"
+      - "5\n"
+      - "6\n"
+
+  - name: "ForLoopWithEmptyPrintStatements"
+    program: |
+      10 FOR I = 1 TO 2: PRINT: PRINT I: PRINT: NEXT I: PRINT "END"
+    expected:
+      - "\n"
+      - "1\n"
+      - "\n"
+      - "\n"
+      - "2\n"
+      - "\n"
+      - "END\n"
+
+  - name: "DeepNestedForLoopsWithColons"
+    program: |
+      10 FOR A = 1 TO 2: FOR B = 1 TO 2: FOR C = 1 TO 2: PRINT A: PRINT B: PRINT C: NEXT C: NEXT B: NEXT A
+    expected:
+      - "1\n"
+      - "1\n"
+      - "1\n"
+      - "1\n"
+      - "1\n"
+      - "2\n"
+      - "1\n"
+      - "2\n"
+      - "1\n"
+      - "1\n"
+      - "2\n"
+      - "2\n"
+      - "2\n"
+      - "1\n"
+      - "1\n"
+      - "2\n"
+      - "1\n"
+      - "2\n"
+      - "2\n"
+      - "2\n"
+      - "1\n"
+      - "2\n"
+      - "2\n"
+      - "2\n"
