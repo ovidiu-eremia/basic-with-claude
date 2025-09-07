@@ -168,32 +168,12 @@ This interpreter uses a traditional multi-phase architecture with polymorphic ex
 ### 3. Abstract Syntax Tree (AST) with Polymorphic Execution
 
 #### Core Structure (Double Dispatch Pattern)
-```go
-type Node interface {
-    GetLineNumber() int
-}
 
-type Statement interface {
-    Node
-    Execute(ops InterpreterOperations) error
-}
-
-type Expression interface {
-    Node
-    Evaluate(ops InterpreterOperations) (types.Value, error)
-}
-
-type InterpreterOperations interface {
-    GetVariable(name string) (types.Value, error)
-    SetVariable(name string, value types.Value) error
-    PrintLine(text string) error
-    ReadInput(prompt string) (string, error)
-    RequestGoto(targetLine int) error
-    RequestEnd() error
-    RequestStop() error
-    NormalizeVariableName(name string) string
-}
-```
+The core interfaces are defined in `parser/ast.go`:
+- `Node`: Base interface with `GetLineNumber()`
+- `Statement`: AST nodes that can execute themselves via `Execute(ops InterpreterOperations)`
+- `Expression`: AST nodes that evaluate to values via `Evaluate(ops InterpreterOperations)`
+- `InterpreterOperations`: Interface enabling double dispatch from AST nodes back to interpreter
 
 #### Node Types
 - **Program**: Root node containing all program lines
@@ -217,19 +197,11 @@ type InterpreterOperations interface {
 - **Extensibility**: Adding new statement types requires no interpreter changes
 
 **Example Flow:**
-```go
-// Interpreter (first dispatch)
-err := stmt.Execute(interpreter)
+1. **First Dispatch**: Interpreter calls `stmt.Execute(interpreter)` - polymorphic method dispatch
+2. **Second Dispatch**: AST node calls back to `interpreter.GetVariable()`, `interpreter.PrintLine()`, etc. - interface method dispatch
+3. **Result**: Clean separation without circular dependencies
 
-// PrintStatement.Execute (second dispatch)
-func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
-    value, err := ps.Expression.Evaluate(ops)  // Recursive polymorphism
-    if err != nil {
-        return err
-    }
-    return ops.PrintLine(value.ToString())     // Callback to interpreter
-}
-```
+See `parser/ast.go` for actual implementation examples (e.g., `PrintStatement.Execute`).
 
 #### Node Properties
 - Each node stores its source line number for error reporting and GOTO targets
@@ -346,15 +318,11 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 - Isolate system dependencies from core interpreter logic
 
 #### Interface
-```go
-type Runtime interface {
-    Print(value string) error
-    PrintLine(value string) error
-    Input(prompt string) (string, error)
-    Clear() error
-    // Additional I/O methods as needed
-}
-```
+The Runtime interface is defined in `runtime/runtime.go` and provides methods for:
+- `Print(value string)` - output without newline
+- `PrintLine(value string)` - output with newline  
+- `Input(prompt string)` - read user input
+- `Clear()` - clear output (if supported)
 
 #### Implementations
 - **StandardRuntime**: Production implementation using os.Stdout/Stdin
@@ -384,8 +352,11 @@ type Runtime interface {
   - String too long (>255 chars)
 
 ### 8. Built-in Functions
+Built-in functions are implemented in the interpreter with:
 - **Function Registry**: Map of function names to implementation functions
 - **Type Safety**: Each function performs type checking on arguments and returns appropriate type
+
+See the interpreter implementation for specific functions like `VAL()`, `STR$()`, etc.
 
 ### Data Flow (Polymorphic Architecture)
 ```
@@ -472,11 +443,7 @@ go test ./acceptance
 go run ./cmd/basic program.bas
 ```
 
-## File Consultation Guide
+# Miscellanea
 
-- **Adding new BASIC statement**: Check `spec.md` for syntax, add AST node type from architecture section, implement Execute() method
-- **Understanding error handling**: See "Error Handling" section in architecture above
-- **Development approach**: See "Development Philosophy" and "Milestone Structure" sections above
-- **Implementation guidance**: See "Development Guidelines" section above
 - find test basic files in the testdata directory in the top folder
 - feel free to write small throwaway test files for testing the interpreter
