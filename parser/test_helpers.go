@@ -35,6 +35,14 @@ func gotoStmt(targetLine int, line int) *GotoStatement {
 	return &GotoStatement{TargetLine: targetLine, Line: line}
 }
 
+func gosubStmt(targetLine int, line int) *GosubStatement {
+	return &GosubStatement{TargetLine: targetLine, Line: line}
+}
+
+func returnStmt(line int) *ReturnStatement {
+	return &ReturnStatement{Line: line}
+}
+
 func ifStmt(condition Expression, thenStmt Statement, line int) *IfStatement {
 	return &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: line}
 }

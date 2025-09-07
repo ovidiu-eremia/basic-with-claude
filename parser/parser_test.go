@@ -121,6 +121,30 @@ func TestParser_StatementParsing(t *testing.T) {
 			),
 		},
 
+		// GOSUB and RETURN statements
+		{
+			name:     "GOSUB statement",
+			input:    "10 GOSUB 100",
+			expected: program(line(10, 1, gosubStmt(100, 1))),
+		},
+		{
+			name:     "RETURN statement",
+			input:    "20 RETURN",
+			expected: program(line(20, 1, returnStmt(1))),
+		},
+		{
+			name:  "program with GOSUB and RETURN",
+			input: "10 PRINT \"MAIN\"\n20 GOSUB 100\n30 PRINT \"BACK\"\n40 END\n100 PRINT \"SUB\"\n110 RETURN",
+			expected: program(
+				line(10, 1, printStmt(str("MAIN", 1), 1)),
+				line(20, 2, gosubStmt(100, 2)),
+				line(30, 3, printStmt(str("BACK", 3), 3)),
+				line(40, 4, endStmt(4)),
+				line(100, 5, printStmt(str("SUB", 5), 5)),
+				line(110, 6, returnStmt(6)),
+			),
+		},
+
 		// IF statements
 		{
 			name:  "simple IF THEN",

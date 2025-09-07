@@ -20,10 +20,13 @@ type MockInterpreterOperations struct {
 	inputIndex   int
 
 	// Control flow tracking
-	gotoRequested bool
-	gotoTarget    int
-	endRequested  bool
-	stopRequested bool
+	gotoRequested   bool
+	gotoTarget      int
+	endRequested    bool
+	stopRequested   bool
+	gosubRequested  bool
+	gosubTarget     int
+	returnRequested bool
 
 	// Error injection for testing
 	getVariableError error
@@ -101,6 +104,17 @@ func (m *MockInterpreterOperations) RequestEnd() error {
 
 func (m *MockInterpreterOperations) RequestStop() error {
 	m.stopRequested = true
+	return nil
+}
+
+func (m *MockInterpreterOperations) RequestGosub(targetLine int) error {
+	m.gosubRequested = true
+	m.gosubTarget = targetLine
+	return nil
+}
+
+func (m *MockInterpreterOperations) RequestReturn() error {
+	m.returnRequested = true
 	return nil
 }
 

@@ -30,6 +30,8 @@ type InterpreterOperations interface {
 	RequestGoto(targetLine int) error
 	RequestEnd() error
 	RequestStop() error
+	RequestGosub(targetLine int) error
+	RequestReturn() error
 
 	// Loop control for FOR/NEXT
 	BeginFor(variable string, end types.Value, step types.Value) error
@@ -409,4 +411,27 @@ func (ns *NextStatement) GetLineNumber() int { return ns.Line }
 func (ns *NextStatement) Execute(ops InterpreterOperations) error {
 	// Iterate the FOR loop via interpreter operations
 	return ops.IterateFor(ns.Variable)
+}
+
+// GosubStatement represents a GOSUB statement
+type GosubStatement struct {
+	TargetLine int // Target line number to call
+	Line       int // Source line number
+}
+
+func (gs *GosubStatement) GetLineNumber() int { return gs.Line }
+
+func (gs *GosubStatement) Execute(ops InterpreterOperations) error {
+	return ops.RequestGosub(gs.TargetLine)
+}
+
+// ReturnStatement represents a RETURN statement
+type ReturnStatement struct {
+	Line int // Source line number
+}
+
+func (rs *ReturnStatement) GetLineNumber() int { return rs.Line }
+
+func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
+	return ops.RequestReturn()
 }

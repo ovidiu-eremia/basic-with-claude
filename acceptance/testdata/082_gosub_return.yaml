@@ -1,0 +1,67 @@
+tests:
+  - name: "Basic GOSUB RETURN - simple subroutine call"
+    program: |
+      10 PRINT "MAIN START"
+      20 GOSUB 100
+      30 PRINT "MAIN END"
+      40 END
+      100 PRINT "IN SUBROUTINE"
+      110 RETURN
+    expected:
+      - "MAIN START\n"
+      - "IN SUBROUTINE\n"
+      - "MAIN END\n"
+
+  - name: "Multiple GOSUB calls to same subroutine"
+    program: |
+      10 FOR I = 1 TO 3
+      20 GOSUB 200
+      30 NEXT I
+      40 END
+      200 PRINT I
+      210 RETURN
+    expected:
+      - "1\n"
+      - "2\n"
+      - "3\n"
+
+  - name: "GOSUB with variable manipulation in subroutine"
+    program: |
+      10 A = 5
+      20 PRINT A
+      30 GOSUB 100
+      40 PRINT A
+      50 END
+      100 A = A * 2
+      110 RETURN
+    expected:
+      - "5\n"
+      - "10\n"
+
+  - name: "Subroutine that doesn't return to main"
+    program: |
+      10 PRINT "MAIN START"
+      20 GOSUB 100
+      30 PRINT "NEVER REACHED"
+      40 END
+      100 PRINT "IN SUBROUTINE"
+      110 END
+    expected:
+      - "MAIN START\n"
+      - "IN SUBROUTINE\n"
+
+  - name: "RETURN without GOSUB should error"
+    program: |
+      10 PRINT "START"
+      20 RETURN
+      30 PRINT "NEVER REACHED"
+    wantErr: true
+    errContains: "RETURN WITHOUT GOSUB"
+
+  - name: "GOSUB to non-existent line should error"
+    program: |
+      10 PRINT "START"
+      20 GOSUB 999
+      30 PRINT "NEVER REACHED"
+    wantErr: true
+    errContains: "UNDEFINED STATEMENT"

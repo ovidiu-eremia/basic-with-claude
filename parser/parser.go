@@ -179,6 +179,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseStopStatement()
 	case lexer.GOTO:
 		return p.parseGotoStatement()
+	case lexer.GOSUB:
+		return p.parseGosubStatement()
+	case lexer.RETURN:
+		return p.parseReturnStatement()
 	case lexer.IF:
 		return p.parseIfStatement()
 	case lexer.FOR:
@@ -364,6 +368,36 @@ func (p *Parser) parseGotoStatement() *GotoStatement {
 	}
 
 	stmt.TargetLine = targetLine
+	return stmt
+}
+
+// parseGosubStatement parses a GOSUB statement
+func (p *Parser) parseGosubStatement() *GosubStatement {
+	stmt := &GosubStatement{Line: p.currentToken.Line}
+
+	p.nextToken() // consume GOSUB
+
+	// Expect a number (target line)
+	if p.currentToken.Type != lexer.NUMBER {
+		p.addTokenError("line number", p.currentToken.Type)
+		return nil
+	}
+
+	// Parse the target line number
+	targetLine, err := strconv.Atoi(p.currentToken.Literal)
+	if err != nil {
+		p.addErrorf("invalid line number: %s", p.currentToken.Literal)
+		return nil
+	}
+
+	stmt.TargetLine = targetLine
+	return stmt
+}
+
+// parseReturnStatement parses a RETURN statement
+func (p *Parser) parseReturnStatement() *ReturnStatement {
+	stmt := &ReturnStatement{Line: p.currentToken.Line}
+	// No need to consume more tokens - RETURN is a simple statement
 	return stmt
 }
 

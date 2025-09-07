@@ -43,23 +43,27 @@ const (
 	TO        TokenType = "TO"
 	NEXT      TokenType = "NEXT"
 	STEP      TokenType = "STEP"
+	GOSUB     TokenType = "GOSUB"
+	RETURN    TokenType = "RETURN"
 )
 
 // keywords maps BASIC keywords to their token types
 var keywords = map[string]TokenType{
-	"PRINT": PRINT,
-	"LET":   LET,
-	"END":   END,
-	"RUN":   RUN,
-	"STOP":  STOP,
-	"GOTO":  GOTO,
-	"INPUT": INPUT,
-	"IF":    IF,
-	"THEN":  THEN,
-	"FOR":   FOR,
-	"TO":    TO,
-	"NEXT":  NEXT,
-	"STEP":  STEP,
+	"PRINT":  PRINT,
+	"LET":    LET,
+	"END":    END,
+	"RUN":    RUN,
+	"STOP":   STOP,
+	"GOTO":   GOTO,
+	"INPUT":  INPUT,
+	"IF":     IF,
+	"THEN":   THEN,
+	"FOR":    FOR,
+	"TO":     TO,
+	"NEXT":   NEXT,
+	"STEP":   STEP,
+	"GOSUB":  GOSUB,
+	"RETURN": RETURN,
 }
 
 // Position represents a position in the source code

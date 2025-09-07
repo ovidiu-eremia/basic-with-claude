@@ -212,6 +212,60 @@ func TestLexer_NextToken(t *testing.T) {
 	}
 }
 
+func TestLexer_GosubReturn(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []Token
+	}{
+		{
+			name:  "GOSUB statement",
+			input: "GOSUB 100",
+			expected: []Token{
+				{Type: GOSUB, Literal: "GOSUB", Line: 1},
+				{Type: NUMBER, Literal: "100", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "RETURN statement",
+			input: "RETURN",
+			expected: []Token{
+				{Type: RETURN, Literal: "RETURN", Line: 1},
+				{Type: EOF, Literal: "", Line: 1},
+			},
+		},
+		{
+			name:  "GOSUB RETURN program",
+			input: "10 GOSUB 100\n20 PRINT \"BACK\"\n100 RETURN",
+			expected: []Token{
+				{Type: NUMBER, Literal: "10", Line: 1},
+				{Type: GOSUB, Literal: "GOSUB", Line: 1},
+				{Type: NUMBER, Literal: "100", Line: 1},
+				{Type: NEWLINE, Literal: "\n", Line: 1},
+				{Type: NUMBER, Literal: "20", Line: 2},
+				{Type: PRINT, Literal: "PRINT", Line: 2},
+				{Type: STRING, Literal: "BACK", Line: 2},
+				{Type: NEWLINE, Literal: "\n", Line: 2},
+				{Type: NUMBER, Literal: "100", Line: 3},
+				{Type: RETURN, Literal: "RETURN", Line: 3},
+				{Type: EOF, Literal: "", Line: 3},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lexer := New(tt.input)
+
+			for i, expectedToken := range tt.expected {
+				token := lexer.NextToken()
+				assertToken(t, expectedToken, token, i)
+			}
+		})
+	}
+}
+
 func TestLexer_ComparisonOperators(t *testing.T) {
 	tests := []struct {
 		name     string

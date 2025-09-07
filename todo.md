@@ -106,9 +106,9 @@ Add iterative control structures.
 Add subroutine capabilities.
 
 #### Step 14: GOSUB...RETURN
-- [ ] **Goal**: Support subroutine calls and returns
-- [ ] **Demo**: Main program calls subroutine, subroutine returns to correct location
-- [ ] **Tests**: Call stack management, return address tracking
+- [x] **Goal**: Support subroutine calls and returns
+- [x] **Demo**: Main program calls subroutine, subroutine returns to correct location
+- [x] **Tests**: Call stack management, return address tracking
 
 #### Step 15: Nested GOSUB
 - [ ] **Goal**: Support nested subroutine calls
