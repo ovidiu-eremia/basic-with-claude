@@ -282,13 +282,12 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 func (p *Parser) parsePrintStatement() *PrintStatement {
 	stmt := &PrintStatement{Line: p.currentToken.Line}
 
-	p.nextToken() // consume PRINT
-
-	// Check if there's an expression to print, or if we're at end of line/file
-	if p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
+	// Check if there's an expression after PRINT
+	if p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.peekToken.Type != lexer.COLON {
+		p.nextToken() // consume PRINT
 		stmt.Expression = p.parseExpression()
 	} else {
-		// No expression means print empty line
+		// No expression means print empty line - leave currentToken on PRINT
 		stmt.Expression = &StringLiteral{Value: "", Line: stmt.Line}
 	}
 
