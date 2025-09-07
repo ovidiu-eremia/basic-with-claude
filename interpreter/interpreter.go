@@ -20,6 +20,7 @@ var (
 	ErrUndefinedStatement = fmt.Errorf("?UNDEFINED STATEMENT ERROR")
 	ErrReturnWithoutGosub = fmt.Errorf("?RETURN WITHOUT GOSUB ERROR")
 	ErrStackOverflow      = fmt.Errorf("?OUT OF MEMORY ERROR")
+	ErrOutOfData          = fmt.Errorf("?OUT OF DATA ERROR")
 )
 
 // ForLoopContext represents an active FOR loop state
@@ -60,6 +61,10 @@ type Interpreter struct {
 	pc           int                    // Program counter: current line index
 	jumped       bool                   // Indicates a jump occurred during statement execution
 	halted       bool                   // Indicates END/STOP was requested
+
+	// DATA/READ state
+	dataValues  []types.Value // Collected DATA values
+	dataPointer int           // Current READ pointer
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -139,8 +144,29 @@ func (i *Interpreter) Execute(program *parser.Program) error {
 	// Build line number index for GOTO statements
 	i.buildLineIndex(program)
 
+	// Collect DATA values before execution
+	i.collectData(program)
+
 	// Execute program with program counter for GOTO support
 	return i.executeWithProgramCounter(program)
+}
+
+// collectData scans the program and collects all DATA values in order
+func (i *Interpreter) collectData(program *parser.Program) {
+	i.dataValues = i.dataValues[:0]
+	i.dataPointer = 0
+	for _, line := range program.Lines {
+		for _, stmt := range line.Statements {
+			if ds, ok := stmt.(*parser.DataStatement); ok {
+				for _, expr := range ds.Values {
+					val, err := expr.Evaluate(i)
+					if err == nil {
+						i.dataValues = append(i.dataValues, val)
+					}
+				}
+			}
+		}
+	}
 }
 
 // buildLineIndex creates a map from line numbers to Line nodes
@@ -251,6 +277,16 @@ func (i *Interpreter) PrintLine(text string) error {
 // ReadInput reads input from the runtime environment
 func (i *Interpreter) ReadInput(prompt string) (string, error) {
 	return i.runtime.Input(prompt)
+}
+
+// GetNextData returns the next DATA value, or error if none remain
+func (i *Interpreter) GetNextData() (types.Value, error) {
+	if i.dataPointer >= len(i.dataValues) {
+		return types.Value{}, ErrOutOfData
+	}
+	v := i.dataValues[i.dataPointer]
+	i.dataPointer++
+	return v, nil
 }
 
 // RequestGoto requests a GOTO control flow change

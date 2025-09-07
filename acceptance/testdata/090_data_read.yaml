@@ -1,0 +1,44 @@
+tests:
+  - name: "Read basic DATA values"
+    program: |
+      10 READ A, B, C$
+      20 PRINT A
+      25 PRINT B
+      28 PRINT C$
+      30 DATA 10, 20, "HELLO"
+      40 END
+    expected:
+      - "10\n"
+      - "20\n"
+      - "HELLO\n"
+
+  - name: "READ across multiple DATA lines"
+    program: |
+      10 READ X, Y, Z, M$
+      20 PRINT X
+      30 PRINT Y
+      40 PRINT Z
+      50 PRINT M$
+      60 DATA 1, 2
+      70 DATA 3, "DONE"
+      80 END
+    expected:
+      - "1\n"
+      - "2\n"
+      - "3\n"
+      - "DONE\n"
+
+  - name: "Out of data error"
+    program: |
+      10 READ A, B, C
+      20 DATA 5, 6
+    wantErr: true
+    errContains: "?OUT OF DATA ERROR"
+
+  - name: "Type mismatch on READ"
+    program: |
+      10 READ A, B$
+      20 DATA "HELLO", 42
+    wantErr: true
+    errContains: "?TYPE MISMATCH ERROR"
+

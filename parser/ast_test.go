@@ -132,6 +132,11 @@ func (m *MockInterpreterOperations) IterateFor(variable string) error {
 	return nil
 }
 
+// Data management stub
+func (m *MockInterpreterOperations) GetNextData() (types.Value, error) {
+	return types.NewNumberValue(0), nil
+}
+
 // Helper methods for testing
 func (m *MockInterpreterOperations) setInput(inputs []string) {
 	m.inputQueue = inputs

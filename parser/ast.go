@@ -39,6 +39,9 @@ type InterpreterOperations interface {
 
 	// Utility operations
 	NormalizeVariableName(name string) string
+
+	// Data management (READ/DATA)
+	GetNextData() (types.Value, error)
 }
 
 // (No control error types are used for END/STOP; interpreter handles them statefully.)
@@ -434,4 +437,46 @@ func (rs *ReturnStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestReturn()
+}
+
+// DataStatement represents a DATA statement containing a list of constants
+type DataStatement struct {
+	Values []Expression // Constants (numbers or strings)
+	Line   int          // Source line number
+}
+
+func (ds *DataStatement) GetLineNumber() int { return ds.Line }
+
+// DATA is processed before execution by the interpreter; at runtime it's a no-op
+func (ds *DataStatement) Execute(ops InterpreterOperations) error { return nil }
+
+// ReadStatement represents a READ statement to read values from DATA
+type ReadStatement struct {
+	Variables []string // Variable names to fill
+	Line      int      // Source line number
+}
+
+func (rs *ReadStatement) GetLineNumber() int { return rs.Line }
+
+func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
+	for _, vname := range rs.Variables {
+		val, err := ops.GetNextData()
+		if err != nil {
+			return err
+		}
+		// Type check based on variable suffix
+		if strings.HasSuffix(vname, "$") {
+			if val.Type != types.StringType {
+				return types.ErrTypeMismatch
+			}
+		} else {
+			if val.Type != types.NumberType {
+				return types.ErrTypeMismatch
+			}
+		}
+		if err := ops.SetVariable(vname, val); err != nil {
+			return err
+		}
+	}
+	return nil
 }

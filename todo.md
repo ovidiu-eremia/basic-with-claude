@@ -119,9 +119,9 @@ Add subroutine capabilities.
 Add data storage and retrieval.
 
 #### Step 16: DATA and READ Statements
-- [ ] **Goal**: Support static data definition and reading
-- [ ] **Demo**: DATA statements provide values for READ statements
-- [ ] **Tests**: Data collection, sequential reading, end-of-data detection
+- [x] **Goal**: Support static data definition and reading
+- [x] **Demo**: DATA statements provide values for READ statements
+- [x] **Tests**: Data collection, sequential reading, end-of-data detection
 
 #### Step 17: RESTORE Statement
 - [ ] **Goal**: Support resetting data pointer

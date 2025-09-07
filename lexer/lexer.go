@@ -23,6 +23,8 @@ const (
 	STOP      TokenType = "STOP"
 	GOTO      TokenType = "GOTO"
 	INPUT     TokenType = "INPUT"
+	DATA      TokenType = "DATA"
+	READ      TokenType = "READ"
 	NEWLINE   TokenType = "NEWLINE"
 	PLUS      TokenType = "+"
 	MINUS     TokenType = "-"
@@ -31,6 +33,7 @@ const (
 	POWER     TokenType = "^"
 	LPAREN    TokenType = "("
 	RPAREN    TokenType = ")"
+	COMMA     TokenType = ","
 	IF        TokenType = "IF"
 	THEN      TokenType = "THEN"
 	GT        TokenType = ">"
@@ -56,6 +59,8 @@ var keywords = map[string]TokenType{
 	"STOP":   STOP,
 	"GOTO":   GOTO,
 	"INPUT":  INPUT,
+	"DATA":   DATA,
+	"READ":   READ,
 	"IF":     IF,
 	"THEN":   THEN,
 	"FOR":    FOR,
@@ -142,6 +147,8 @@ func (l *Lexer) NextToken() Token {
 		return l.createSingleCharToken(LPAREN)
 	case ')':
 		return l.createSingleCharToken(RPAREN)
+	case ',':
+		return l.createSingleCharToken(COMMA)
 	case ';':
 		return l.createSingleCharToken(SEMICOLON)
 	case '<':

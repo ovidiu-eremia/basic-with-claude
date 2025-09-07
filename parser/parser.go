@@ -189,6 +189,10 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseForStatement()
 	case lexer.NEXT:
 		return p.parseNextStatement()
+	case lexer.DATA:
+		return p.parseDataStatement()
+	case lexer.READ:
+		return p.parseReadStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -196,6 +200,62 @@ func (p *Parser) parseStatement() Statement {
 		p.addTokenError("unrecognized statement", p.currentToken.Type)
 		return nil
 	}
+}
+
+// parseDataStatement parses a DATA statement: DATA <const>[, <const>...]
+func (p *Parser) parseDataStatement() *DataStatement {
+	stmt := &DataStatement{Line: p.currentToken.Line}
+	p.nextToken() // consume DATA
+
+	// Parse zero or more constants until end of line/EOF
+	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
+		var expr Expression
+		switch p.currentToken.Type {
+		case lexer.STRING:
+			expr = p.parseStringLiteral()
+		case lexer.NUMBER:
+			expr = p.parseNumberLiteral()
+		default:
+			p.addTokenError("constant (number or string)", p.currentToken.Type)
+			return nil
+		}
+		stmt.Values = append(stmt.Values, expr)
+
+		// If next token is comma, consume it and continue
+		if p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // move to COMMA
+			p.nextToken() // move past COMMA to next value
+			continue
+		}
+
+		// Otherwise, break and let outer loop advance
+		break
+	}
+	return stmt
+}
+
+// parseReadStatement parses a READ statement: READ <var>[, <var>...]
+func (p *Parser) parseReadStatement() *ReadStatement {
+	stmt := &ReadStatement{Line: p.currentToken.Line}
+	p.nextToken() // consume READ
+
+	// Expect at least one identifier
+	if p.currentToken.Type != lexer.IDENT {
+		p.addTokenError("variable name", p.currentToken.Type)
+		return nil
+	}
+
+	// Parse variables separated by commas until end of line/EOF
+	for p.currentToken.Type == lexer.IDENT {
+		stmt.Variables = append(stmt.Variables, p.currentToken.Literal)
+		if p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // move to COMMA
+			p.nextToken() // move to next IDENT
+			continue
+		}
+		break
+	}
+	return stmt
 }
 
 // parsePrintStatement parses a PRINT statement
