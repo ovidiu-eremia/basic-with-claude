@@ -433,12 +433,6 @@ cmd/basic        (main application)
 go test ./...
 go build ./cmd/basic
 
-# Run specific tests  
-go test ./lexer
-go test ./parser
-go test ./interpreter
-go test ./acceptance
-
 # Run BASIC program
 go run ./cmd/basic program.bas
 ```
@@ -447,3 +441,4 @@ go run ./cmd/basic program.bas
 
 - find test basic files in the testdata directory in the top folder
 - feel free to write small throwaway test files for testing the interpreter
+
