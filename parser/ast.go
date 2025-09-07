@@ -480,3 +480,12 @@ func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
 	}
 	return nil
 }
+
+// RemStatement represents a REM (comment) statement; it is a no-op at runtime
+type RemStatement struct {
+	Line int // Source line number
+}
+
+func (rs *RemStatement) GetLineNumber() int { return rs.Line }
+
+func (rs *RemStatement) Execute(ops InterpreterOperations) error { return nil }

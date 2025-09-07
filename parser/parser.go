@@ -147,6 +147,11 @@ func (p *Parser) parseLine() *Line {
 
 	// Parse statements on this line. On first error, skip rest of the line.
 	for p.currentToken.Type != lexer.NEWLINE && p.currentToken.Type != lexer.EOF {
+		// Support colon-separated statements
+		if p.currentToken.Type == lexer.COLON {
+			p.nextToken()
+			continue
+		}
 		stmt := p.parseStatement()
 		if stmt == nil {
 			// An error occurred; stop here
@@ -193,6 +198,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseDataStatement()
 	case lexer.READ:
 		return p.parseReadStatement()
+	case lexer.REM:
+		return p.parseRemStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -200,6 +207,19 @@ func (p *Parser) parseStatement() Statement {
 		p.addTokenError("unrecognized statement", p.currentToken.Type)
 		return nil
 	}
+}
+
+// parseRemStatement parses a REM statement which consumes the rest of the line
+func (p *Parser) parseRemStatement() *RemStatement {
+	stmt := &RemStatement{Line: p.currentToken.Line}
+	// Consume REM token
+	p.nextToken()
+	// Skip tokens until end of line or EOF, but leave currentToken on last non-NEWLINE token
+	for p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF {
+		p.nextToken()
+	}
+	// Leave currentToken at NEWLINE/EOF so caller can advance appropriately
+	return stmt
 }
 
 // parseDataStatement parses a DATA statement: DATA <const>[, <const>...]

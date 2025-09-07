@@ -31,6 +31,7 @@ const (
 	MULTIPLY  TokenType = "*"
 	DIVIDE    TokenType = "/"
 	POWER     TokenType = "^"
+	COLON     TokenType = ":"
 	LPAREN    TokenType = "("
 	RPAREN    TokenType = ")"
 	COMMA     TokenType = ","
@@ -48,6 +49,7 @@ const (
 	STEP      TokenType = "STEP"
 	GOSUB     TokenType = "GOSUB"
 	RETURN    TokenType = "RETURN"
+	REM       TokenType = "REM"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -69,6 +71,7 @@ var keywords = map[string]TokenType{
 	"STEP":   STEP,
 	"GOSUB":  GOSUB,
 	"RETURN": RETURN,
+	"REM":    REM,
 }
 
 // Position represents a position in the source code
@@ -147,6 +150,8 @@ func (l *Lexer) NextToken() Token {
 		return l.createSingleCharToken(LPAREN)
 	case ')':
 		return l.createSingleCharToken(RPAREN)
+	case ':':
+		return l.createSingleCharToken(COLON)
 	case ',':
 		return l.createSingleCharToken(COMMA)
 	case ';':

@@ -66,3 +66,7 @@ func varRef(name string, line int) *VariableReference {
 func binaryOp(left Expression, operator string, right Expression, line int) *BinaryOperation {
 	return &BinaryOperation{Left: left, Operator: operator, Right: right, Line: line}
 }
+
+func remStmt(line int) *RemStatement {
+	return &RemStatement{Line: line}
+}

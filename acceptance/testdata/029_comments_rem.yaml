@@ -1,0 +1,22 @@
+tests:
+  - name: "REM as full line is ignored"
+    program: |
+      10 REM This is a comment line
+      20 PRINT "HELLO"
+    expected:
+      - "HELLO\n"
+
+  - name: "Comment after statement with colon"
+    program: |
+      10 PRINT "A": REM after print should be ignored
+      20 PRINT "B"
+    expected:
+      - "A\n"
+      - "B\n"
+
+  - name: "Statements after REM on same line are ignored"
+    program: |
+      10 REM comment then colon: PRINT "SHOULD NOT RUN"
+      20 PRINT "OK"
+    expected:
+      - "OK\n"
