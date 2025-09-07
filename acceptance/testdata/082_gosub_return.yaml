@@ -65,3 +65,171 @@ tests:
       30 PRINT "NEVER REACHED"
     wantErr: true
     errContains: "UNDEFINED STATEMENT"
+
+  - name: "Nested GOSUB - simple two level nesting"
+    program: |
+      10 PRINT "MAIN"
+      20 GOSUB 100
+      30 PRINT "BACK IN MAIN"
+      40 END
+      100 PRINT "FIRST SUB"
+      110 GOSUB 200
+      120 PRINT "BACK IN FIRST"
+      130 RETURN
+      200 PRINT "SECOND SUB"
+      210 RETURN
+    expected:
+      - "MAIN\n"
+      - "FIRST SUB\n"
+      - "SECOND SUB\n"
+      - "BACK IN FIRST\n"
+      - "BACK IN MAIN\n"
+
+  - name: "Nested GOSUB - three level nesting"
+    program: |
+      10 PRINT "MAIN"
+      20 GOSUB 100
+      30 PRINT "BACK IN MAIN"
+      40 END
+      100 PRINT "FIRST SUB"
+      110 GOSUB 200
+      120 PRINT "BACK IN FIRST"
+      130 RETURN
+      200 PRINT "SECOND SUB"
+      210 GOSUB 300
+      220 PRINT "BACK IN SECOND"
+      230 RETURN
+      300 PRINT "THIRD SUB"
+      310 RETURN
+    expected:
+      - "MAIN\n"
+      - "FIRST SUB\n"
+      - "SECOND SUB\n"
+      - "THIRD SUB\n"
+      - "BACK IN SECOND\n"
+      - "BACK IN FIRST\n"
+      - "BACK IN MAIN\n"
+
+  - name: "Nested GOSUB with variable manipulation"
+    program: |
+      10 X = 1
+      20 PRINT "MAIN:"
+      25 PRINT X
+      30 GOSUB 100
+      40 PRINT "MAIN END:"
+      45 PRINT X
+      50 END
+      100 X = X + 10
+      110 PRINT "FIRST SUB:"
+      115 PRINT X
+      120 GOSUB 200
+      130 PRINT "FIRST SUB END:"
+      135 PRINT X
+      140 RETURN
+      200 X = X + 100
+      210 PRINT "SECOND SUB:"
+      215 PRINT X
+      220 RETURN
+    expected:
+      - "MAIN:\n"
+      - "1\n"
+      - "FIRST SUB:\n"
+      - "11\n"
+      - "SECOND SUB:\n"
+      - "111\n"
+      - "FIRST SUB END:\n"
+      - "111\n"
+      - "MAIN END:\n"
+      - "111\n"
+
+  - name: "Nested GOSUB - deep nesting (4 levels)"
+    program: |
+      10 PRINT "MAIN"
+      20 GOSUB 100
+      30 PRINT "BACK IN MAIN"
+      40 END
+      100 PRINT "SUB1"
+      110 GOSUB 200
+      120 PRINT "BACK IN SUB1"
+      130 RETURN
+      200 PRINT "SUB2"
+      210 GOSUB 300
+      220 PRINT "BACK IN SUB2"
+      230 RETURN
+      300 PRINT "SUB3"
+      310 GOSUB 400
+      320 PRINT "BACK IN SUB3"
+      330 RETURN
+      400 PRINT "SUB4"
+      410 RETURN
+    expected:
+      - "MAIN\n"
+      - "SUB1\n"
+      - "SUB2\n"
+      - "SUB3\n"
+      - "SUB4\n"
+      - "BACK IN SUB3\n"
+      - "BACK IN SUB2\n"
+      - "BACK IN SUB1\n"
+      - "BACK IN MAIN\n"
+
+  - name: "Nested GOSUB - mixed with FOR loops"
+    program: |
+      10 FOR I = 1 TO 2
+      20 PRINT "LOOP:"
+      25 PRINT I
+      30 GOSUB 100
+      40 NEXT I
+      50 END
+      100 PRINT "SUB1"
+      110 GOSUB 200
+      120 PRINT "END SUB1"
+      130 RETURN
+      200 PRINT "SUB2:"
+      205 PRINT I
+      210 RETURN
+    expected:
+      - "LOOP:\n"
+      - "1\n"
+      - "SUB1\n"
+      - "SUB2:\n"
+      - "1\n"
+      - "END SUB1\n"
+      - "LOOP:\n"
+      - "2\n"
+      - "SUB1\n"
+      - "SUB2:\n"
+      - "2\n"
+      - "END SUB1\n"
+
+  - name: "Stack overflow protection - deeply nested GOSUBs"
+    program: |
+      10 GOSUB 100
+      20 END
+      100 GOSUB 200
+      110 RETURN  
+      200 GOSUB 300
+      210 RETURN
+      300 GOSUB 400
+      310 RETURN
+      400 GOSUB 500
+      410 RETURN
+      500 GOSUB 600
+      510 RETURN
+      600 GOSUB 700
+      610 RETURN
+      700 GOSUB 800
+      710 RETURN
+      800 GOSUB 900
+      810 RETURN
+      900 PRINT "DEEP"
+      910 RETURN
+    expected:
+      - "DEEP\n"
+
+  - name: "Stack overflow error - too many nested GOSUBs"
+    program: |
+      10 GOSUB 20
+      20 GOSUB 20
+    wantErr: true
+    errContains: "OUT OF MEMORY"

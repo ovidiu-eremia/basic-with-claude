@@ -111,9 +111,9 @@ Add subroutine capabilities.
 - [x] **Tests**: Call stack management, return address tracking
 
 #### Step 15: Nested GOSUB
-- [ ] **Goal**: Support nested subroutine calls
-- [ ] **Demo**: Subroutine calls another subroutine, both return correctly
-- [ ] **Tests**: Multiple stack levels, proper stack unwinding
+- [x] **Goal**: Support nested subroutine calls
+- [x] **Demo**: Subroutine calls another subroutine, both return correctly
+- [x] **Tests**: Multiple stack levels, proper stack unwinding
 
 ### Phase 7: Data Handling (Steps 16-18)
 Add data storage and retrieval.
