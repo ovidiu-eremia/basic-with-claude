@@ -312,6 +312,31 @@ func (i *Interpreter) GetNextData() (types.Value, error) {
 	return v, nil
 }
 
+// EvaluateFunction evaluates built-in functions
+func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expression) (types.Value, error) {
+	// Evaluate all arguments first
+	argValues := make([]types.Value, len(args))
+	for idx, arg := range args {
+		val, err := arg.Evaluate(i)
+		if err != nil {
+			return types.Value{}, err
+		}
+		argValues[idx] = val
+	}
+
+	// Dispatch to specific function implementation
+	switch strings.ToUpper(functionName) {
+	case "LEN":
+		return i.evaluateLenFunction(argValues)
+	case "LEFT$":
+		return i.evaluateLeftFunction(argValues)
+	case "RIGHT$":
+		return i.evaluateRightFunction(argValues)
+	default:
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
+	}
+}
+
 // RequestGoto requests a GOTO control flow change
 func (i *Interpreter) RequestGoto(targetLine int) error {
 	// Resolve target line to index and set jump state
@@ -436,4 +461,82 @@ func (i *Interpreter) IterateFor(variableName string) error {
 	// Loop finished - pop the loop from stack and continue normally
 	i.popForLoop()
 	return nil
+}
+
+// Built-in function implementations
+
+// evaluateLenFunction implements the LEN function
+func (i *Interpreter) evaluateLenFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: LEN requires exactly 1 argument")
+	}
+
+	arg := args[0]
+	if arg.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: LEN requires string argument")
+	}
+
+	return types.NewNumberValue(float64(len(arg.String))), nil
+}
+
+// evaluateLeftFunction implements the LEFT$ function
+func (i *Interpreter) evaluateLeftFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 2 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: LEFT$ requires exactly 2 arguments")
+	}
+
+	str := args[0]
+	count := args[1]
+
+	if str.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: LEFT$ first argument must be string")
+	}
+	if count.Type != types.NumberType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: LEFT$ second argument must be number")
+	}
+
+	// Handle negative or zero count
+	if count.Number <= 0 {
+		return types.NewStringValue(""), nil
+	}
+
+	// Convert count to integer and handle bounds
+	countInt := int(count.Number)
+	if countInt >= len(str.String) {
+		return str, nil // Return entire string if count exceeds length
+	}
+
+	return types.NewStringValue(str.String[:countInt]), nil
+}
+
+// evaluateRightFunction implements the RIGHT$ function
+func (i *Interpreter) evaluateRightFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 2 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: RIGHT$ requires exactly 2 arguments")
+	}
+
+	str := args[0]
+	count := args[1]
+
+	if str.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: RIGHT$ first argument must be string")
+	}
+	if count.Type != types.NumberType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: RIGHT$ second argument must be number")
+	}
+
+	// Handle negative or zero count
+	if count.Number <= 0 {
+		return types.NewStringValue(""), nil
+	}
+
+	// Convert count to integer and handle bounds
+	countInt := int(count.Number)
+	if countInt >= len(str.String) {
+		return str, nil // Return entire string if count exceeds length
+	}
+
+	// Extract rightmost characters
+	startPos := len(str.String) - countInt
+	return types.NewStringValue(str.String[startPos:]), nil
 }

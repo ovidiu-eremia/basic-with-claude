@@ -1,0 +1,93 @@
+tests:
+  - name: "LEN function basic tests"
+    program: |
+      10 PRINT LEN("HELLO WORLD")
+      20 PRINT LEN("")
+      30 PRINT LEN("A")
+      40 END
+    expected:
+      - "11\n"
+      - "0\n"
+      - "1\n"
+
+  - name: "LEFT$ function basic tests"
+    program: |
+      10 PRINT LEFT$("HELLO WORLD", 5)
+      20 PRINT LEFT$("HI", 10)
+      30 PRINT LEFT$("TEST", 0)
+      40 PRINT LEFT$("HELLO", 3)
+      50 END
+    expected:
+      - "HELLO\n"
+      - "HI\n"
+      - "\n"
+      - "HEL\n"
+
+  - name: "RIGHT$ function basic tests"
+    program: |
+      10 PRINT RIGHT$("HELLO WORLD", 5)
+      20 PRINT RIGHT$("HI", 10)
+      30 PRINT RIGHT$("TEST", 0)
+      40 PRINT RIGHT$("HELLO", 2)
+      50 END
+    expected:
+      - "WORLD\n"
+      - "HI\n"
+      - "\n"
+      - "LO\n"
+
+  - name: "Functions with variables"
+    program: |
+      10 LET A$ = "TESTING"
+      20 PRINT LEN(A$)
+      30 PRINT LEFT$(A$, 4)
+      40 PRINT RIGHT$(A$, 3)
+      50 END
+    expected:
+      - "7\n"
+      - "TEST\n"
+      - "ING\n"
+
+  - name: "Functions in expressions"
+    program: |
+      10 IF LEN("HELLO") = 5 THEN PRINT "LEN WORKS IN IF"
+      20 LET B$ = LEFT$("WORLD", 2) + RIGHT$("HELLO", 2)
+      30 PRINT B$
+      40 END
+    expected:
+      - "LEN WORKS IN IF\n"
+      - "WOLO\n"
+
+  - name: "LEN function error - wrong argument type"
+    program: |
+      10 PRINT LEN(42)
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "LEFT$ function error - wrong first argument type"
+    program: |
+      10 PRINT LEFT$(123, 2)
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "RIGHT$ function error - wrong second argument type"
+    program: |
+      10 PRINT RIGHT$("HELLO", "2")
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "Functions with edge cases"
+    program: |
+      10 PRINT LEFT$("", 5)
+      20 PRINT RIGHT$("", 3)
+      30 PRINT LEFT$("ABC", -1)
+      40 PRINT RIGHT$("ABC", -1)
+      50 END
+    expected:
+      - "\n"
+      - "\n"
+      - "\n"
+      - "\n"

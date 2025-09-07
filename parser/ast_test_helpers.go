@@ -137,6 +137,19 @@ func (m *MockInterpreterOperations) GetNextData() (types.Value, error) {
 	return types.NewNumberValue(0), nil
 }
 
+// Function evaluation stub - returns a simple test value
+func (m *MockInterpreterOperations) EvaluateFunction(functionName string, args []Expression) (types.Value, error) {
+	// For testing, just return a mock value based on function name
+	switch functionName {
+	case "LEN":
+		return types.NewNumberValue(5), nil // Mock length
+	case "LEFT$", "RIGHT$":
+		return types.NewStringValue("TEST"), nil // Mock string result
+	default:
+		return types.NewStringValue("MOCK"), nil
+	}
+}
+
 // Helper methods for testing
 func (m *MockInterpreterOperations) setInput(inputs []string) {
 	m.inputQueue = inputs

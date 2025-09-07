@@ -42,6 +42,9 @@ type InterpreterOperations interface {
 
 	// Data management (READ/DATA)
 	GetNextData() (types.Value, error)
+
+	// Function evaluation
+	EvaluateFunction(functionName string, args []Expression) (types.Value, error)
 }
 
 // (No control error types are used for END/STOP; interpreter handles them statefully.)
@@ -489,3 +492,16 @@ type RemStatement struct {
 func (rs *RemStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *RemStatement) Execute(ops InterpreterOperations) error { return nil }
+
+// FunctionCall represents a function call expression
+type FunctionCall struct {
+	FunctionName string       // Function name (LEN, LEFT$, RIGHT$, etc.)
+	Arguments    []Expression // Function arguments
+	Line         int          // Source line number
+}
+
+func (fc *FunctionCall) GetLineNumber() int { return fc.Line }
+
+func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error) {
+	return ops.EvaluateFunction(fc.FunctionName, fc.Arguments)
+}

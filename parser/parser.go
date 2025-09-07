@@ -363,6 +363,10 @@ func (p *Parser) parsePrimaryExpression() Expression {
 	case lexer.NUMBER:
 		return p.parseNumberLiteral()
 	case lexer.IDENT:
+		// Check if this is a function call (identifier followed by left parenthesis)
+		if p.peekToken.Type == lexer.LPAREN {
+			return p.parseFunctionCall()
+		}
 		return p.parseVariableReference()
 	case lexer.LPAREN:
 		return p.parseGroupedExpression()
@@ -536,6 +540,53 @@ func (p *Parser) parseVariableReference() *VariableReference {
 		Name: p.currentToken.Literal,
 		Line: p.currentToken.Line,
 	}
+}
+
+// parseFunctionCall parses a function call (identifier followed by parentheses)
+func (p *Parser) parseFunctionCall() *FunctionCall {
+	functionCall := &FunctionCall{
+		FunctionName: p.currentToken.Literal,
+		Arguments:    []Expression{}, // Initialize empty slice
+		Line:         p.currentToken.Line,
+	}
+
+	p.nextToken() // consume function name
+	p.nextToken() // consume '('
+
+	// Parse arguments
+	if p.currentToken.Type != lexer.RPAREN {
+		// First argument
+		arg := p.parseExpression()
+		if arg == nil {
+			return nil
+		}
+		functionCall.Arguments = append(functionCall.Arguments, arg)
+
+		// Additional arguments separated by commas
+		for p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // consume current argument token
+			p.nextToken() // consume ','
+			arg = p.parseExpression()
+			if arg == nil {
+				return nil
+			}
+			functionCall.Arguments = append(functionCall.Arguments, arg)
+		}
+
+		// Move to the closing parenthesis if we're not already there
+		if p.currentToken.Type != lexer.RPAREN && p.peekToken.Type == lexer.RPAREN {
+			p.nextToken()
+		}
+	}
+
+	// We should now be at the closing parenthesis
+	if p.currentToken.Type != lexer.RPAREN {
+		p.addTokenError("')'", p.currentToken.Type)
+		return nil
+	}
+
+	// Don't consume the closing parenthesis here - let the caller handle token advancement
+	return functionCall
 }
 
 // parseAssignmentStatement parses variable assignment (with or without LET keyword)

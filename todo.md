@@ -124,22 +124,24 @@ Add data storage and retrieval.
 - [x] **Tests**: Data collection, sequential reading, end-of-data detection
 
 #### Step 17: RESTORE Statement
-- [ ] **Goal**: Support resetting data pointer
-- [ ] **Demo**: READ data, RESTORE, READ same data again
-- [ ] **Tests**: Data pointer management, RESTORE without line number
+DEFERRED TO LATER
+- [-] **Goal**: Support resetting data pointer
+- [-] **Demo**: READ data, RESTORE, READ same data again
+- [-] **Tests**: Data pointer management, RESTORE without line number
 
 #### Step 18: RESTORE with Line Number
-- [ ] **Goal**: Support RESTORE to specific line
-- [ ] **Demo**: Multiple DATA blocks, RESTORE to specific one
-- [ ] **Tests**: Line-specific data pointer reset, error handling
+DEFERRED TO LATER
+- [-] **Goal**: Support RESTORE to specific line
+- [-] **Demo**: Multiple DATA blocks, RESTORE to specific one
+- [-] **Tests**: Line-specific data pointer reset, error handling
 
 ### Phase 8: String Functions (Steps 19-21)
 Add string manipulation capabilities.
 
 #### Step 19: Basic String Functions
-- [ ] **Goal**: Support LEN, LEFT$, RIGHT$ functions
-- [ ] **Demo**: String length and substring operations work correctly
-- [ ] **Tests**: Function parsing, string manipulation, boundary conditions
+- [x] **Goal**: Support LEN, LEFT$, RIGHT$ functions
+- [x] **Demo**: String length and substring operations work correctly
+- [x] **Tests**: Function parsing, string manipulation, boundary conditions
 
 #### Step 20: More String Functions
 - [ ] **Goal**: Support MID$, CHR$, ASC functions
@@ -196,9 +198,9 @@ Add comprehensive error handling and final features.
 - [ ] **Tests**: All error types, correct line number reporting
 
 #### Step 29: Comments and REM
-- [ ] **Goal**: Support REM statements (comments)
-- [ ] **Demo**: Programs with REM statements execute correctly, comments preserved
-- [ ] **Tests**: Comment parsing, preservation during execution
+- [x] **Goal**: Support REM statements (comments)
+- [x] **Demo**: Programs with REM statements execute correctly, comments preserved
+- [x] **Tests**: Comment parsing, preservation during execution
 
 #### Step 30: Program Listing and Polish
 - [ ] **Goal**: Add program listing capability and final polish

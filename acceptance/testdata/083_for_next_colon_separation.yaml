@@ -24,6 +24,17 @@ tests:
       - "2\n"
       - "END\n"
 
+  - name: "ForLoopWithStatementsBeforeOnMultipleLines"
+    program: |
+      10 PRINT "START": FOR I = 1 TO 2
+      20 PRINT I: NEXT I
+      30 PRINT "END"
+    expected:
+      - "START\n"
+      - "1\n"
+      - "2\n"
+      - "END\n"
+
   - name: "ForLoopSpanningMultipleLinesWithColonContinuation"
     program: |
       10 FOR I = 1 TO 2: PRINT I

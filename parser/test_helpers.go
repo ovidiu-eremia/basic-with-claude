@@ -70,3 +70,7 @@ func binaryOp(left Expression, operator string, right Expression, line int) *Bin
 func remStmt(line int) *RemStatement {
 	return &RemStatement{Line: line}
 }
+
+func funcCall(name string, args []Expression, line int) *FunctionCall {
+	return &FunctionCall{FunctionName: name, Arguments: args, Line: line}
+}
