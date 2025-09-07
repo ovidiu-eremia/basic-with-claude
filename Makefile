@@ -1,4 +1,4 @@
-.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff
+.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff coverage-history
 
 .DEFAULT_GOAL := help
 
@@ -29,3 +29,6 @@ loc-diff:
 
 go-files-by-size:
 	@cloc --by-file --include-ext=go . --quiet
+
+coverage-history:
+	@./scripts/coverage-history.sh $(RANGE)

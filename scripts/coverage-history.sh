@@ -1,58 +1,87 @@
 #!/bin/bash
-# ABOUTME: Shows Go test coverage percentage by commit in chronological order
-# ABOUTME: Uses a temporary git worktree to avoid touching the current tree
+# ABOUTME: Shows Go test coverage by commit in chronological order
+# ABOUTME: Uses a temporary detached clone to avoid touching your tree
 
 set -euo pipefail
 
-echo "Commit         Date                Coverage %   Diff   Message"
-echo "-------        ----                ----------   ----   -------"
+echo "Commit         Date        Coverage(%)  Diff(%)  Message"
+echo "-------        ----        -----------  -------  -------"
 
-repo_root=$(git rev-parse --show-toplevel)
-current_branch=$(git branch --show-current || true)
 prev_cov=""
 
-# Prepare a temporary worktree at HEAD
-wt_dir=$(mktemp -d 2>/dev/null || mktemp -d -t covwt)
+# Optional revision range (e.g., "HEAD~50..HEAD"). Defaults to HEAD history.
+REV_RANGE="${1:-HEAD}"
+
+# Create a temporary clone rooted at HEAD (or provided range start)
+wt_dir=$(mktemp -d 2>/dev/null || mktemp -d -t coverhistory)
 cleanup() {
-  git worktree remove --force "$wt_dir" >/dev/null 2>&1 || true
+  rm -rf "$wt_dir" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
+# Allow Ctrl-C to stop immediately (not swallowed by non-fatal blocks)
+trap 'exit 130' INT
 
-git worktree add --detach -q "$wt_dir" HEAD >/dev/null 2>&1
+if ! git clone --quiet . "$wt_dir" >/dev/null 2>&1; then
+  echo "Failed to clone repository into temporary directory" >&2
+  exit 1
+fi
 
-# Collect commits in chronological order
-mapfile -t commits < <(git rev-list --reverse HEAD)
+# Compute ordered list of commits for the given range from inside the clone
+commits=$(git -C "$wt_dir" rev-list --reverse "$REV_RANGE")
 
-for commit in "${commits[@]}"; do
-    # Checkout commit inside the worktree
-    git -C "$wt_dir" checkout -q "$commit" >/dev/null 2>&1
+# Iterate commits without using mapfile for portability
+for commit in $commits; do
+  # Checkout each commit
+  git -C "$wt_dir" checkout -q "$commit" >/dev/null 2>&1 || continue
 
-    date=$(git show -s --format=%ci "$commit" | cut -d' ' -f1)
-    short_commit=$(echo "$commit" | cut -c1-8)
+  date=$(git -C "$wt_dir" show -s --format=%ad --date=short "$commit")
+  short_commit=$(echo "$commit" | cut -c1-8)
+  message=$(git -C "$wt_dir" show -s --format=%s "$commit")
 
-    # Create a temp coverage profile and run tests from the worktree
-    tmpfile=$(mktemp 2>/dev/null || mktemp -t coverprofile)
-    if (cd "$wt_dir" && go test -count=1 -coverpkg=./... ./... -coverprofile="$tmpfile" -covermode=atomic >/dev/null 2>&1); then
-        cov=$(go tool cover -func="$tmpfile" 2>/dev/null | awk '/^total:/ {print $3}' | tr -d '%')
-    else
-        cov=""
-    fi
-    rm -f "$tmpfile" 2>/dev/null || true
+  cov_pct=""
+  diff_str=""
 
-    # Fallback if coverage not available
-    if [ -z "$cov" ]; then cov=0; fi
+  # Run tests with coverage; tolerate failures and mark as n/a
+  set +e
+  (cd "$wt_dir" && go test -count=1 ./... -coverprofile=coverage.out >/dev/null 2>&1)
+  test_status=$?
+  set -e
 
-    # Compute diff vs previous (two decimals)
+  # If interrupted, exit now so Ctrl-C works as expected
+  if [ ${test_status:-0} -eq 130 ]; then
+    exit 130
+  fi
+
+  if [ $test_status -eq 0 ] && [ -f "$wt_dir/coverage.out" ]; then
+    # Compute coverage directly from coverage.out to avoid go tool cover pitfalls
+    # Format: mode: set; then lines like: file:line1,col1,line2,col2 statements count
+    cov_pct=$(awk '
+      BEGIN { total=0; covered=0 }
+      NR==1 { next } # skip mode line
+      {
+        stmts=$(NF-1); cnt=$NF;
+        total+=stmts; if (cnt>0) covered+=stmts;
+      }
+      END {
+        if (total>0) printf "%.2f", (covered/total*100);
+      }
+    ' "$wt_dir/coverage.out")
+  fi
+
+  if [ -z "$cov_pct" ]; then
+    cov_disp="n/a"
+    diff_str="   n/a"
+  else
+    cov_disp="$cov_pct%"
     if [ -z "$prev_cov" ]; then
-        diff=$cov
+      diff_str=$(printf '%+6.2f' "$cov_pct")
     else
-        diff=$(awk -v a="$cov" -v b="$prev_cov" 'BEGIN{printf "%.2f", (a - b)}')
+      # Compute numeric diff with awk to handle floats precisely
+      delta=$(awk -v a="$cov_pct" -v b="$prev_cov" 'BEGIN { printf "%.2f", (a - b) }')
+      diff_str=$(printf '%+6.2f' "$delta")
     fi
+    prev_cov="$cov_pct"
+  fi
 
-    message=$(git show -s --format=%s "$commit")
-
-    # Print: commit, date, coverage (2 decimals), diff (2 decimals with sign), message
-    printf "%-14s %-19s %10.2f %% %+6.2f  %s\n" "$short_commit" "$date" "$cov" "$diff" "$message"
-
-    prev_cov=$cov
+  printf "%-14s %-10s %11s %8s  %s\n" "$short_commit" "$date" "$cov_disp" "$diff_str" "$message"
 done
