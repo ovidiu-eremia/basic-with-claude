@@ -433,8 +433,17 @@ cmd/basic        (main application)
 go test ./...
 go build ./cmd/basic
 
-# Run BASIC program
+# Run BASIC program from file
 go run ./cmd/basic program.bas
+
+# Quick testing with -e flag (execute directly)
+go run ./cmd/basic -e "10 PRINT \"HELLO\": 20 END"
+
+# With input using -i flag (comma-separated)
+go run ./cmd/basic -e "10 INPUT X,Y: 20 PRINT X+Y: 30 END" -i "42,17"
+
+# With input from stdin (pipe-friendly)
+echo "42" | go run ./cmd/basic -e "10 INPUT X: 20 PRINT X: 30 END"
 ```
 
 # Miscellanea

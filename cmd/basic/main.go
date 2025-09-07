@@ -18,24 +18,36 @@ import (
 func main() {
 	// Define command-line flags
 	maxSteps := flag.Int("max-steps", 1000, "Maximum number of execution steps before infinite loop protection triggers")
+	executeFlag := flag.String("e", "", "Execute BASIC program directly from command line")
+	inputsFlag := flag.String("i", "", "Comma-separated inputs for INPUT statements")
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage: %s [options] <filename.bas>\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "   or: %s [options] -e \"BASIC program\"\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "\nOptions:\n")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
 
-	// Check for required filename argument
-	if flag.NArg() != 1 {
+	var content string
+	var err error
+
+	// Check for mutually exclusive options
+	if *executeFlag != "" && flag.NArg() > 0 {
+		exitWithError("Cannot specify both -e flag and filename")
+	}
+	if *executeFlag == "" && flag.NArg() != 1 {
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	filename := flag.Arg(0)
-
-	content, err := readBasicFile(filename)
-	if err != nil {
-		exitWithError("Error reading file %s: %v", filename, err)
+	if *executeFlag != "" {
+		content = *executeFlag
+	} else {
+		filename := flag.Arg(0)
+		content, err = readBasicFile(filename)
+		if err != nil {
+			exitWithError("Error reading file %s: %v", filename, err)
+		}
 	}
 
 	// Parse the BASIC program
@@ -60,13 +72,27 @@ func main() {
 	}
 
 	// Execute the program
-	fmt.Printf("Program loaded: %s\n", filename)
-	fmt.Println("Executing program:")
-	fmt.Println()
+	if *executeFlag == "" {
+		fmt.Printf("Program loaded: %s\n", flag.Arg(0))
+		fmt.Println("Executing program:")
+		fmt.Println()
+	}
 
 	// Create runtime and interpreter
-	stdRuntime := runtime.NewStandardRuntime()
-	interp := interpreter.NewInterpreter(stdRuntime)
+	var rt runtime.Runtime
+	if *inputsFlag != "" {
+		// Use test runtime with predefined inputs
+		testRuntime := runtime.NewTestRuntime()
+		inputs := strings.Split(*inputsFlag, ",")
+		for i := range inputs {
+			inputs[i] = strings.TrimSpace(inputs[i])
+		}
+		testRuntime.SetInput(inputs)
+		rt = testRuntime
+	} else {
+		rt = runtime.NewStandardRuntime()
+	}
+	interp := interpreter.NewInterpreter(rt)
 
 	// Configure infinite loop protection
 	if *maxSteps > 0 {
@@ -77,6 +103,14 @@ func main() {
 	err = interp.Execute(program)
 	if err != nil {
 		exitWithError("Runtime error: %v", err)
+	}
+
+	// If using test runtime with -i flag, output the captured results to stdout
+	if testRuntime, ok := rt.(*runtime.TestRuntime); ok {
+		output := testRuntime.GetOutput()
+		for _, line := range output {
+			fmt.Print(line)
+		}
 	}
 }
 

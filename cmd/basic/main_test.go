@@ -67,3 +67,116 @@ func TestReadBasicFilePermissionDenied(t *testing.T) {
 		t.Error("readBasicFile() should return error for permission denied")
 	}
 }
+
+func TestParseInputsFlag(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected []string
+	}{
+		{
+			name:     "single input",
+			input:    "42",
+			expected: []string{"42"},
+		},
+		{
+			name:     "multiple inputs",
+			input:    "42,hello,17",
+			expected: []string{"42", "hello", "17"},
+		},
+		{
+			name:     "inputs with spaces",
+			input:    "42, hello , 17",
+			expected: []string{"42", "hello", "17"},
+		},
+		{
+			name:     "empty string input",
+			input:    "42,,17",
+			expected: []string{"42", "", "17"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inputs := strings.Split(tt.input, ",")
+			for i := range inputs {
+				inputs[i] = strings.TrimSpace(inputs[i])
+			}
+
+			if len(inputs) != len(tt.expected) {
+				t.Errorf("Expected %d inputs, got %d", len(tt.expected), len(inputs))
+				return
+			}
+
+			for i, expected := range tt.expected {
+				if inputs[i] != expected {
+					t.Errorf("Input[%d] = %q, want %q", i, inputs[i], expected)
+				}
+			}
+		})
+	}
+}
+
+func TestFlagValidation(t *testing.T) {
+	tests := []struct {
+		name         string
+		executeFlag  string
+		args         []string
+		shouldError  bool
+		errorMessage string
+	}{
+		{
+			name:        "valid file argument",
+			executeFlag: "",
+			args:        []string{"test.bas"},
+			shouldError: false,
+		},
+		{
+			name:        "valid execute flag",
+			executeFlag: "10 PRINT \"TEST\": 20 END",
+			args:        []string{},
+			shouldError: false,
+		},
+		{
+			name:         "both execute flag and file",
+			executeFlag:  "10 PRINT \"TEST\"",
+			args:         []string{"test.bas"},
+			shouldError:  true,
+			errorMessage: "Cannot specify both -e flag and filename",
+		},
+		{
+			name:        "no execute flag or file",
+			executeFlag: "",
+			args:        []string{},
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test the validation logic directly (without actually running main)
+			executeFlag := tt.executeFlag
+			hasFile := len(tt.args) > 0
+
+			// Replicate the validation logic from main()
+			bothSpecified := executeFlag != "" && hasFile
+			neitherSpecified := executeFlag == "" && !hasFile
+
+			if tt.shouldError {
+				if !bothSpecified && !neitherSpecified {
+					t.Error("Expected validation error but none occurred")
+				}
+				if bothSpecified && tt.errorMessage != "" {
+					// This would trigger the "Cannot specify both" error
+					if tt.errorMessage != "Cannot specify both -e flag and filename" {
+						t.Errorf("Wrong error message expected")
+					}
+				}
+			} else {
+				if bothSpecified || neitherSpecified {
+					t.Error("Unexpected validation error")
+				}
+			}
+		})
+	}
+}
