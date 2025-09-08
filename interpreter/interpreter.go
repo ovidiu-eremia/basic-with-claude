@@ -358,6 +358,14 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateIntFunction(argValues)
 	case "SQR":
 		return i.evaluateSqrFunction(argValues)
+	case "SIN":
+		return i.evaluateSinFunction(argValues)
+	case "COS":
+		return i.evaluateCosFunction(argValues)
+	case "TAN":
+		return i.evaluateTanFunction(argValues)
+	case "ATN":
+		return i.evaluateAtnFunction(argValues)
 	case "TAB":
 		return i.evaluateTabFunction(argValues)
 	default:
@@ -742,6 +750,54 @@ func (i *Interpreter) evaluateSqrFunction(args []types.Value) (types.Value, erro
 		return types.Value{}, ErrIllegalQuantity
 	}
 	return types.NewNumberValue(math.Sqrt(arg.Number)), nil
+}
+
+// evaluateSinFunction implements the SIN function (argument in radians)
+func (i *Interpreter) evaluateSinFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: SIN requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(math.Sin(arg.Number)), nil
+}
+
+// evaluateCosFunction implements the COS function (argument in radians)
+func (i *Interpreter) evaluateCosFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: COS requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(math.Cos(arg.Number)), nil
+}
+
+// evaluateTanFunction implements the TAN function (argument in radians)
+func (i *Interpreter) evaluateTanFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: TAN requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(math.Tan(arg.Number)), nil
+}
+
+// evaluateAtnFunction implements the ATN (arctangent) function, returning radians
+func (i *Interpreter) evaluateAtnFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: ATN requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(math.Atan(arg.Number)), nil
 }
 
 // evaluateTabFunction implements the TAB function used in PRINT formatting.

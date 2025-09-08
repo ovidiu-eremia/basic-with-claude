@@ -1,0 +1,19 @@
+tests:
+  - name: "Trig_zero_values"
+    program: |
+      10 PRINT SIN(0)
+      20 PRINT COS(0)
+      30 PRINT TAN(0)
+      40 END
+    expected:
+      - "0\n"
+      - "1\n"
+      - "0\n"
+
+  - name: "ATN_of_one"
+    program: |
+      10 PRINT ATN(1)
+      20 END
+    expected:
+      - "0.7853981633974483\n"
+
