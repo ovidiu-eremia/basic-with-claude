@@ -1,4 +1,4 @@
-.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff coverage-history
+.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff coverage-history short-coverage-history
 
 .DEFAULT_GOAL := help
 
@@ -32,3 +32,6 @@ go-files-by-size:
 
 coverage-history:
 	@./scripts/coverage-history.sh $(RANGE)
+
+short-coverage-history:
+	@cnt=$$(git rev-list --count HEAD); if [ $$cnt -ge 10 ]; then base=$$(git rev-list --max-count=10 HEAD | tail -1); ./scripts/coverage-history.sh "$$base^..HEAD"; else ./scripts/coverage-history.sh HEAD; fi

@@ -1,8 +1,0 @@
-10 PRINT 2 + 3 * 4
-20 PRINT (2 + 3) * 4
-30 A = 5
-40 B = 3
-50 PRINT A * B + 1
-60 PRINT A + B * 2
-70 PRINT 10 / 2
-80 PRINT 2 ^ 3
