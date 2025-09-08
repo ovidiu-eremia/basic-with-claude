@@ -146,7 +146,7 @@ func TestAcceptance(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var output []string
 			var err error
-			if tt.maxSteps > 0 {
+			if tt.maxSteps == 0 {
 				tt.maxSteps = DEFAULT_MAX_STEPS
 			}
 			output, err = executeBasicProgramWithMaxSteps(t, tt.program, tt.inputs, tt.maxSteps)
