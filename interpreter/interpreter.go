@@ -6,7 +6,6 @@ package interpreter
 import (
 	"fmt"
 	"math"
-	"math/rand"
 	"strings"
 
 	"basic-interpreter/lexer"
@@ -71,8 +70,7 @@ type Interpreter struct {
 	dataValues  []types.Value // Collected DATA values
 	dataPointer int           // Current READ pointer
 
-	// Random number generator (deterministic for tests)
-	rnd *rand.Rand
+	// No RNG here; delegate randomness to runtime
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -93,7 +91,6 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		jumped:       false,
 		halted:       false,
 		stmtJumped:   false,
-		rnd:          rand.New(rand.NewSource(1)),
 	}
 }
 
@@ -697,7 +694,7 @@ func (i *Interpreter) evaluateRndFunction(args []types.Value) (types.Value, erro
 	if args[0].Type != types.NumberType {
 		return types.Value{}, types.ErrTypeMismatch
 	}
-	return types.NewNumberValue(i.rnd.Float64()), nil
+	return types.NewNumberValue(i.runtime.Random()), nil
 }
 
 // evaluateAbsFunction implements the ABS function

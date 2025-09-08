@@ -17,4 +17,8 @@ type Runtime interface {
 
 	// Clear clears the output (if supported by the runtime)
 	Clear() error
+
+	// Random returns a pseudo-random float64 in [0,1).
+	// Implementations may be deterministic (TestRuntime) or seeded (StandardRuntime).
+	Random() float64
 }

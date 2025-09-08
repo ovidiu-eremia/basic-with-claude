@@ -5,6 +5,7 @@ package runtime
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 // TestRuntime implements Runtime interface for testing
@@ -13,6 +14,7 @@ type TestRuntime struct {
 	outputBuffer []string
 	inputQueue   []string
 	inputIndex   int
+	rng          *rand.Rand
 }
 
 // NewTestRuntime creates a new TestRuntime instance
@@ -21,6 +23,7 @@ func NewTestRuntime() *TestRuntime {
 		outputBuffer: make([]string, 0),
 		inputQueue:   make([]string, 0),
 		inputIndex:   0,
+		rng:          rand.New(rand.NewSource(1)),
 	}
 }
 
@@ -66,4 +69,9 @@ func (test *TestRuntime) GetOutput() []string {
 func (test *TestRuntime) SetInput(inputs []string) {
 	test.inputQueue = inputs
 	test.inputIndex = 0
+}
+
+// Random returns deterministic random numbers for tests
+func (test *TestRuntime) Random() float64 {
+	return test.rng.Float64()
 }
