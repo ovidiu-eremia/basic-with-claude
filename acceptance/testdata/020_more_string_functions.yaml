@@ -1,0 +1,68 @@
+tests:
+  - name: "MID$_basic_three_args"
+    program: |
+      10 PRINT MID$("HELLO", 2, 3)
+      20 END
+    expected:
+      - "ELL\n"
+
+  - name: "MID$_start_beyond_length"
+    program: |
+      10 PRINT MID$("ABC", 5, 2)
+      20 END
+    expected:
+      - "\n"
+
+  - name: "MID$_length_overflow_to_end"
+    program: |
+      10 PRINT MID$("ABCDE", 4, 99)
+      20 END
+    expected:
+      - "DE\n"
+
+  - name: "CHR$_basic_codes"
+    program: |
+      10 PRINT CHR$(65)
+      20 PRINT CHR$(97)
+      30 END
+    expected:
+      - "A\n"
+      - "a\n"
+
+  - name: "ASC_basic"
+    program: |
+      10 PRINT ASC("A")
+      20 PRINT ASC("hello")
+      30 END
+    expected:
+      - "65\n"
+      - "104\n"
+
+  - name: "Nested_ASC_CHR_roundtrip"
+    program: |
+      10 PRINT CHR$(ASC("Z"))
+      20 END
+    expected:
+      - "Z\n"
+
+  - name: "MID$_type_mismatch_errors"
+    program: |
+      10 PRINT MID$(123, 1, 1)
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "CHR$_type_mismatch_errors"
+    program: |
+      10 PRINT CHR$("A")
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "ASC_type_mismatch_errors"
+    program: |
+      10 PRINT ASC(65)
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+

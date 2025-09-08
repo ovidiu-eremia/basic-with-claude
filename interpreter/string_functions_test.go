@@ -298,3 +298,132 @@ func TestInterpreter_RightFunction(t *testing.T) {
 		})
 	}
 }
+
+func TestInterpreter_MidFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		args     []types.Value
+		expected types.Value
+		wantErr  bool
+	}{
+		{
+			name: "basic substring",
+			args: []types.Value{
+				types.NewStringValue("HELLO"),
+				types.NewNumberValue(2),
+				types.NewNumberValue(3),
+			},
+			expected: types.NewStringValue("ELL"),
+			wantErr:  false,
+		},
+		{
+			name: "start beyond length",
+			args: []types.Value{
+				types.NewStringValue("ABC"),
+				types.NewNumberValue(5),
+				types.NewNumberValue(2),
+			},
+			expected: types.NewStringValue(""),
+			wantErr:  false,
+		},
+		{
+			name: "length overflow to end",
+			args: []types.Value{
+				types.NewStringValue("ABCDE"),
+				types.NewNumberValue(4),
+				types.NewNumberValue(99),
+			},
+			expected: types.NewStringValue("DE"),
+			wantErr:  false,
+		},
+		{ // wrong arity
+			name:    "wrong number of arguments",
+			args:    []types.Value{types.NewStringValue("A"), types.NewNumberValue(1)},
+			wantErr: true,
+		},
+		{ // wrong types
+			name: "wrong types",
+			args: []types.Value{
+				types.NewNumberValue(123),
+				types.NewNumberValue(1),
+				types.NewNumberValue(1),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtime.NewTestRuntime()
+			interp := NewInterpreter(rt)
+
+			result, err := interp.evaluateMidFunction(tt.args)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestInterpreter_ChrFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		arg      types.Value
+		expected types.Value
+		wantErr  bool
+	}{
+		{name: "A", arg: types.NewNumberValue(65), expected: types.NewStringValue("A")},
+		{name: "a", arg: types.NewNumberValue(97), expected: types.NewStringValue("a")},
+		{name: "zero", arg: types.NewNumberValue(0), expected: types.NewStringValue("\x00")},
+		{name: "wrong type", arg: types.NewStringValue("A"), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtime.NewTestRuntime()
+			interp := NewInterpreter(rt)
+
+			result, err := interp.evaluateChrFunction([]types.Value{tt.arg})
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestInterpreter_AscFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		arg      types.Value
+		expected types.Value
+		wantErr  bool
+	}{
+		{name: "A", arg: types.NewStringValue("A"), expected: types.NewNumberValue(65)},
+		{name: "hello", arg: types.NewStringValue("hello"), expected: types.NewNumberValue(104)},
+		{name: "empty", arg: types.NewStringValue(""), expected: types.NewNumberValue(0)},
+		{name: "wrong type", arg: types.NewNumberValue(65), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtime.NewTestRuntime()
+			interp := NewInterpreter(rt)
+
+			result, err := interp.evaluateAscFunction([]types.Value{tt.arg})
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

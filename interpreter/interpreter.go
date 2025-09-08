@@ -332,6 +332,12 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateLeftFunction(argValues)
 	case "RIGHT$":
 		return i.evaluateRightFunction(argValues)
+	case "MID$":
+		return i.evaluateMidFunction(argValues)
+	case "CHR$":
+		return i.evaluateChrFunction(argValues)
+	case "ASC":
+		return i.evaluateAscFunction(argValues)
 	default:
 		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
 	}
@@ -539,4 +545,89 @@ func (i *Interpreter) evaluateRightFunction(args []types.Value) (types.Value, er
 	// Extract rightmost characters
 	startPos := len(str.String) - countInt
 	return types.NewStringValue(str.String[startPos:]), nil
+}
+
+// evaluateMidFunction implements the MID$ function
+func (i *Interpreter) evaluateMidFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 3 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: MID$ requires exactly 3 arguments")
+	}
+
+	src := args[0]
+	start := args[1]
+	length := args[2]
+
+	if src.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: MID$ first argument must be string")
+	}
+	if start.Type != types.NumberType || length.Type != types.NumberType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: MID$ second and third arguments must be numbers")
+	}
+
+	if len(src.String) == 0 {
+		return types.NewStringValue(""), nil
+	}
+
+	// 1-based start position
+	startInt := int(start.Number)
+	countInt := int(length.Number)
+
+	if countInt <= 0 {
+		return types.NewStringValue(""), nil
+	}
+
+	// Convert to 0-based index
+	idx := startInt - 1
+	if idx < 0 {
+		// Be forgiving: treat before-start as empty result
+		return types.NewStringValue(""), nil
+	}
+	if idx >= len(src.String) {
+		return types.NewStringValue(""), nil
+	}
+
+	end := idx + countInt
+	if end > len(src.String) {
+		end = len(src.String)
+	}
+	if end <= idx {
+		return types.NewStringValue(""), nil
+	}
+	return types.NewStringValue(src.String[idx:end]), nil
+}
+
+// evaluateChrFunction implements the CHR$ function
+func (i *Interpreter) evaluateChrFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: CHR$ requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: CHR$ requires numeric argument")
+	}
+	code := int(arg.Number)
+	// Normalize to 0..255 range
+	if code < 0 {
+		code = 256 - ((-code) % 256)
+	}
+	code = code % 256
+	b := byte(code)
+	return types.NewStringValue(string([]byte{b})), nil
+}
+
+// evaluateAscFunction implements the ASC function
+func (i *Interpreter) evaluateAscFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: ASC requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: ASC requires string argument")
+	}
+	if len(arg.String) == 0 {
+		return types.NewNumberValue(0), nil
+	}
+	// Use first byte of UTF-8 representation for compatibility with simple ASCII
+	c := arg.String[0]
+	return types.NewNumberValue(float64(int(c))), nil
 }
