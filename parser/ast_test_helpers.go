@@ -16,6 +16,7 @@ type MockInterpreterOperations struct {
 
 	// I/O capture
 	printedLines []string
+	printed      []string
 	inputQueue   []string
 	inputIndex   int
 
@@ -39,6 +40,7 @@ func newMockOps() *MockInterpreterOperations {
 	return &MockInterpreterOperations{
 		variables:    make(map[string]types.Value),
 		printedLines: make([]string, 0),
+		printed:      make([]string, 0),
 		inputQueue:   make([]string, 0),
 	}
 }
@@ -74,6 +76,14 @@ func (m *MockInterpreterOperations) PrintLine(text string) error {
 	}
 
 	m.printedLines = append(m.printedLines, text)
+	return nil
+}
+
+func (m *MockInterpreterOperations) Print(text string) error {
+	if m.printLineError != nil {
+		return m.printLineError
+	}
+	m.printed = append(m.printed, text)
 	return nil
 }
 

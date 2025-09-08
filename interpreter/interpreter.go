@@ -6,6 +6,7 @@ package interpreter
 import (
 	"fmt"
 	"math"
+	"math/rand"
 	"strings"
 
 	"basic-interpreter/lexer"
@@ -69,6 +70,9 @@ type Interpreter struct {
 	// DATA/READ state
 	dataValues  []types.Value // Collected DATA values
 	dataPointer int           // Current READ pointer
+
+	// Random number generator (deterministic for tests)
+	rnd *rand.Rand
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -89,6 +93,7 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		jumped:       false,
 		halted:       false,
 		stmtJumped:   false,
+		rnd:          rand.New(rand.NewSource(1)),
 	}
 }
 
@@ -298,6 +303,11 @@ func (i *Interpreter) PrintLine(text string) error {
 	return i.runtime.PrintLine(text)
 }
 
+// Print outputs text without a newline
+func (i *Interpreter) Print(text string) error {
+	return i.runtime.Print(text)
+}
+
 // ReadInput reads input from the runtime environment
 func (i *Interpreter) ReadInput(prompt string) (string, error) {
 	return i.runtime.Input(prompt)
@@ -343,6 +353,8 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateStrFunction(argValues)
 	case "VAL":
 		return i.evaluateValFunction(argValues)
+	case "RND":
+		return i.evaluateRndFunction(argValues)
 	case "ABS":
 		return i.evaluateAbsFunction(argValues)
 	case "INT":
@@ -673,6 +685,19 @@ func (i *Interpreter) evaluateValFunction(args []types.Value) (types.Value, erro
 		return v, nil
 	}
 	return types.NewNumberValue(0), nil
+}
+
+// evaluateRndFunction implements the RND function
+// For now, it returns a pseudo-random number in [0,1).
+// The argument is required (C64 style) but only used for compatibility.
+func (i *Interpreter) evaluateRndFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: RND requires exactly 1 argument")
+	}
+	if args[0].Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(i.rnd.Float64()), nil
 }
 
 // evaluateAbsFunction implements the ABS function

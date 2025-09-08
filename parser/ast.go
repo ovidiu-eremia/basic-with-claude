@@ -23,6 +23,7 @@ type InterpreterOperations interface {
 	SetVariable(name string, value types.Value) error
 
 	// I/O operations
+	Print(text string) error
 	PrintLine(text string) error
 	ReadInput(prompt string) (string, error)
 
@@ -86,13 +87,34 @@ func (l *Line) GetLineNumber() int { return l.SourceLine }
 
 // PrintStatement represents a PRINT statement
 type PrintStatement struct {
-	Expression Expression // What to print
-	Line       int        // Source line number
+	// Legacy single expression (used when Items is empty)
+	Expression Expression
+	// Items is a list of expressions to print in sequence (semicolon/comma separated)
+	Items []Expression
+	// If true, suppress the trailing newline (trailing ';' in PRINT)
+	NoNewline bool
+	Line      int // Source line number
 }
 
 func (ps *PrintStatement) GetLineNumber() int { return ps.Line }
 
 func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
+	// If multiple items are present, concatenate them into a single output string
+	if len(ps.Items) > 0 {
+		var out string
+		for _, it := range ps.Items {
+			v, err := it.Evaluate(ops)
+			if err != nil {
+				return err
+			}
+			out += v.ToString()
+		}
+		if ps.NoNewline {
+			return ops.Print(out)
+		}
+		return ops.PrintLine(out)
+	}
+	// Legacy behavior: single expression
 	value, err := ps.Expression.Evaluate(ops)
 	if err != nil {
 		return err

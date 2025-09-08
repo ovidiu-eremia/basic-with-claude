@@ -1,0 +1,69 @@
+tests:
+  - name: "PRINT_semicolon_concatenation_and_trailing"
+    program: |
+      10 PRINT "HELLO";" ";42
+      20 PRINT "PROMPT:";
+      30 END
+    expected:
+      - "HELLO 42\n"
+      - "PROMPT:"
+
+  - name: "Run_guess_number_basics"
+    program: |
+      10 REM program from testdata/guess_number.bas (copied inline for acceptance)
+      20 PRINT "======="
+      40 PRINT " ZERO!"
+      50 PRINT "=======":PRINT
+      60 PRINT "I CHOOSE A NUMBER BETWEEN 1 AND 100.":PRINT
+      70 PRINT "YOU MUST ZERO IN ON IT IN 7 GUESSES.":PRINT
+      80 PRINT "I TELL YOU TO GUESS HIGHER, OR LOWER.":PRINT
+      90 INPUT "PRESS ENTER TO START. READY"; START$
+      100 NUM = INT(100*RND(1))
+      110 PRINT:PRINT "====================":PRINT
+      120 PRINT "I HAVE CHOSEN A NUMBER ":PRINT
+      130 FOR COUNT = 1 TO 7
+      140 PRINT "GUESS ";COUNT;
+      150 INPUT ": "; GUESS$
+      160 GUESS = VAL(GUESS$)
+      170 IF GUESS = NUM GOTO 250
+      180 IF GUESS > NUM THEN PRINT "GUESS LOWER"
+      190 IF GUESS < NUM THEN PRINT "GUESS HIGHER"
+      200 PRINT
+      210 NEXT COUNT
+      220 PRINT:PRINT "YOU'VE USED ALL OF YOUR GUESSES."
+      230 PRINT "THE NUMBER WAS";NUM
+      240 GOTO 270
+      250 PRINT "YOU GOT IT IN ";COUNT;
+      260 PRINT " GUESSES."
+      270 PRINT
+      280 INPUT "PLAY AGAIN? (Y/N) "; A$
+      290 IF A$ = "Y" THEN GOTO 100
+      300 END
+    inputs:
+      - ""   # press enter to start
+      - "60" # first guess matches deterministic RND(1) with Go's default seed
+      - "N"  # do not play again
+    expected:
+      - "=======\n"
+      - " ZERO!\n"
+      - "=======\n"
+      - "\n"
+      - "I CHOOSE A NUMBER BETWEEN 1 AND 100.\n"
+      - "\n"
+      - "YOU MUST ZERO IN ON IT IN 7 GUESSES.\n"
+      - "\n"
+      - "I TELL YOU TO GUESS HIGHER, OR LOWER.\n"
+      - "\n"
+      - "PRESS ENTER TO START. READY"
+      - "\n"
+      - "====================\n"
+      - "\n"
+      - "I HAVE CHOSEN A NUMBER \n"
+      - "\n"
+      - "GUESS 1"
+      - ": "
+      - "YOU GOT IT IN 1"
+      - " GUESSES.\n"
+      - "\n"
+      - "PLAY AGAIN? (Y/N) "
+

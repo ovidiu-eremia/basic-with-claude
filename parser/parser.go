@@ -282,15 +282,51 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 func (p *Parser) parsePrintStatement() *PrintStatement {
 	stmt := &PrintStatement{Line: p.currentToken.Line}
 
-	// Check if there's an expression after PRINT
-	if p.peekToken.Type != lexer.NEWLINE && p.peekToken.Type != lexer.EOF && p.peekToken.Type != lexer.COLON {
-		p.nextToken() // consume PRINT
-		stmt.Expression = p.parseExpression()
-	} else {
-		// No expression means print empty line - leave currentToken on PRINT
+	// Look ahead: if next token ends the statement, this is an empty PRINT
+	if p.peekToken.Type == lexer.NEWLINE || p.peekToken.Type == lexer.EOF || p.peekToken.Type == lexer.COLON {
+		// Empty PRINT -> outputs blank line
 		stmt.Expression = &StringLiteral{Value: "", Line: stmt.Line}
+		return stmt
 	}
 
+	// Consume PRINT and parse first expression
+	p.nextToken()
+	first := p.parseExpression()
+	if first == nil {
+		return nil
+	}
+
+	// Collect additional items separated by ';' or ','
+	items := []Expression{first}
+	noNewline := false
+	for {
+		// If next token is a separator, handle it
+		if p.peekToken.Type == lexer.SEMICOLON || p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // move to separator
+			// If the separator is the last token before end-of-statement, suppress newline
+			if p.peekToken.Type == lexer.NEWLINE || p.peekToken.Type == lexer.EOF || p.peekToken.Type == lexer.COLON {
+				noNewline = true
+				break
+			}
+			// Otherwise parse another expression
+			p.nextToken()
+			nextExpr := p.parseExpression()
+			if nextExpr == nil {
+				return nil
+			}
+			items = append(items, nextExpr)
+			continue
+		}
+		break
+	}
+
+	// If only one item and no special flags, keep legacy field for compatibility
+	if len(items) == 1 && !noNewline {
+		stmt.Expression = items[0]
+	} else {
+		stmt.Items = items
+		stmt.NoNewline = noNewline
+	}
 	return stmt
 }
 
@@ -496,12 +532,23 @@ func (p *Parser) parseIfStatement() *IfStatement {
 		return nil
 	}
 
-	// For simple expressions without operators, we need to advance past the primary expression
+	// Support optional THEN if followed directly by GOTO (e.g., IF A=B GOTO 100)
+	if p.peekToken.Type == lexer.GOTO {
+		p.nextToken() // move to GOTO
+		// Parse the statement to execute (GOTO ...)
+		stmt.ThenStmt = p.parseStatement()
+		if stmt.ThenStmt == nil {
+			return nil
+		}
+		return stmt
+	}
+
+	// For simple expressions without operators, advance past the primary expression to THEN if needed
 	if p.currentToken.Type != lexer.THEN && p.peekToken.Type == lexer.THEN {
 		p.nextToken()
 	}
 
-	// Expect THEN
+	// Expect THEN for standard form
 	if p.currentToken.Type != lexer.THEN {
 		p.addTokenError("THEN", p.currentToken.Type)
 		return nil
