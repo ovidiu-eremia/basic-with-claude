@@ -175,14 +175,14 @@ Add mathematical capabilities.
 Add array support.
 
 #### Step 25: Array Declaration (DIM)
-- [ ] **Goal**: Support array declaration with DIM
-- [ ] **Demo**: `DIM A(10)` creates array, access with A(0) through A(10)
-- [ ] **Tests**: Array allocation, index validation, memory management
+- [x] **Goal**: Support array declaration with DIM
+- [x] **Demo**: `DIM A(10)` creates array, access with A(0) through A(10)
+- [x] **Tests**: Array allocation, index validation, memory management
 
 #### Step 26: Array Assignment and Access
-- [ ] **Goal**: Support array element assignment and retrieval
-- [ ] **Demo**: Store values in array elements, retrieve and display them
-- [ ] **Tests**: Array indexing, value storage, bounds checking
+- [x] **Goal**: Support array element assignment and retrieval
+- [x] **Demo**: Store values in array elements, retrieve and display them
+- [x] **Tests**: Array indexing, value storage, bounds checking
 
 #### Step 27: String Arrays
 - [ ] **Goal**: Support string arrays
