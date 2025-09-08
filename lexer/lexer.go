@@ -50,6 +50,7 @@ const (
 	GOSUB     TokenType = "GOSUB"
 	RETURN    TokenType = "RETURN"
 	REM       TokenType = "REM"
+	DIM       TokenType = "DIM"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -72,6 +73,7 @@ var keywords = map[string]TokenType{
 	"GOSUB":  GOSUB,
 	"RETURN": RETURN,
 	"REM":    REM,
+	"DIM":    DIM,
 }
 
 // Position represents a position in the source code

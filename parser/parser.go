@@ -6,6 +6,7 @@ package parser
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"basic-interpreter/lexer"
 )
@@ -171,9 +172,9 @@ func (p *Parser) parseStatement() Statement {
 	case lexer.PRINT:
 		return p.parsePrintStatement()
 	case lexer.LET:
-		return p.parseAssignmentStatement(true) // LET assignment
+		return p.parseAssignmentOrArraySet(true) // LET assignment or array set
 	case lexer.IDENT:
-		return p.parseAssignmentStatement(false) // Direct assignment
+		return p.parseAssignmentOrArraySet(false) // Direct assignment or array set
 	case lexer.INPUT:
 		return p.parseInputStatement()
 	case lexer.END:
@@ -200,6 +201,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseReadStatement()
 	case lexer.REM:
 		return p.parseRemStatement()
+	case lexer.DIM:
+		return p.parseDimStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -270,6 +273,59 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 		stmt.Variables = append(stmt.Variables, p.currentToken.Literal)
 		if p.peekToken.Type == lexer.COMMA {
 			p.nextToken() // move to COMMA
+			p.nextToken() // move to next IDENT
+			continue
+		}
+		break
+	}
+	return stmt
+}
+
+// parseDimStatement parses a DIM statement: DIM A(n)[, B$(m) ...]
+func (p *Parser) parseDimStatement() *DimStatement {
+	stmt := &DimStatement{Line: p.currentToken.Line}
+	p.nextToken() // consume DIM
+
+	for {
+		// Expect identifier
+		if p.currentToken.Type != lexer.IDENT {
+			p.addTokenError("array name", p.currentToken.Type)
+			return nil
+		}
+		name := p.currentToken.Literal
+		p.nextToken() // consume name
+
+		// Expect '('
+		if p.currentToken.Type != lexer.LPAREN {
+			p.addTokenError("'(' after array name", p.currentToken.Type)
+			return nil
+		}
+		p.nextToken() // consume '('
+
+		// Parse size expression
+		sizeExpr := p.parseExpression()
+		if sizeExpr == nil {
+			return nil
+		}
+
+		// After parsing expression, ensure we are at ')'
+		if p.currentToken.Type != lexer.RPAREN {
+			// If peek is ')', advance
+			if p.peekToken.Type == lexer.RPAREN {
+				p.nextToken()
+			}
+		}
+		if p.currentToken.Type != lexer.RPAREN {
+			p.addTokenError("')' after dimension size", p.currentToken.Type)
+			return nil
+		}
+
+		// Add declaration
+		stmt.Declarations = append(stmt.Declarations, DimDeclaration{Name: name, Size: sizeExpr})
+
+		// If next is comma, consume and continue parsing more declarations
+		if p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // move to ')'
 			p.nextToken() // move to next IDENT
 			continue
 		}
@@ -399,9 +455,30 @@ func (p *Parser) parsePrimaryExpression() Expression {
 	case lexer.NUMBER:
 		return p.parseNumberLiteral()
 	case lexer.IDENT:
-		// Check if this is a function call (identifier followed by left parenthesis)
+		// IDENT followed by '(' could be a function call or an array reference
 		if p.peekToken.Type == lexer.LPAREN {
-			return p.parseFunctionCall()
+			if p.isBuiltinFunction(p.currentToken.Literal) {
+				return p.parseFunctionCall()
+			}
+			// Parse as array reference: NAME '(' expr ')'
+			nameTok := p.currentToken
+			p.nextToken() // consume name
+			p.nextToken() // consume '('
+			idx := p.parseExpression()
+			if idx == nil {
+				return nil
+			}
+			if p.currentToken.Type != lexer.RPAREN {
+				if p.peekToken.Type == lexer.RPAREN {
+					p.nextToken()
+				}
+			}
+			if p.currentToken.Type != lexer.RPAREN {
+				p.addTokenError("')' after array index", p.currentToken.Type)
+				return nil
+			}
+			// Do not consume ')'; caller will advance
+			return &ArrayReference{Name: nameTok.Literal, Index: idx, Line: nameTok.Line}
 		}
 		return p.parseVariableReference()
 	case lexer.LPAREN:
@@ -651,32 +728,75 @@ func (p *Parser) parseFunctionCall() *FunctionCall {
 	return functionCall
 }
 
-// parseAssignmentStatement parses variable assignment (with or without LET keyword)
-func (p *Parser) parseAssignmentStatement(hasLet bool) *LetStatement {
+// isBuiltinFunction checks if a name is a known built-in function (for disambiguating array refs)
+func (p *Parser) isBuiltinFunction(name string) bool {
+	n := strings.ToUpper(name)
+	switch n {
+	case "LEN", "LEFT$", "RIGHT$", "MID$", "CHR$", "ASC", "STR$", "VAL", "RND",
+		"ABS", "INT", "SQR", "TAB", "SIN", "COS", "TAN", "ATN", "EXP", "LOG":
+		return true
+	default:
+		return false
+	}
+}
+
+// parseAssignmentOrArraySet parses either a simple variable assignment or an array element assignment
+func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 	if hasLet {
 		p.nextToken() // consume LET token
 	}
 
-	stmt := &LetStatement{Line: p.currentToken.Line}
+	line := p.currentToken.Line
 
 	if p.currentToken.Type != lexer.IDENT {
-		p.addTokenError("variable name", p.currentToken.Type)
+		p.addTokenError("variable or array name", p.currentToken.Type)
 		return nil
 	}
 
-	stmt.Variable = p.currentToken.Literal
-	p.nextToken() // consume variable name
+	name := p.currentToken.Literal
+	p.nextToken() // consume name
 
+	// Array element assignment: IDENT '(' expr ')' '=' expr
+	if p.currentToken.Type == lexer.LPAREN {
+		p.nextToken() // consume '('
+		idx := p.parseExpression()
+		if idx == nil {
+			return nil
+		}
+		if p.currentToken.Type != lexer.RPAREN {
+			if p.peekToken.Type == lexer.RPAREN {
+				p.nextToken()
+			}
+		}
+		if p.currentToken.Type != lexer.RPAREN {
+			p.addTokenError("')' after array index", p.currentToken.Type)
+			return nil
+		}
+		// Expect '='
+		if p.peekToken.Type != lexer.ASSIGN {
+			p.addTokenError("'=' after array reference", p.peekToken.Type)
+			return nil
+		}
+		p.nextToken() // move to '='
+		p.nextToken() // consume '=' and move to expr
+		rhs := p.parseExpression()
+		if rhs == nil {
+			return nil
+		}
+		return &ArraySetStatement{Name: name, Index: idx, Expression: rhs, Line: line}
+	}
+
+	// Simple variable assignment
 	if p.currentToken.Type != lexer.ASSIGN {
 		p.addTokenError("'=' after variable name", p.currentToken.Type)
 		return nil
 	}
-
 	p.nextToken() // consume '='
-
-	stmt.Expression = p.parseExpression()
-
-	return stmt
+	expr := p.parseExpression()
+	if expr == nil {
+		return nil
+	}
+	return &LetStatement{Variable: name, Expression: expr, Line: line}
 }
 
 // parseInputStatement parses an INPUT statement

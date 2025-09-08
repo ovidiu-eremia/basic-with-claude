@@ -22,6 +22,7 @@ var (
 	ErrReturnWithoutGosub = fmt.Errorf("?RETURN WITHOUT GOSUB ERROR")
 	ErrStackOverflow      = fmt.Errorf("?OUT OF MEMORY ERROR")
 	ErrOutOfData          = fmt.Errorf("?OUT OF DATA ERROR")
+	ErrRedimArray         = fmt.Errorf("?REDIM'D ARRAY ERROR")
 )
 
 // ForLoopContext represents an active FOR loop state
@@ -71,6 +72,15 @@ type Interpreter struct {
 	dataPointer int           // Current READ pointer
 
 	// No RNG here; delegate randomness to runtime
+
+	// Arrays state
+	arrays map[string]ArrayInfo
+}
+
+// ArrayInfo holds metadata and storage for declared arrays
+type ArrayInfo struct {
+	IsString bool
+	Values   []types.Value
 }
 
 // NewInterpreter creates a new interpreter instance
@@ -91,6 +101,7 @@ func NewInterpreter(rt runtime.Runtime) *Interpreter {
 		jumped:       false,
 		halted:       false,
 		stmtJumped:   false,
+		arrays:       make(map[string]ArrayInfo),
 	}
 }
 
@@ -318,6 +329,65 @@ func (i *Interpreter) GetNextData() (types.Value, error) {
 	v := i.dataValues[i.dataPointer]
 	i.dataPointer++
 	return v, nil
+}
+
+// GetArrayElement retrieves an element from a declared array with bounds/type checks
+func (i *Interpreter) GetArrayElement(name string, index int) (types.Value, error) {
+	norm := i.NormalizeVariableName(name)
+	arr, ok := i.arrays[norm]
+	if !ok {
+		return types.Value{}, fmt.Errorf("?UNDEFINED ARRAY ERROR")
+	}
+	if index < 0 || index >= len(arr.Values) {
+		return types.Value{}, fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+	}
+	return arr.Values[index], nil
+}
+
+// SetArrayElement sets an element in a declared array with bounds/type checks
+func (i *Interpreter) SetArrayElement(name string, index int, value types.Value) error {
+	norm := i.NormalizeVariableName(name)
+	arr, ok := i.arrays[norm]
+	if !ok {
+		return fmt.Errorf("?UNDEFINED ARRAY ERROR")
+	}
+	if index < 0 || index >= len(arr.Values) {
+		return fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+	}
+	if arr.IsString && value.Type != types.StringType {
+		return types.ErrTypeMismatch
+	}
+	if !arr.IsString && value.Type != types.NumberType {
+		return types.ErrTypeMismatch
+	}
+	arr.Values[index] = value
+	i.arrays[norm] = arr
+	return nil
+}
+
+// DeclareArray declares a new array with given size (highest index). Size must be >=0.
+func (i *Interpreter) DeclareArray(name string, size int, isString bool) error {
+	if size < 0 {
+		return ErrIllegalQuantity
+	}
+	norm := i.NormalizeVariableName(name)
+	if _, exists := i.arrays[norm]; exists {
+		return ErrRedimArray
+	}
+	// Allocate size+1 elements for 0..size
+	count := size + 1
+	vals := make([]types.Value, count)
+	if isString {
+		for idx := range vals {
+			vals[idx] = types.NewStringValue("")
+		}
+	} else {
+		for idx := range vals {
+			vals[idx] = types.NewNumberValue(0)
+		}
+	}
+	i.arrays[norm] = ArrayInfo{IsString: isString, Values: vals}
+	return nil
 }
 
 // EvaluateFunction evaluates built-in functions

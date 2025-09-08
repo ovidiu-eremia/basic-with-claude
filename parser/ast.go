@@ -44,8 +44,15 @@ type InterpreterOperations interface {
 	// Data management (READ/DATA)
 	GetNextData() (types.Value, error)
 
+	// Array management (DIM)
+	DeclareArray(name string, size int, isString bool) error
+
 	// Function evaluation
 	EvaluateFunction(functionName string, args []Expression) (types.Value, error)
+
+	// Array element operations
+	GetArrayElement(name string, index int) (types.Value, error)
+	SetArrayElement(name string, index int, value types.Value) error
 }
 
 // (No control error types are used for END/STOP; interpreter handles them statefully.)
@@ -545,4 +552,94 @@ func (fc *FunctionCall) GetLineNumber() int { return fc.Line }
 
 func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	return ops.EvaluateFunction(fc.FunctionName, fc.Arguments)
+}
+
+// ArrayReference represents access to an array element, e.g., A(5)
+type ArrayReference struct {
+	Name  string
+	Index Expression
+	Line  int
+}
+
+func (ar *ArrayReference) GetLineNumber() int { return ar.Line }
+
+func (ar *ArrayReference) Evaluate(ops InterpreterOperations) (types.Value, error) {
+	idxVal, err := ar.Index.Evaluate(ops)
+	if err != nil {
+		return types.Value{}, err
+	}
+	if idxVal.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	n := idxVal.Number
+	if n < 0 || float64(int(n)) != n {
+		return types.Value{}, fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+	}
+	return ops.GetArrayElement(ar.Name, int(n))
+}
+
+// ArraySetStatement assigns a value to an array element, e.g., A(5) = 42
+type ArraySetStatement struct {
+	Name       string
+	Index      Expression
+	Expression Expression
+	Line       int
+}
+
+func (as *ArraySetStatement) GetLineNumber() int { return as.Line }
+
+func (as *ArraySetStatement) Execute(ops InterpreterOperations) error {
+	idxVal, err := as.Index.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+	if idxVal.Type != types.NumberType {
+		return types.ErrTypeMismatch
+	}
+	n := idxVal.Number
+	if n < 0 || float64(int(n)) != n {
+		return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+	}
+	val, err := as.Expression.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+	return ops.SetArrayElement(as.Name, int(n), val)
+}
+
+// DimDeclaration represents a single array declaration inside a DIM statement
+type DimDeclaration struct {
+	Name string
+	Size Expression
+}
+
+// DimStatement represents a DIM statement declaring one or more arrays
+type DimStatement struct {
+	Declarations []DimDeclaration
+	Line         int
+}
+
+func (ds *DimStatement) GetLineNumber() int { return ds.Line }
+
+func (ds *DimStatement) Execute(ops InterpreterOperations) error {
+	for _, d := range ds.Declarations {
+		// Evaluate size
+		val, err := d.Size.Evaluate(ops)
+		if err != nil {
+			return err
+		}
+		if val.Type != types.NumberType {
+			return types.ErrTypeMismatch
+		}
+		n := val.Number
+		// Size must be integer and >= 0
+		if n < 0 || float64(int(n)) != n {
+			return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+		}
+		isString := strings.HasSuffix(d.Name, "$")
+		if err := ops.DeclareArray(d.Name, int(n), isString); err != nil {
+			return err
+		}
+	}
+	return nil
 }
