@@ -1,4 +1,4 @@
-.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff coverage-history short-coverage-history
+.PHONY: help test loc-prod loc-test loc-history go-files-by-size loc-diff coverage coverage-html coverage-history short-coverage-history
 
 .DEFAULT_GOAL := help
 
@@ -11,6 +11,8 @@ help:
 	@echo "  loc-history      Show production LOC by commit in chronological order"
 	@echo "  loc-diff         Compare production LOC between current tree and HEAD"
 	@echo "  go-files-by-size List all Go files by descending order of size"
+	@echo "  coverage         Generate combined coverage report (includes acceptance tests)"
+	@echo "  coverage-html    Generate combined HTML coverage report"
 
 test:
 	go test ./...
@@ -32,6 +34,15 @@ go-files-by-size:
 
 coverage-history:
 	@./scripts/coverage-history.sh $(RANGE)
+
+coverage:
+	go test -coverprofile=combined.out -coverpkg=./... ./...
+	go tool cover -func=combined.out
+
+coverage-html:
+	go test -coverprofile=combined.out -coverpkg=./... ./...
+	go tool cover -html=combined.out -o combined_coverage.html
+	@echo "HTML coverage report generated: combined_coverage.html"
 
 short-coverage-history:
 	@cnt=$$(git rev-list --count HEAD); if [ $$cnt -ge 10 ]; then base=$$(git rev-list --max-count=10 HEAD | tail -1); ./scripts/coverage-history.sh "$$base^..HEAD"; else ./scripts/coverage-history.sh HEAD; fi
