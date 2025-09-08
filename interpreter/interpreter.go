@@ -338,6 +338,10 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateChrFunction(argValues)
 	case "ASC":
 		return i.evaluateAscFunction(argValues)
+	case "STR$":
+		return i.evaluateStrFunction(argValues)
+	case "VAL":
+		return i.evaluateValFunction(argValues)
 	default:
 		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
 	}
@@ -630,4 +634,36 @@ func (i *Interpreter) evaluateAscFunction(args []types.Value) (types.Value, erro
 	// Use first byte of UTF-8 representation for compatibility with simple ASCII
 	c := arg.String[0]
 	return types.NewNumberValue(float64(int(c))), nil
+}
+
+// evaluateStrFunction implements the STR$ function
+func (i *Interpreter) evaluateStrFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: STR$ requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: STR$ requires numeric argument")
+	}
+	return types.NewStringValue(arg.ToString()), nil
+}
+
+// evaluateValFunction implements the VAL function
+func (i *Interpreter) evaluateValFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: VAL requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.StringType {
+		return types.Value{}, fmt.Errorf("?TYPE MISMATCH ERROR: VAL requires string argument")
+	}
+	s := strings.TrimSpace(arg.String)
+	if s == "" {
+		return types.NewNumberValue(0), nil
+	}
+	// Try to parse as float; if it fails, return 0 as C64 VAL behavior
+	if v, err := types.ParseValue(s); err == nil && v.Type == types.NumberType {
+		return v, nil
+	}
+	return types.NewNumberValue(0), nil
 }

@@ -144,14 +144,14 @@ Add string manipulation capabilities.
 - [x] **Tests**: Function parsing, string manipulation, boundary conditions
 
 #### Step 20: More String Functions
-- [ ] **Goal**: Support MID$, CHR$, ASC functions
-- [ ] **Demo**: Advanced string operations and ASCII conversions
-- [ ] **Tests**: Character code conversions, substring extraction
+- [x] **Goal**: Support MID$, CHR$, ASC functions
+- [x] **Demo**: Advanced string operations and ASCII conversions
+- [x] **Tests**: Character code conversions, substring extraction
 
 #### Step 21: String Conversion Functions
-- [ ] **Goal**: Support STR$, VAL functions
-- [ ] **Demo**: Convert between numbers and strings
-- [ ] **Tests**: Type conversions, format handling, error cases
+- [x] **Goal**: Support STR$, VAL functions
+- [x] **Demo**: Convert between numbers and strings
+- [x] **Tests**: Type conversions, format handling, error cases
 
 ### Phase 9: Math Functions (Steps 22-24)
 Add mathematical capabilities.

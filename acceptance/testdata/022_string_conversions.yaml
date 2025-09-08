@@ -1,0 +1,46 @@
+tests:
+  - name: "STR$_basic_numbers"
+    program: |
+      10 PRINT STR$(42)
+      20 PRINT STR$(-3)
+      30 PRINT STR$(12.5)
+      40 END
+    expected:
+      - "42\n"
+      - "-3\n"
+      - "12.5\n"
+
+  - name: "VAL_basic_strings"
+    program: |
+      10 PRINT VAL("123")
+      20 PRINT VAL("  12.5")
+      30 PRINT VAL("")
+      40 PRINT VAL("A")
+      50 END
+    expected:
+      - "123\n"
+      - "12.5\n"
+      - "0\n"
+      - "0\n"
+
+  - name: "Roundtrip_STR$_VAL"
+    program: |
+      10 PRINT STR$(VAL("42") + 1)
+      20 END
+    expected:
+      - "43\n"
+
+  - name: "STR$_type_mismatch"
+    program: |
+      10 PRINT STR$("A")
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "VAL_type_mismatch"
+    program: |
+      10 PRINT VAL(123)
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+

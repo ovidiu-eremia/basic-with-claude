@@ -427,3 +427,63 @@ func TestInterpreter_AscFunction(t *testing.T) {
 		})
 	}
 }
+
+func TestInterpreter_StrFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		arg      types.Value
+		expected types.Value
+		wantErr  bool
+	}{
+		{name: "int", arg: types.NewNumberValue(42), expected: types.NewStringValue("42")},
+		{name: "neg", arg: types.NewNumberValue(-3), expected: types.NewStringValue("-3")},
+		{name: "float", arg: types.NewNumberValue(12.5), expected: types.NewStringValue("12.5")},
+		{name: "wrong type", arg: types.NewStringValue("A"), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtime.NewTestRuntime()
+			interp := NewInterpreter(rt)
+
+			result, err := interp.evaluateStrFunction([]types.Value{tt.arg})
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestInterpreter_ValFunction(t *testing.T) {
+	tests := []struct {
+		name     string
+		arg      types.Value
+		expected types.Value
+		wantErr  bool
+	}{
+		{name: "int", arg: types.NewStringValue("123"), expected: types.NewNumberValue(123)},
+		{name: "float", arg: types.NewStringValue("12.5"), expected: types.NewNumberValue(12.5)},
+		{name: "leading spaces", arg: types.NewStringValue("  12.5"), expected: types.NewNumberValue(12.5)},
+		{name: "empty", arg: types.NewStringValue(""), expected: types.NewNumberValue(0)},
+		{name: "nonnumeric", arg: types.NewStringValue("A"), expected: types.NewNumberValue(0)},
+		{name: "wrong type", arg: types.NewNumberValue(1), wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rt := runtime.NewTestRuntime()
+			interp := NewInterpreter(rt)
+
+			result, err := interp.evaluateValFunction([]types.Value{tt.arg})
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
