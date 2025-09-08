@@ -1,0 +1,66 @@
+tests:
+  - name: "Nested_LEN_LEFT_basic"
+    program: |
+      10 PRINT LEN(LEFT$("HELLO", 2))
+      20 END
+    expected:
+      - "2\n"
+
+  - name: "Nested_LEFT_in_RIGHT"
+    program: |
+      10 PRINT LEFT$(RIGHT$("HELLO", 4), 2)
+      20 END
+    expected:
+      - "EL\n"
+
+  - name: "Nested_RIGHT_in_LEFT"
+    program: |
+      10 PRINT RIGHT$(LEFT$("HELLO", 4), 2)
+      20 END
+    expected:
+      - "LL\n"
+
+  - name: "Triple_nesting_LEN_LEFT_RIGHT"
+    program: |
+      10 PRINT LEN(LEFT$(RIGHT$(LEFT$("ABCDE", 4), 3), 2))
+      20 END
+    expected:
+      - "2\n"
+
+  - name: "Nested_LEN_in_RIGHT_second_arg"
+    program: |
+      10 PRINT RIGHT$("ABCDE", LEN("XY"))
+      20 END
+    expected:
+      - "DE\n"
+
+  - name: "Nested_in_expression_with_numeric_result"
+    program: |
+      10 LET N = LEN(LEFT$("WORLD", 3)) + LEN(RIGHT$("XYZ", 2))
+      20 PRINT N
+      30 END
+    expected:
+      - "5\n"
+
+  - name: "Nested_with_variable_and_zero_length"
+    program: |
+      10 LET A$ = "HELLO"
+      20 PRINT LEN(LEFT$(A$, 0))
+      30 END
+    expected:
+      - "0\n"
+
+  - name: "Error_nested_wrong_inner_arg_type"
+    program: |
+      10 PRINT LEN(LEFT$(42, 2))
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+
+  - name: "Error_nested_wrong_type_for_arity"
+    program: |
+      10 PRINT LEFT$("HELLO", RIGHT$("X", 1))
+      20 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+

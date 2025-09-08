@@ -573,8 +573,12 @@ func (p *Parser) parseFunctionCall() *FunctionCall {
 			functionCall.Arguments = append(functionCall.Arguments, arg)
 		}
 
-		// Move to the closing parenthesis if we're not already there
-		if p.currentToken.Type != lexer.RPAREN && p.peekToken.Type == lexer.RPAREN {
+		// Move to the closing parenthesis for this call.
+		// After parsing an argument, currentToken may still be on the last
+		// token of the argument (or on a nested function's ')'). In both
+		// simple and nested cases, if the next token is a ')', advance so
+		// that currentToken points at this call's closing parenthesis.
+		if p.peekToken.Type == lexer.RPAREN {
 			p.nextToken()
 		}
 	}
