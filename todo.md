@@ -157,9 +157,9 @@ Add string manipulation capabilities.
 Add mathematical capabilities.
 
 #### Step 22: Basic Math Functions
-- [ ] **Goal**: Support ABS, INT, SQR functions
-- [ ] **Demo**: Basic mathematical operations work correctly
-- [ ] **Tests**: Math function evaluation, negative number handling
+- [x] **Goal**: Support ABS, INT, SQR functions
+- [x] **Demo**: Basic mathematical operations work correctly
+- [x] **Tests**: Math function evaluation, negative number handling
 
 #### Step 23: Trigonometric Functions
 - [ ] **Goal**: Support SIN, COS, TAN, ATN functions

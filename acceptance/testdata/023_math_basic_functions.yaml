@@ -1,0 +1,54 @@
+tests:
+  - name: "ABS_basic"
+    program: |
+      10 PRINT ABS(5)
+      20 PRINT ABS(-3)
+      30 PRINT ABS(0)
+      40 PRINT ABS(-2.5)
+      50 END
+    expected:
+      - "5\n"
+      - "3\n"
+      - "0\n"
+      - "2.5\n"
+
+  - name: "INT_basic_floor_behavior"
+    program: |
+      10 PRINT INT(3.7)
+      20 PRINT INT(-3.2)
+      30 PRINT INT(0)
+      40 PRINT INT(-0.1)
+      50 END
+    expected:
+      - "3\n"
+      - "-4\n"
+      - "0\n"
+      - "-1\n"
+
+  - name: "SQR_basic"
+    program: |
+      10 PRINT SQR(9)
+      20 PRINT SQR(2.25)
+      30 PRINT SQR(0)
+      40 END
+    expected:
+      - "3\n"
+      - "1.5\n"
+      - "0\n"
+
+  - name: "SQR_negative_illegal_quantity"
+    program: |
+      10 PRINT SQR(-1)
+      20 END
+    wantErr: true
+    errContains: "ILLEGAL QUANTITY"
+
+  - name: "Type_mismatch_errors"
+    program: |
+      10 PRINT ABS("A")
+      20 PRINT INT("B")
+      30 PRINT SQR("C")
+      40 END
+    wantErr: true
+    errContains: "TYPE MISMATCH"
+

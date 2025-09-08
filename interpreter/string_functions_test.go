@@ -487,3 +487,65 @@ func TestInterpreter_ValFunction(t *testing.T) {
 		})
 	}
 }
+
+func TestInterpreter_AbsIntSqrFunctions(t *testing.T) {
+	t.Run("ABS", func(t *testing.T) {
+		rt := runtime.NewTestRuntime()
+		interp := NewInterpreter(rt)
+		cases := []struct {
+			in  float64
+			out float64
+		}{
+			{5, 5}, {-3, 3}, {0, 0}, {-2.5, 2.5},
+		}
+		for _, c := range cases {
+			got, err := interp.evaluateAbsFunction([]types.Value{types.NewNumberValue(c.in)})
+			require.NoError(t, err)
+			assert.Equal(t, types.NewNumberValue(c.out), got)
+		}
+		// type mismatch
+		_, err := interp.evaluateAbsFunction([]types.Value{types.NewStringValue("A")})
+		assert.Error(t, err)
+	})
+
+	t.Run("INT", func(t *testing.T) {
+		rt := runtime.NewTestRuntime()
+		interp := NewInterpreter(rt)
+		cases := []struct {
+			in  float64
+			out float64
+		}{
+			{3.7, 3}, {-3.2, -4}, {0, 0}, {-0.1, -1},
+		}
+		for _, c := range cases {
+			got, err := interp.evaluateIntFunction([]types.Value{types.NewNumberValue(c.in)})
+			require.NoError(t, err)
+			assert.Equal(t, types.NewNumberValue(c.out), got)
+		}
+		// type mismatch
+		_, err := interp.evaluateIntFunction([]types.Value{types.NewStringValue("A")})
+		assert.Error(t, err)
+	})
+
+	t.Run("SQR", func(t *testing.T) {
+		rt := runtime.NewTestRuntime()
+		interp := NewInterpreter(rt)
+		cases := []struct {
+			in  float64
+			out float64
+		}{
+			{9, 3}, {2.25, 1.5}, {0, 0},
+		}
+		for _, c := range cases {
+			got, err := interp.evaluateSqrFunction([]types.Value{types.NewNumberValue(c.in)})
+			require.NoError(t, err)
+			assert.Equal(t, types.NewNumberValue(c.out), got)
+		}
+		// negative -> illegal quantity
+		_, err := interp.evaluateSqrFunction([]types.Value{types.NewNumberValue(-1)})
+		assert.Error(t, err)
+		// type mismatch
+		_, err = interp.evaluateSqrFunction([]types.Value{types.NewStringValue("A")})
+		assert.Error(t, err)
+	})
+}

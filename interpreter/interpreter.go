@@ -5,6 +5,7 @@ package interpreter
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"basic-interpreter/lexer"
@@ -342,6 +343,12 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateStrFunction(argValues)
 	case "VAL":
 		return i.evaluateValFunction(argValues)
+	case "ABS":
+		return i.evaluateAbsFunction(argValues)
+	case "INT":
+		return i.evaluateIntFunction(argValues)
+	case "SQR":
+		return i.evaluateSqrFunction(argValues)
 	default:
 		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
 	}
@@ -666,4 +673,49 @@ func (i *Interpreter) evaluateValFunction(args []types.Value) (types.Value, erro
 		return v, nil
 	}
 	return types.NewNumberValue(0), nil
+}
+
+// evaluateAbsFunction implements the ABS function
+func (i *Interpreter) evaluateAbsFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: ABS requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	v := arg.Number
+	if v < 0 {
+		v = -v
+	}
+	return types.NewNumberValue(v), nil
+}
+
+// evaluateIntFunction implements the INT function (floor)
+func (i *Interpreter) evaluateIntFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: INT requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	// INT returns the greatest integer less than or equal to arg
+	// Use math.Floor semantics
+	return types.NewNumberValue(math.Floor(arg.Number)), nil
+}
+
+// evaluateSqrFunction implements the SQR function
+func (i *Interpreter) evaluateSqrFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: SQR requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	if arg.Number < 0 {
+		return types.Value{}, ErrIllegalQuantity
+	}
+	return types.NewNumberValue(math.Sqrt(arg.Number)), nil
 }
