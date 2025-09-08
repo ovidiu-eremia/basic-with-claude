@@ -1,0 +1,40 @@
+tests:
+  - name: "EXP_and_LOG_basic"
+    program: |
+      10 PRINT EXP(0)
+      20 PRINT LOG(1)
+      30 END
+    expected:
+      - "1\n"
+      - "0\n"
+
+  - name: "EXP_positive"
+    program: |
+      10 PRINT EXP(1)
+      20 END
+    expected:
+      - "2.718281828459045\n"
+
+  - name: "LOG_values"
+    program: |
+      10 PRINT LOG(2.718281828459045)
+      20 END
+    expected:
+      - "1\n"
+
+  - name: "LOG_invalid_nonpositive"
+    program: |
+      10 PRINT LOG(0)
+      20 END
+    wantErr: true
+    errContains: "ILLEGAL QUANTITY"
+
+  - name: "RND_returns_in_range"
+    program: |
+      10 A = RND(1)
+      20 IF A < 0 THEN PRINT "BAD"
+      30 IF A >= 1 THEN PRINT "BAD"
+      40 PRINT "OK"
+      50 END
+    expected:
+      - "OK\n"

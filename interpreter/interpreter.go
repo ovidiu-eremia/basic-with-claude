@@ -358,6 +358,10 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateIntFunction(argValues)
 	case "SQR":
 		return i.evaluateSqrFunction(argValues)
+	case "EXP":
+		return i.evaluateExpFunction(argValues)
+	case "LOG":
+		return i.evaluateLogFunction(argValues)
 	case "SIN":
 		return i.evaluateSinFunction(argValues)
 	case "COS":
@@ -750,6 +754,33 @@ func (i *Interpreter) evaluateSqrFunction(args []types.Value) (types.Value, erro
 		return types.Value{}, ErrIllegalQuantity
 	}
 	return types.NewNumberValue(math.Sqrt(arg.Number)), nil
+}
+
+// evaluateExpFunction implements the EXP function (e^x)
+func (i *Interpreter) evaluateExpFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: EXP requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	return types.NewNumberValue(math.Exp(arg.Number)), nil
+}
+
+// evaluateLogFunction implements the LOG function (natural logarithm)
+func (i *Interpreter) evaluateLogFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: LOG requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	if arg.Number <= 0 {
+		return types.Value{}, ErrIllegalQuantity
+	}
+	return types.NewNumberValue(math.Log(arg.Number)), nil
 }
 
 // evaluateSinFunction implements the SIN function (argument in radians)
