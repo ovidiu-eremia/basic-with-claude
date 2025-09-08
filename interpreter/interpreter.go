@@ -358,6 +358,8 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 		return i.evaluateIntFunction(argValues)
 	case "SQR":
 		return i.evaluateSqrFunction(argValues)
+	case "TAB":
+		return i.evaluateTabFunction(argValues)
 	default:
 		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
 	}
@@ -740,4 +742,24 @@ func (i *Interpreter) evaluateSqrFunction(args []types.Value) (types.Value, erro
 		return types.Value{}, ErrIllegalQuantity
 	}
 	return types.NewNumberValue(math.Sqrt(arg.Number)), nil
+}
+
+// evaluateTabFunction implements the TAB function used in PRINT formatting.
+// For our purposes, TAB(n) returns a string of n spaces (n floored, min 0, capped for safety).
+func (i *Interpreter) evaluateTabFunction(args []types.Value) (types.Value, error) {
+	if len(args) != 1 {
+		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: TAB requires exactly 1 argument")
+	}
+	arg := args[0]
+	if arg.Type != types.NumberType {
+		return types.Value{}, types.ErrTypeMismatch
+	}
+	n := int(math.Floor(arg.Number))
+	if n <= 0 {
+		return types.NewStringValue(""), nil
+	}
+	if n > 4096 { // cap to avoid excessive allocation
+		n = 4096
+	}
+	return types.NewStringValue(strings.Repeat(" ", n)), nil
 }

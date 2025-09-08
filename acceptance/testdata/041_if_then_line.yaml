@@ -1,0 +1,12 @@
+tests:
+  - name: "IF_THEN_line_number_short_form"
+    program: |
+      10 A=1
+      20 IF A=1 THEN 50
+      30 PRINT "NO"
+      40 GOTO 60
+      50 PRINT "YES"
+      60 END
+    expected:
+      - "YES\n"
+

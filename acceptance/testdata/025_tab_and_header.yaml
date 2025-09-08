@@ -1,0 +1,21 @@
+tests:
+  - name: "PRINT_TAB_basic_alignment"
+    program: |
+      10 PRINT TAB(5);"X"
+      20 PRINT TAB(0);"Y"
+      30 PRINT TAB(3.9);"Z"
+      40 END
+    expected:
+      - "     X\n"
+      - "Y\n"
+      - "   Z\n"
+
+  - name: "Hamurabi_header_uses_TAB"
+    program: |
+      10 PRINT TAB(32);"HAMURABI"
+      20 PRINT TAB(15);"CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY"
+      30 END
+    expected:
+      - "                                HAMURABI\n"
+      - "               CREATIVE COMPUTING  MORRISTOWN, NEW JERSEY\n"
+

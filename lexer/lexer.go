@@ -166,6 +166,18 @@ func (l *Lexer) NextToken() Token {
 		} else {
 			return l.createToken(ILLEGAL, "unterminated string")
 		}
+	case '.':
+		// Support leading-dot decimals like .3
+		if isDigit(l.peekChar()) {
+			start := l.currentPosition
+			l.readChar() // consume '.'
+			for isDigit(l.currentChar) {
+				l.readChar()
+			}
+			return l.createToken(NUMBER, l.input[start:l.currentPosition])
+		}
+		// Otherwise '.' is illegal in this grammar
+		return l.createSingleCharToken(ILLEGAL)
 	case '\n':
 		tok := l.createToken(NEWLINE, string(l.currentChar))
 		l.line++

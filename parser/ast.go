@@ -102,12 +102,31 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 	// If multiple items are present, concatenate them into a single output string
 	if len(ps.Items) > 0 {
 		var out string
-		for _, it := range ps.Items {
+		var prevType types.ValueType = -1
+		for idx, it := range ps.Items {
 			v, err := it.Evaluate(ops)
 			if err != nil {
 				return err
 			}
-			out += v.ToString()
+			curr := v.ToString()
+			// Insert a single space between items when either side is numeric,
+			// but avoid double spaces if spacing is already present.
+			if idx > 0 {
+				if v.Type == types.NumberType || prevType == types.NumberType {
+					needSpace := true
+					if len(out) > 0 && out[len(out)-1] == ' ' {
+						needSpace = false
+					}
+					if len(curr) > 0 && (curr[0] == ' ' || curr[0] == ',' || curr[0] == '.' || curr[0] == ';' || curr[0] == ':' || curr[0] == ')') {
+						needSpace = false
+					}
+					if needSpace {
+						out += " "
+					}
+				}
+			}
+			out += curr
+			prevType = v.Type
 		}
 		if ps.NoNewline {
 			return ops.Print(out)

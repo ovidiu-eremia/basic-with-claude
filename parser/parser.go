@@ -556,7 +556,18 @@ func (p *Parser) parseIfStatement() *IfStatement {
 
 	p.nextToken() // consume THEN
 
-	// Parse the statement to execute when condition is true
+	// Support short form: THEN <lineNumber> meaning GOTO <lineNumber>
+	if p.currentToken.Type == lexer.NUMBER {
+		targetLine, err := strconv.Atoi(p.currentToken.Literal)
+		if err != nil {
+			p.addErrorf("invalid line number: %s", p.currentToken.Literal)
+			return nil
+		}
+		stmt.ThenStmt = &GotoStatement{TargetLine: targetLine, Line: stmt.Line}
+		return stmt
+	}
+
+	// Parse the statement to execute when condition is true (regular form)
 	stmt.ThenStmt = p.parseStatement()
 	if stmt.ThenStmt == nil {
 		return nil
