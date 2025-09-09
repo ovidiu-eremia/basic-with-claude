@@ -1,0 +1,38 @@
+tests:
+  - name: "ON GOTO jumps to second"
+    program: |
+      10 X=2
+      20 ON X GOTO 50,60,70
+      30 PRINT "NO JUMP"
+      40 END
+      50 PRINT "TWO"
+      55 END
+      60 PRINT "THREE"
+      70 PRINT "FOUR"
+    expected:
+      - "THREE\n"
+      - "FOUR\n"
+
+  - name: "ON GOTO out of range does nothing"
+    program: |
+      10 X=0
+      20 ON X GOTO 50,60
+      30 PRINT "CONTINUE"
+      40 END
+      50 PRINT "NOPE"
+    expected:
+      - "CONTINUE\n"
+
+  - name: "ON GOSUB jumps and returns"
+    program: |
+      10 I=1
+      20 ON I GOSUB 100,200
+      30 PRINT "MAIN"
+      40 END
+      100 PRINT "SUB1"
+      110 RETURN
+      200 PRINT "SUB2"
+      210 RETURN
+    expected:
+      - "SUB1\n"
+      - "MAIN\n"

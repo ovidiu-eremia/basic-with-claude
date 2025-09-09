@@ -1,0 +1,23 @@
+tests:
+  - name: "Input_into_array_element_numeric"
+    program: |
+      10 DIM P(2)
+      20 INPUT P(1)
+      30 PRINT P(1)
+      40 END
+    inputs:
+      - "42"
+    expected:
+      - "42\n"
+
+  - name: "Input_into_array_element_string"
+    program: |
+      10 DIM S$(1)
+      20 INPUT S$(1)
+      30 PRINT S$(1)
+      40 END
+    inputs:
+      - "HI"
+    expected:
+      - "HI\n"
+

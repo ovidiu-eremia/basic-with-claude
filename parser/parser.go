@@ -177,6 +177,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseGotoStatement()
 	case lexer.GOSUB:
 		return p.parseGosubStatement()
+	case lexer.ON:
+		return p.parseOnStatement()
 	case lexer.RETURN:
 		return p.parseReturnStatement()
 	case lexer.IF:
@@ -282,10 +284,9 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 				}
 				target.Indices = append(target.Indices, idx)
 			}
-			if p.currentToken.Type != lexer.RPAREN {
-				if p.peekToken.Type == lexer.RPAREN {
-					p.nextToken()
-				}
+			// Align to the array-closing ')'
+			if p.peekToken.Type == lexer.RPAREN {
+				p.nextToken()
 			}
 			if p.currentToken.Type != lexer.RPAREN {
 				p.addTokenError("')' after array index", p.currentToken.Type)
@@ -513,10 +514,10 @@ func (p *Parser) parsePrimaryExpression() Expression {
 				}
 				indices = append(indices, nextIdx)
 			}
-			if p.currentToken.Type != lexer.RPAREN {
-				if p.peekToken.Type == lexer.RPAREN {
-					p.nextToken()
-				}
+			// After parsing indices, align to the array-closing ')'.
+			// If the last index ended on its own ')', advance once.
+			if p.peekToken.Type == lexer.RPAREN {
+				p.nextToken()
 			}
 			if p.currentToken.Type != lexer.RPAREN {
 				p.addTokenError("')' after array index", p.currentToken.Type)
@@ -625,6 +626,61 @@ func (p *Parser) parseReturnStatement() *ReturnStatement {
 	stmt := &ReturnStatement{}
 	// No need to consume more tokens - RETURN is a simple statement
 	return stmt
+}
+
+// parseOnStatement parses: ON expr GOTO n1,n2,... | ON expr GOSUB n1,n2,...
+func (p *Parser) parseOnStatement() Statement {
+	p.nextToken() // consume ON
+	// Parse selector expression
+	sel := p.parseExpression()
+	if sel == nil {
+		return nil
+	}
+
+	// For simple expressions, advance to next keyword if needed
+	if p.currentToken.Type != lexer.GOTO && p.currentToken.Type != lexer.GOSUB &&
+		(p.peekToken.Type == lexer.GOTO || p.peekToken.Type == lexer.GOSUB) {
+		p.nextToken()
+	}
+
+	var isGosub bool
+	switch p.currentToken.Type {
+	case lexer.GOTO:
+		isGosub = false
+	case lexer.GOSUB:
+		isGosub = true
+	default:
+		p.addTokenError("GOTO or GOSUB", p.currentToken.Type)
+		return nil
+	}
+
+	p.nextToken() // consume GOTO/GOSUB
+
+	// Parse list of line numbers separated by commas
+	targets := []int{}
+	for {
+		if p.currentToken.Type != lexer.NUMBER {
+			p.addTokenError("line number", p.currentToken.Type)
+			return nil
+		}
+		n, err := strconv.Atoi(p.currentToken.Literal)
+		if err != nil {
+			p.addErrorf("invalid line number: %s", p.currentToken.Literal)
+			return nil
+		}
+		targets = append(targets, n)
+		if p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // to comma
+			p.nextToken() // to next number
+			continue
+		}
+		break
+	}
+
+	if isGosub {
+		return &OnGosubStatement{Selector: sel, TargetLines: targets}
+	}
+	return &OnGotoStatement{Selector: sel, TargetLines: targets}
 }
 
 // parseIfStatement parses an IF...THEN statement
@@ -898,12 +954,46 @@ func (p *Parser) parseInputStatement() *InputStatement {
 		p.nextToken() // consume semicolon
 	}
 
-	// Expect variable name
+	// Expect identifier (variable or array)
 	if p.currentToken.Type != lexer.IDENT {
 		p.addTokenError("variable name", p.currentToken.Type)
 		return nil
 	}
-	stmt.Variable = p.currentToken.Literal
+
+	name := p.currentToken.Literal
+	// Array element?
+	if p.peekToken.Type == lexer.LPAREN {
+		p.nextToken() // consume IDENT
+		p.nextToken() // consume '('
+		// Parse indices (one or more)
+		idx := p.parseExpression()
+		if idx == nil {
+			return nil
+		}
+		stmt.ArrayName = name
+		stmt.ArrayIndices = append(stmt.ArrayIndices, idx)
+		for p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // to comma
+			p.nextToken() // to next expr
+			idx = p.parseExpression()
+			if idx == nil {
+				return nil
+			}
+			stmt.ArrayIndices = append(stmt.ArrayIndices, idx)
+		}
+		// Align to the array-closing ')'
+		if p.peekToken.Type == lexer.RPAREN {
+			p.nextToken()
+		}
+		if p.currentToken.Type != lexer.RPAREN {
+			p.addTokenError("')' after array index", p.currentToken.Type)
+			return nil
+		}
+		return stmt
+	}
+
+	// Simple variable input
+	stmt.Variable = name
 	return stmt
 }
 

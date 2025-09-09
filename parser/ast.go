@@ -259,14 +259,48 @@ func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 
 // InputStatement represents an INPUT statement
 type InputStatement struct {
-	Prompt   string // Optional prompt string (empty for no prompt)
-	Variable string // Variable name to read into
+	Prompt       string       // Optional prompt string (empty for no prompt)
+	Variable     string       // Variable name to read into (if not array)
+	ArrayName    string       // Array name if input targets an array element
+	ArrayIndices []Expression // Index expressions for array input
 }
 
 func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 	input, err := ops.ReadInput(ins.Prompt)
 	if err != nil {
 		return err
+	}
+
+	// If targeting an array element
+	if ins.ArrayName != "" {
+		// Evaluate indices
+		idxs := make([]int, len(ins.ArrayIndices))
+		for i, e := range ins.ArrayIndices {
+			v, err := e.Evaluate(ops)
+			if err != nil {
+				return err
+			}
+			if v.Type != types.NumberType {
+				return types.ErrTypeMismatch
+			}
+			n := v.Number
+			if n < 0 || float64(int(n)) != n {
+				return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+			}
+			idxs[i] = int(n)
+		}
+		// Convert input to appropriate type based on array name suffix
+		var value types.Value
+		if strings.HasSuffix(ins.ArrayName, "$") {
+			value = types.NewStringValue(input)
+		} else {
+			parsed, err := types.ParseValue(input)
+			if err != nil || parsed.Type != types.NumberType {
+				return types.ErrTypeMismatch
+			}
+			value = parsed
+		}
+		return ops.SetArrayElement(ins.ArrayName, idxs, value)
 	}
 
 	// Parse input based on variable type
@@ -632,4 +666,46 @@ type DefFnStatement struct {
 
 func (df *DefFnStatement) Execute(ops InterpreterOperations) error {
 	return ops.DefineUserFunction(df.Name, df.Param, df.Body)
+}
+
+// OnGotoStatement represents: ON expr GOTO n1,n2,...
+type OnGotoStatement struct {
+	Selector    Expression
+	TargetLines []int
+}
+
+func (og *OnGotoStatement) Execute(ops InterpreterOperations) error {
+	v, err := og.Selector.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+	if v.Type != types.NumberType {
+		return types.ErrTypeMismatch
+	}
+	idx := int(v.Number)
+	if idx <= 0 || idx > len(og.TargetLines) {
+		return nil // out of range: no jump
+	}
+	return ops.RequestGoto(og.TargetLines[idx-1])
+}
+
+// OnGosubStatement represents: ON expr GOSUB n1,n2,...
+type OnGosubStatement struct {
+	Selector    Expression
+	TargetLines []int
+}
+
+func (og *OnGosubStatement) Execute(ops InterpreterOperations) error {
+	v, err := og.Selector.Evaluate(ops)
+	if err != nil {
+		return err
+	}
+	if v.Type != types.NumberType {
+		return types.ErrTypeMismatch
+	}
+	idx := int(v.Number)
+	if idx <= 0 || idx > len(og.TargetLines) {
+		return nil // out of range: no jump
+	}
+	return ops.RequestGosub(og.TargetLines[idx-1])
 }
