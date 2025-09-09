@@ -1,0 +1,22 @@
+cases:
+  - name: "IF with OR on string comparisons"
+    program: |
+      10 INPUT A$
+      20 IF (A$ = "N") OR (A$ = "n") THEN PRINT "NO"
+      30 IF (A$ = "Y") OR (A$ = "y") THEN PRINT "YES"
+      40 END
+    input: "n"
+    want:
+      - "NO\n"
+
+  - name: "IF with AND on numeric truthy values"
+    program: |
+      10 A = 1
+      20 B = 1
+      30 IF A AND B THEN PRINT "BOTH"
+      40 B = 0
+      50 IF A AND B THEN PRINT "SHOULD NOT PRINT"
+      60 END
+    want:
+      - "BOTH\n"
+

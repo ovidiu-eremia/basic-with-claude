@@ -209,6 +209,28 @@ func (bo *BinaryOperation) Evaluate(ops InterpreterOperations) (types.Value, err
 		return left.Divide(right)
 	case "^":
 		return left.Power(right)
+	case "AND":
+		// Logical/bitwise AND; treat operands as numbers and operate on ints
+		ln, err := left.ToNumber()
+		if err != nil {
+			return types.Value{}, err
+		}
+		rn, err := right.ToNumber()
+		if err != nil {
+			return types.Value{}, err
+		}
+		return types.NewNumberValue(float64(int(ln) & int(rn))), nil
+	case "OR":
+		// Logical/bitwise OR
+		ln, err := left.ToNumber()
+		if err != nil {
+			return types.Value{}, err
+		}
+		rn, err := right.ToNumber()
+		if err != nil {
+			return types.Value{}, err
+		}
+		return types.NewNumberValue(float64(int(ln) | int(rn))), nil
 	default:
 		return types.Value{}, fmt.Errorf("unknown operator: %s", bo.Operator)
 	}
@@ -311,6 +333,12 @@ func (uo *UnaryOperation) Evaluate(ops InterpreterOperations) (types.Value, erro
 			return operand, nil
 		}
 		return types.Value{}, fmt.Errorf("cannot apply unary plus to non-numeric value")
+	case "NOT":
+		// Logical/bitwise NOT on numeric values
+		if operand.Type != types.NumberType {
+			return types.Value{}, types.ErrTypeMismatch
+		}
+		return types.NewNumberValue(float64(^int(operand.Number))), nil
 	default:
 		return types.Value{}, fmt.Errorf("unknown unary operator: %s", uo.Operator)
 	}

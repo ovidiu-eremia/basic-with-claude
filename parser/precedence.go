@@ -11,12 +11,14 @@ type precedence int
 const (
 	_ precedence = iota
 	LOWEST
-	COMPARE // =, <>, <, >, <=, >=
-	SUM     // +, -
-	PRODUCT // *, /
-	PREFIX  // -X or +X (lower precedence than power in BASIC)
-	POWER   // ^
-	CALL    // functions (future use)
+	LOGICAL_OR  // OR
+	LOGICAL_AND // AND
+	COMPARE     // =, <>, <, >, <=, >=
+	SUM         // +, -
+	PRODUCT     // *, /
+	PREFIX      // -X or +X (lower precedence than power in BASIC)
+	POWER       // ^
+	CALL        // functions (future use)
 )
 
 // PrecedenceTable manages operator precedence lookup
@@ -28,6 +30,8 @@ type PrecedenceTable struct {
 func NewPrecedenceTable() *PrecedenceTable {
 	return &PrecedenceTable{
 		precedences: map[lexer.TokenType]precedence{
+			lexer.OR:       LOGICAL_OR,
+			lexer.AND:      LOGICAL_AND,
 			lexer.ASSIGN:   COMPARE,
 			lexer.NE:       COMPARE,
 			lexer.LT:       COMPARE,

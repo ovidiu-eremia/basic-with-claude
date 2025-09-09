@@ -430,6 +430,12 @@ func (p *Parser) isComparisonOperatorString(operator string) bool {
 // parsePrimaryExpression parses primary expressions (literals, variables, parentheses)
 func (p *Parser) parsePrimaryExpression() Expression {
 	switch p.currentToken.Type {
+	case lexer.NOT:
+		// Support NOT as unary operator
+		u := &UnaryOperation{Operator: "NOT"}
+		p.nextToken() // consume NOT
+		u.Right = p.parseExpressionWithPrecedence(PREFIX)
+		return u
 	case lexer.STRING:
 		return p.parseStringLiteral()
 	case lexer.NUMBER:

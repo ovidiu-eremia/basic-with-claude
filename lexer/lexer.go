@@ -51,6 +51,9 @@ const (
 	RETURN    TokenType = "RETURN"
 	REM       TokenType = "REM"
 	DIM       TokenType = "DIM"
+	AND       TokenType = "AND"
+	OR        TokenType = "OR"
+	NOT       TokenType = "NOT"
 )
 
 // keywords maps BASIC keywords to their token types
@@ -74,6 +77,9 @@ var keywords = map[string]TokenType{
 	"RETURN": RETURN,
 	"REM":    REM,
 	"DIM":    DIM,
+	"AND":    AND,
+	"OR":     OR,
+	"NOT":    NOT,
 }
 
 // Position represents a position in the source code
