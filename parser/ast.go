@@ -43,14 +43,15 @@ type InterpreterOperations interface {
 	GetNextData() (types.Value, error)
 
 	// Array management (DIM)
-	DeclareArray(name string, size int, isString bool) error
+	// sizes: each dimension's max index (declared as DIM A(n,m,...) => sizes=[n,m,...])
+	DeclareArray(name string, sizes []int, isString bool) error
 
 	// Function evaluation
 	EvaluateFunction(functionName string, args []Expression) (types.Value, error)
 
 	// Array element operations
-	GetArrayElement(name string, index int) (types.Value, error)
-	SetArrayElement(name string, index int, value types.Value) error
+	GetArrayElement(name string, indices []int) (types.Value, error)
+	SetArrayElement(name string, indices []int, value types.Value) error
 	// User-defined functions
 	DefineUserFunction(name string, param string, body Expression) error
 }
@@ -499,57 +500,65 @@ func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error)
 	return ops.EvaluateFunction(fc.FunctionName, fc.Arguments)
 }
 
-// ArrayReference represents access to an array element, e.g., A(5)
+// ArrayReference represents access to an array element, e.g., A(5) or A(1,2)
 type ArrayReference struct {
-	Name  string
-	Index Expression
+	Name    string
+	Indices []Expression
 }
 
 func (ar *ArrayReference) Evaluate(ops InterpreterOperations) (types.Value, error) {
-	idxVal, err := ar.Index.Evaluate(ops)
-	if err != nil {
-		return types.Value{}, err
+	idxs := make([]int, len(ar.Indices))
+	for i, iexpr := range ar.Indices {
+		idxVal, err := iexpr.Evaluate(ops)
+		if err != nil {
+			return types.Value{}, err
+		}
+		if idxVal.Type != types.NumberType {
+			return types.Value{}, types.ErrTypeMismatch
+		}
+		n := idxVal.Number
+		if n < 0 || float64(int(n)) != n {
+			return types.Value{}, fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+		}
+		idxs[i] = int(n)
 	}
-	if idxVal.Type != types.NumberType {
-		return types.Value{}, types.ErrTypeMismatch
-	}
-	n := idxVal.Number
-	if n < 0 || float64(int(n)) != n {
-		return types.Value{}, fmt.Errorf("?ILLEGAL QUANTITY ERROR")
-	}
-	return ops.GetArrayElement(ar.Name, int(n))
+	return ops.GetArrayElement(ar.Name, idxs)
 }
 
 // ArraySetStatement assigns a value to an array element, e.g., A(5) = 42
 type ArraySetStatement struct {
 	Name       string
-	Index      Expression
+	Indexes    []Expression
 	Expression Expression
 }
 
 func (as *ArraySetStatement) Execute(ops InterpreterOperations) error {
-	idxVal, err := as.Index.Evaluate(ops)
-	if err != nil {
-		return err
-	}
-	if idxVal.Type != types.NumberType {
-		return types.ErrTypeMismatch
-	}
-	n := idxVal.Number
-	if n < 0 || float64(int(n)) != n {
-		return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+	idxs := make([]int, len(as.Indexes))
+	for i, iexpr := range as.Indexes {
+		idxVal, err := iexpr.Evaluate(ops)
+		if err != nil {
+			return err
+		}
+		if idxVal.Type != types.NumberType {
+			return types.ErrTypeMismatch
+		}
+		n := idxVal.Number
+		if n < 0 || float64(int(n)) != n {
+			return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+		}
+		idxs[i] = int(n)
 	}
 	val, err := as.Expression.Evaluate(ops)
 	if err != nil {
 		return err
 	}
-	return ops.SetArrayElement(as.Name, int(n), val)
+	return ops.SetArrayElement(as.Name, idxs, val)
 }
 
 // DimDeclaration represents a single array declaration inside a DIM statement
 type DimDeclaration struct {
-	Name string
-	Size Expression
+	Name  string
+	Sizes []Expression
 }
 
 // DimStatement represents a DIM statement declaring one or more arrays
@@ -559,21 +568,25 @@ type DimStatement struct {
 
 func (ds *DimStatement) Execute(ops InterpreterOperations) error {
 	for _, d := range ds.Declarations {
-		// Evaluate size
-		val, err := d.Size.Evaluate(ops)
-		if err != nil {
-			return err
-		}
-		if val.Type != types.NumberType {
-			return types.ErrTypeMismatch
-		}
-		n := val.Number
-		// Size must be integer and >= 0
-		if n < 0 || float64(int(n)) != n {
-			return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+		// Evaluate sizes
+		dims := make([]int, len(d.Sizes))
+		for i, sexpr := range d.Sizes {
+			val, err := sexpr.Evaluate(ops)
+			if err != nil {
+				return err
+			}
+			if val.Type != types.NumberType {
+				return types.ErrTypeMismatch
+			}
+			n := val.Number
+			// Size must be integer and >= 0
+			if n < 0 || float64(int(n)) != n {
+				return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+			}
+			dims[i] = int(n)
 		}
 		isString := strings.HasSuffix(d.Name, "$")
-		if err := ops.DeclareArray(d.Name, int(n), isString); err != nil {
+		if err := ops.DeclareArray(d.Name, dims, isString); err != nil {
 			return err
 		}
 	}

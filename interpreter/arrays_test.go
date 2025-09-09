@@ -14,15 +14,15 @@ func TestInterpreter_DeclareArray(t *testing.T) {
 	interp := NewInterpreter(rt)
 
 	// Declare numeric array
-	err := interp.DeclareArray("A", 5, false)
+	err := interp.DeclareArray("A", []int{5}, false)
 	require.NoError(t, err)
 
 	// Redimension should error
-	err = interp.DeclareArray("A", 6, false)
+	err = interp.DeclareArray("A", []int{6}, false)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "REDIM'D")
 
 	// Negative size illegal
-	err = interp.DeclareArray("B", -1, false)
+	err = interp.DeclareArray("B", []int{-1}, false)
 	assert.Error(t, err)
 }

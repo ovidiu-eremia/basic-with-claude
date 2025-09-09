@@ -83,7 +83,8 @@ type Interpreter struct {
 // ArrayInfo holds metadata and storage for declared arrays
 type ArrayInfo struct {
 	IsString bool
-	Values   []types.Value
+	Sizes    []int         // maximum index per dimension (inclusive)
+	Values   []types.Value // flattened storage
 }
 
 // UserFunction stores definition of a DEF FN
@@ -342,27 +343,29 @@ func (i *Interpreter) GetNextData() (types.Value, error) {
 }
 
 // GetArrayElement retrieves an element from a declared array with bounds/type checks
-func (i *Interpreter) GetArrayElement(name string, index int) (types.Value, error) {
+func (i *Interpreter) GetArrayElement(name string, indices []int) (types.Value, error) {
 	norm := i.NormalizeVariableName(name)
 	arr, ok := i.arrays[norm]
 	if !ok {
 		return types.Value{}, fmt.Errorf("?UNDEFINED ARRAY ERROR")
 	}
-	if index < 0 || index >= len(arr.Values) {
-		return types.Value{}, fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+	off, err := flattenIndex(arr.Sizes, indices)
+	if err != nil {
+		return types.Value{}, err
 	}
-	return arr.Values[index], nil
+	return arr.Values[off], nil
 }
 
 // SetArrayElement sets an element in a declared array with bounds/type checks
-func (i *Interpreter) SetArrayElement(name string, index int, value types.Value) error {
+func (i *Interpreter) SetArrayElement(name string, indices []int, value types.Value) error {
 	norm := i.NormalizeVariableName(name)
 	arr, ok := i.arrays[norm]
 	if !ok {
 		return fmt.Errorf("?UNDEFINED ARRAY ERROR")
 	}
-	if index < 0 || index >= len(arr.Values) {
-		return fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+	off, err := flattenIndex(arr.Sizes, indices)
+	if err != nil {
+		return err
 	}
 	if arr.IsString && value.Type != types.StringType {
 		return types.ErrTypeMismatch
@@ -370,22 +373,33 @@ func (i *Interpreter) SetArrayElement(name string, index int, value types.Value)
 	if !arr.IsString && value.Type != types.NumberType {
 		return types.ErrTypeMismatch
 	}
-	arr.Values[index] = value
+	arr.Values[off] = value
 	i.arrays[norm] = arr
 	return nil
 }
 
 // DeclareArray declares a new array with given size (highest index). Size must be >=0.
-func (i *Interpreter) DeclareArray(name string, size int, isString bool) error {
-	if size < 0 {
+func (i *Interpreter) DeclareArray(name string, sizes []int, isString bool) error {
+	if len(sizes) == 0 {
 		return ErrIllegalQuantity
+	}
+	for _, s := range sizes {
+		if s < 0 {
+			return ErrIllegalQuantity
+		}
 	}
 	norm := i.NormalizeVariableName(name)
 	if _, exists := i.arrays[norm]; exists {
 		return ErrRedimArray
 	}
-	// Allocate size+1 elements for 0..size
-	count := size + 1
+	// Compute total count as product of (size+1) per dimension
+	count := 1
+	extents := make([]int, len(sizes))
+	for i, s := range sizes {
+		e := s + 1
+		extents[i] = s
+		count *= e
+	}
 	vals := make([]types.Value, count)
 	if isString {
 		for idx := range vals {
@@ -396,8 +410,32 @@ func (i *Interpreter) DeclareArray(name string, size int, isString bool) error {
 			vals[idx] = types.NewNumberValue(0)
 		}
 	}
-	i.arrays[norm] = ArrayInfo{IsString: isString, Values: vals}
+	i.arrays[norm] = ArrayInfo{IsString: isString, Sizes: sizes, Values: vals}
 	return nil
+}
+
+// flattenIndex converts multi-dimensional indices into a flat offset using row-major order.
+func flattenIndex(sizes []int, indices []int) (int, error) {
+	if len(indices) != len(sizes) {
+		return 0, fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+	}
+	// Precompute strides: stride[d-1]=1; stride[i]=stride[i+1]*(sizes[i+1]+1)
+	d := len(sizes)
+	strides := make([]int, d)
+	stride := 1
+	for i := d - 1; i >= 0; i-- {
+		strides[i] = stride
+		stride *= (sizes[i] + 1)
+	}
+	off := 0
+	for i := 0; i < d; i++ {
+		idx := indices[i]
+		if idx < 0 || idx > sizes[i] {
+			return 0, fmt.Errorf("?ARRAY BOUNDS EXCEEDED ERROR")
+		}
+		off += idx * strides[i]
+	}
+	return off, nil
 }
 
 // EvaluateFunction evaluates built-in functions

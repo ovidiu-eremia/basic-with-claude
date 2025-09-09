@@ -161,12 +161,12 @@ func (m *MockInterpreterOperations) EvaluateFunction(functionName string, args [
 }
 
 // Array management stub
-func (m *MockInterpreterOperations) DeclareArray(name string, size int, isString bool) error {
+func (m *MockInterpreterOperations) DeclareArray(name string, sizes []int, isString bool) error {
 	// No-op for AST unit tests
 	return nil
 }
 
-func (m *MockInterpreterOperations) GetArrayElement(name string, index int) (types.Value, error) {
+func (m *MockInterpreterOperations) GetArrayElement(name string, indices []int) (types.Value, error) {
 	// Return zero values; not used in parser unit tests
 	if len(name) > 0 && name[len(name)-1] == '$' {
 		return types.NewStringValue(""), nil
@@ -174,7 +174,7 @@ func (m *MockInterpreterOperations) GetArrayElement(name string, index int) (typ
 	return types.NewNumberValue(0), nil
 }
 
-func (m *MockInterpreterOperations) SetArrayElement(name string, index int, value types.Value) error {
+func (m *MockInterpreterOperations) SetArrayElement(name string, indices []int, value types.Value) error {
 	return nil
 }
 

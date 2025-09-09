@@ -294,15 +294,25 @@ func (p *Parser) parseDimStatement() *DimStatement {
 		}
 		p.nextToken() // consume '('
 
-		// Parse size expression
-		sizeExpr := p.parseExpression()
-		if sizeExpr == nil {
+		// Parse one or more size expressions separated by commas
+		sizes := []Expression{}
+		first := p.parseExpression()
+		if first == nil {
 			return nil
 		}
+		sizes = append(sizes, first)
+		for p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // move to comma
+			p.nextToken() // move to next size expr
+			nextSize := p.parseExpression()
+			if nextSize == nil {
+				return nil
+			}
+			sizes = append(sizes, nextSize)
+		}
 
-		// After parsing expression, ensure we are at ')'
+		// Ensure we are at ')'
 		if p.currentToken.Type != lexer.RPAREN {
-			// If peek is ')', advance
 			if p.peekToken.Type == lexer.RPAREN {
 				p.nextToken()
 			}
@@ -313,11 +323,11 @@ func (p *Parser) parseDimStatement() *DimStatement {
 		}
 
 		// Add declaration
-		stmt.Declarations = append(stmt.Declarations, DimDeclaration{Name: name, Size: sizeExpr})
+		stmt.Declarations = append(stmt.Declarations, DimDeclaration{Name: name, Sizes: sizes})
 
-		// If next is comma, consume and continue parsing more declarations
+		// If another declaration follows, it must be after a comma
 		if p.peekToken.Type == lexer.COMMA {
-			p.nextToken() // move to ')'
+			p.nextToken() // current on ')'
 			p.nextToken() // move to next IDENT
 			continue
 		}
@@ -454,9 +464,21 @@ func (p *Parser) parsePrimaryExpression() Expression {
 			nameTok := p.currentToken
 			p.nextToken() // consume name
 			p.nextToken() // consume '('
-			idx := p.parseExpression()
-			if idx == nil {
+			// Parse one or more indices separated by commas
+			indices := []Expression{}
+			first := p.parseExpression()
+			if first == nil {
 				return nil
+			}
+			indices = append(indices, first)
+			for p.peekToken.Type == lexer.COMMA {
+				p.nextToken() // to comma
+				p.nextToken() // to next index expr
+				nextIdx := p.parseExpression()
+				if nextIdx == nil {
+					return nil
+				}
+				indices = append(indices, nextIdx)
 			}
 			if p.currentToken.Type != lexer.RPAREN {
 				if p.peekToken.Type == lexer.RPAREN {
@@ -468,7 +490,7 @@ func (p *Parser) parsePrimaryExpression() Expression {
 				return nil
 			}
 			// Do not consume ')'; caller will advance
-			return &ArrayReference{Name: nameTok.Literal, Index: idx}
+			return &ArrayReference{Name: nameTok.Literal, Indices: indices}
 		}
 		return p.parseVariableReference()
 	case lexer.LPAREN:
@@ -771,12 +793,23 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 	name := p.currentToken.Literal
 	p.nextToken() // consume name
 
-	// Array element assignment: IDENT '(' expr ')' '=' expr
+	// Array element assignment: IDENT '(' expr[,expr...] ')' '=' expr
 	if p.currentToken.Type == lexer.LPAREN {
 		p.nextToken() // consume '('
-		idx := p.parseExpression()
-		if idx == nil {
+		indices := []Expression{}
+		firstIdx := p.parseExpression()
+		if firstIdx == nil {
 			return nil
+		}
+		indices = append(indices, firstIdx)
+		for p.peekToken.Type == lexer.COMMA {
+			p.nextToken() // to comma
+			p.nextToken() // to next index expr
+			nxt := p.parseExpression()
+			if nxt == nil {
+				return nil
+			}
+			indices = append(indices, nxt)
 		}
 		if p.currentToken.Type != lexer.RPAREN {
 			if p.peekToken.Type == lexer.RPAREN {
@@ -798,7 +831,7 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 		if rhs == nil {
 			return nil
 		}
-		return &ArraySetStatement{Name: name, Index: idx, Expression: rhs}
+		return &ArraySetStatement{Name: name, Indexes: indices, Expression: rhs}
 	}
 
 	// Simple variable assignment
