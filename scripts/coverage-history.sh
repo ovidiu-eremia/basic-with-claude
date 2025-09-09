@@ -1,6 +1,10 @@
 #!/bin/bash
 # ABOUTME: Shows Go test coverage by commit in chronological order
 # ABOUTME: Uses a temporary detached clone to avoid touching your tree
+#
+# Uses combined coverage (-coverpkg=./...) to include acceptance test coverage.
+# Previously used basic coverage which missed functions only tested via acceptance tests.
+# Coverage calculation uses 'go tool cover -func' for accuracy vs manual parsing.
 
 set -euo pipefail
 
@@ -41,9 +45,9 @@ for commit in $commits; do
   cov_pct=""
   diff_str=""
 
-  # Run tests with coverage; tolerate failures and mark as n/a
+  # Run tests with combined coverage; tolerate failures and mark as n/a
   set +e
-  (cd "$wt_dir" && go test -count=1 ./... -coverprofile=coverage.out >/dev/null 2>&1)
+  (cd "$wt_dir" && go test -count=1 -coverprofile=coverage.out -coverpkg=./... ./... >/dev/null 2>&1)
   test_status=$?
   set -e
 
@@ -53,19 +57,9 @@ for commit in $commits; do
   fi
 
   if [ $test_status -eq 0 ] && [ -f "$wt_dir/coverage.out" ]; then
-    # Compute coverage directly from coverage.out to avoid go tool cover pitfalls
-    # Format: mode: set; then lines like: file:line1,col1,line2,col2 statements count
-    cov_pct=$(awk '
-      BEGIN { total=0; covered=0 }
-      NR==1 { next } # skip mode line
-      {
-        stmts=$(NF-1); cnt=$NF;
-        total+=stmts; if (cnt>0) covered+=stmts;
-      }
-      END {
-        if (total>0) printf "%.2f", (covered/total*100);
-      }
-    ' "$wt_dir/coverage.out")
+    # Use go tool cover -func to get accurate coverage percentage
+    # Extract total coverage percentage from the last line
+    cov_pct=$(cd "$wt_dir" && go tool cover -func=coverage.out 2>/dev/null | tail -1 | sed -n 's/.*[[:space:]]\([0-9][0-9]*\.[0-9][0-9]*\)%$/\1/p')
   fi
 
   if [ -z "$cov_pct" ]; then
