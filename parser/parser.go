@@ -101,11 +101,13 @@ func (p *Parser) addErrorAt(line int, msg string) {
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
 	program.Lines = []*Line{}
+	currentLine := 1
 
 	for p.currentToken.Type != lexer.EOF {
 		// Skip newlines
 		if p.currentToken.Type == lexer.NEWLINE {
 			p.nextToken()
+			currentLine++
 			continue
 		}
 
@@ -116,10 +118,12 @@ func (p *Parser) ParseProgram() *Program {
 
 		// Stop parsing if we encountered any error
 		if p.error != nil {
+			p.error.Position.Line = currentLine
 			break
 		}
 
-		// parseLine() leaves us at NEWLINE or EOF, no need to advance
+		// Advance line count
+		currentLine++
 	}
 
 	return program

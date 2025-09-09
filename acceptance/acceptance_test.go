@@ -28,6 +28,7 @@ type YamlTest struct {
 	Expected    []string `yaml:"expected,omitempty"`
 	WantErr     bool     `yaml:"wantErr,omitempty"`
 	ErrContains string   `yaml:"errContains,omitempty"`
+	ErrLine     int      `yaml:"errLine,omitempty"`
 	MaxSteps    int      `yaml:"maxSteps,omitempty"`
 }
 
@@ -41,6 +42,7 @@ type AcceptanceTest struct {
 	inputs      []string
 	expected    []string
 	wantErr     bool
+	errLine     int
 	errContains string
 	maxSteps    int // Custom max steps limit, 0 means use default
 }
@@ -89,6 +91,7 @@ func loadTestFile(t *testing.T, filePath string) []AcceptanceTest {
 			inputs:      yamlTest.Inputs,
 			expected:    yamlTest.Expected,
 			wantErr:     yamlTest.WantErr,
+			errLine:     yamlTest.ErrLine,
 			errContains: yamlTest.ErrContains,
 			maxSteps:    yamlTest.MaxSteps,
 		}
@@ -108,8 +111,8 @@ func executeBasicProgramWithMaxSteps(t *testing.T, program string, inputs []stri
 	ast := p.ParseProgram()
 
 	// Check for parsing errors
-	if len(p.Errors()) > 0 {
-		return nil, fmt.Errorf("parse errors: %v", p.Errors())
+	if p.ParseError() != nil {
+		return nil, p.ParseError()
 	}
 	if ast == nil {
 		return nil, fmt.Errorf("parsing returned nil AST")
@@ -154,7 +157,11 @@ func TestAcceptance(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 				if tt.errContains != "" {
-					assert.Contains(t, err.Error(), tt.errContains)
+					assert.Contains(t, err.Error(), tt.errContains, err.Error())
+				}
+				if tt.errLine != 0 {
+					parseError := err.(*parser.ParseError)
+					assert.Equal(t, tt.errLine, parseError.Position.Line)
 				}
 			} else {
 				require.NoError(t, err)

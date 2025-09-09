@@ -1,0 +1,36 @@
+tests:
+  - name: lexer error - unterminated string
+    program: |
+          10 PRINT "HELLO
+    wantErr: true
+    errLine: 1
+    errContains: unterminated string
+
+  - name: parser error - missing THEN in IF
+    program: |
+          10 IF 1 PRINT "X"
+    wantErr: true
+    errLine: 1
+    errContains: expected THEN
+
+  - name: parser error - missing closing parenthesis
+    program: |
+          10 PRINT (12
+    wantErr: true
+    errLine: 1
+    errContains: expected ')' after grouped expression
+
+  - name: missing line number after blank line
+    program: |
+    
+          PRINT "NO LINE"
+    wantErr: true
+    errLine: 2
+    errContains: line number
+
+  - name: lexer error in expression (illegal token)
+    program: |
+          10 PRINT 1 . 2
+    wantErr: true
+    errLine: 1
+    errContains: illegal token
