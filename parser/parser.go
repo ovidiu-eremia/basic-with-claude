@@ -452,11 +452,19 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 			return nil
 		}
 
+		// Normalize textual operators to uppercase for case-insensitive logic
+		// This ensures AND/OR work regardless of input case.
+		normOp := operator
+		switch operatorType {
+		case lexer.AND, lexer.OR:
+			normOp = strings.ToUpper(operator)
+		}
+
 		// Create appropriate node type based on operator
-		if p.isComparisonOperatorString(operator) {
-			left = &ComparisonExpression{Left: left, Operator: operator, Right: right}
+		if p.isComparisonOperatorString(normOp) {
+			left = &ComparisonExpression{Left: left, Operator: normOp, Right: right}
 		} else {
-			left = &BinaryOperation{Left: left, Operator: operator, Right: right}
+			left = &BinaryOperation{Left: left, Operator: normOp, Right: right}
 		}
 	}
 
