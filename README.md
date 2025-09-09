@@ -20,4 +20,4 @@ Check out classic basic programs such as
 or
 
     scripts/run.sh testdata/hamurabi.bas
-    scripts/run.sh testdata/wumpus.bas
+    scripts/run.sh -max-steps 100000 testdata/wumpus.bas 
