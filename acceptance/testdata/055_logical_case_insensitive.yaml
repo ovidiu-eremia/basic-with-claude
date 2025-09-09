@@ -1,0 +1,11 @@
+cases:
+  - name: "IF with lowercase or on string comparisons"
+    program: |
+      10 INPUT A$
+      20 IF (A$ = "N") or (A$ = "n") THEN PRINT "NO"
+      30 IF (A$ = "Y") or (A$ = "y") THEN PRINT "YES"
+      40 END
+    input: "y"
+    want:
+      - "YES\n"
+
