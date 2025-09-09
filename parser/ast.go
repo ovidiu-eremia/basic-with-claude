@@ -51,6 +51,8 @@ type InterpreterOperations interface {
 	// Array element operations
 	GetArrayElement(name string, index int) (types.Value, error)
 	SetArrayElement(name string, index int, value types.Value) error
+	// User-defined functions
+	DefineUserFunction(name string, param string, body Expression) error
 }
 
 // (No control error types are used for END/STOP; interpreter handles them statefully.)
@@ -576,4 +578,15 @@ func (ds *DimStatement) Execute(ops InterpreterOperations) error {
 		}
 	}
 	return nil
+}
+
+// DefFnStatement represents a DEF FNx(X)=expr definition
+type DefFnStatement struct {
+	Name  string
+	Param string
+	Body  Expression
+}
+
+func (df *DefFnStatement) Execute(ops InterpreterOperations) error {
+	return ops.DefineUserFunction(df.Name, df.Param, df.Body)
 }

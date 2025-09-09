@@ -193,6 +193,8 @@ func (p *Parser) parseStatement() Statement {
 		return p.parseRemStatement()
 	case lexer.DIM:
 		return p.parseDimStatement()
+	case lexer.DEF:
+		return p.parseDefFnStatement()
 	case lexer.ILLEGAL:
 		p.addLiteralError("illegal token", p.currentToken.Literal)
 		return nil
@@ -443,7 +445,9 @@ func (p *Parser) parsePrimaryExpression() Expression {
 	case lexer.IDENT:
 		// IDENT followed by '(' could be a function call or an array reference
 		if p.peekToken.Type == lexer.LPAREN {
-			if p.isBuiltinFunction(p.currentToken.Literal) {
+			// Built-in or user-defined FN*
+			nameUpper := strings.ToUpper(p.currentToken.Literal)
+			if p.isBuiltinFunction(p.currentToken.Literal) || strings.HasPrefix(nameUpper, "FN") {
 				return p.parseFunctionCall()
 			}
 			// Parse as array reference: NAME '(' expr ')'
@@ -696,6 +700,61 @@ func (p *Parser) isBuiltinFunction(name string) bool {
 	default:
 		return false
 	}
+}
+
+// parseDefFnStatement parses: DEF FNx(param) = expr
+func (p *Parser) parseDefFnStatement() *DefFnStatement {
+	stmt := &DefFnStatement{}
+
+	p.nextToken() // consume DEF
+
+	// Expect FN name
+	if p.currentToken.Type != lexer.IDENT {
+		p.addTokenError("function name (FNx)", p.currentToken.Type)
+		return nil
+	}
+	name := p.currentToken.Literal
+	if !strings.HasPrefix(strings.ToUpper(name), "FN") {
+		p.addLiteralError("expected FN name", name)
+		return nil
+	}
+	stmt.Name = name
+
+	p.nextToken() // consume name
+
+	// Expect '('
+	if p.currentToken.Type != lexer.LPAREN {
+		p.addTokenError("'('", p.currentToken.Type)
+		return nil
+	}
+	p.nextToken() // consume '('
+
+	// Expect single parameter identifier
+	if p.currentToken.Type != lexer.IDENT {
+		p.addTokenError("parameter name", p.currentToken.Type)
+		return nil
+	}
+	stmt.Param = p.currentToken.Literal
+
+	p.nextToken() // consume param
+	if p.currentToken.Type != lexer.RPAREN {
+		p.addTokenError("')'", p.currentToken.Type)
+		return nil
+	}
+
+	p.nextToken() // consume ')'
+	if p.currentToken.Type != lexer.ASSIGN {
+		p.addTokenError("'='", p.currentToken.Type)
+		return nil
+	}
+	p.nextToken() // consume '='
+
+	body := p.parseExpression()
+	if body == nil {
+		return nil
+	}
+	stmt.Body = body
+	return stmt
 }
 
 // parseAssignmentOrArraySet parses either a simple variable assignment or an array element assignment

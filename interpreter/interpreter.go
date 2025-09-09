@@ -75,6 +75,9 @@ type Interpreter struct {
 
 	// Arrays state
 	arrays map[string]ArrayInfo
+
+	// User-defined functions: map FNNAME -> {param, body}
+	userFunctions map[string]UserFunction
 }
 
 // ArrayInfo holds metadata and storage for declared arrays
@@ -83,25 +86,32 @@ type ArrayInfo struct {
 	Values   []types.Value
 }
 
+// UserFunction stores definition of a DEF FN
+type UserFunction struct {
+	Param string
+	Body  parser.Expression
+}
+
 // NewInterpreter creates a new interpreter instance
 func NewInterpreter(rt runtime.Runtime) *Interpreter {
 	maxCallDepth := 100 // Default maximum call depth
 	return &Interpreter{
-		runtime:      rt,
-		variables:    make(map[string]types.Value),
-		lineIndex:    make(map[int]*parser.Line),
-		linePos:      make(map[int]int),
-		forStack:     NewStack[ForLoopContext](maxCallDepth), // Use same limit for FOR loops
-		callStack:    NewStack[CallContext](maxCallDepth),
-		maxSteps:     1000, // Default maximum steps
-		maxCallDepth: maxCallDepth,
-		stepCount:    0,
-		pc:           0,
-		stmtIndex:    0,
-		jumped:       false,
-		halted:       false,
-		stmtJumped:   false,
-		arrays:       make(map[string]ArrayInfo),
+		runtime:       rt,
+		variables:     make(map[string]types.Value),
+		lineIndex:     make(map[int]*parser.Line),
+		linePos:       make(map[int]int),
+		forStack:      NewStack[ForLoopContext](maxCallDepth), // Use same limit for FOR loops
+		callStack:     NewStack[CallContext](maxCallDepth),
+		maxSteps:      1000, // Default maximum steps
+		maxCallDepth:  maxCallDepth,
+		stepCount:     0,
+		pc:            0,
+		stmtIndex:     0,
+		jumped:        false,
+		halted:        false,
+		stmtJumped:    false,
+		arrays:        make(map[string]ArrayInfo),
+		userFunctions: make(map[string]UserFunction),
 	}
 }
 
@@ -443,8 +453,49 @@ func (i *Interpreter) EvaluateFunction(functionName string, args []parser.Expres
 	case "TAB":
 		return i.evaluateTabFunction(argValues)
 	default:
+		// Check user-defined functions FN*
+		upper := strings.ToUpper(functionName)
+		if strings.HasPrefix(upper, "FN") {
+			uf, ok := i.userFunctions[upper]
+			if !ok {
+				return types.Value{}, fmt.Errorf("?SYNTAX ERROR: undefined function %s", functionName)
+			}
+			// Expect exactly one argument
+			if len(argValues) != 1 {
+				return types.Value{}, fmt.Errorf("?SYNTAX ERROR: %s expects 1 argument", functionName)
+			}
+			// Save previous value of parameter (if any)
+			normParam := i.NormalizeVariableName(uf.Param)
+			prevVal, hadPrev := i.variables[normParam]
+			// Bind argument to parameter
+			if err := i.SetVariable(uf.Param, argValues[0]); err != nil {
+				return types.Value{}, err
+			}
+			// Evaluate body
+			result, err := uf.Body.Evaluate(i)
+			// Restore previous value
+			if hadPrev {
+				i.variables[normParam] = prevVal
+			} else {
+				delete(i.variables, normParam)
+			}
+			if err != nil {
+				return types.Value{}, err
+			}
+			if result.Type != types.NumberType {
+				return types.Value{}, types.ErrTypeMismatch
+			}
+			return result, nil
+		}
 		return types.Value{}, fmt.Errorf("?SYNTAX ERROR: unknown function %s", functionName)
 	}
+}
+
+// DefineUserFunction registers a DEF FN definition
+func (i *Interpreter) DefineUserFunction(name string, param string, body parser.Expression) error {
+	upper := strings.ToUpper(name)
+	i.userFunctions[upper] = UserFunction{Param: param, Body: body}
+	return nil
 }
 
 // RequestGoto requests a GOTO control flow change

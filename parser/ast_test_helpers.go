@@ -178,6 +178,11 @@ func (m *MockInterpreterOperations) SetArrayElement(name string, index int, valu
 	return nil
 }
 
+// User-defined functions stub
+func (m *MockInterpreterOperations) DefineUserFunction(name string, param string, body Expression) error {
+	return nil
+}
+
 // Helper methods for testing
 func (m *MockInterpreterOperations) setInput(inputs []string) {
 	m.inputQueue = inputs

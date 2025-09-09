@@ -51,6 +51,7 @@ const (
 	RETURN    TokenType = "RETURN"
 	REM       TokenType = "REM"
 	DIM       TokenType = "DIM"
+	DEF       TokenType = "DEF"
 	AND       TokenType = "AND"
 	OR        TokenType = "OR"
 	NOT       TokenType = "NOT"
@@ -77,6 +78,7 @@ var keywords = map[string]TokenType{
 	"RETURN": RETURN,
 	"REM":    REM,
 	"DIM":    DIM,
+	"DEF":    DEF,
 	"AND":    AND,
 	"OR":     OR,
 	"NOT":    NOT,

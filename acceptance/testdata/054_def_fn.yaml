@@ -1,0 +1,25 @@
+cases:
+  - name: "DEF FN simple increment"
+    program: |
+      10 DEF FNA(X)=X+1
+      20 PRINT FNA(4)
+      30 END
+    want:
+      - "5\n"
+
+  - name: "DEF FN square and print"
+    program: |
+      10 DEF FNB(A)=A*A
+      20 PRINT FNB(3)
+      30 END
+    want:
+      - "9\n"
+
+  - name: "DEF FN used in IF condition"
+    program: |
+      10 DEF FNC(Z)=Z-2
+      20 IF FNC(5)=3 THEN PRINT "OK"
+      30 END
+    want:
+      - "OK\n"
+
