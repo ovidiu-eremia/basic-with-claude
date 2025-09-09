@@ -46,10 +46,10 @@ func TestComparisonExpression_Evaluate(t *testing.T) {
 			mock.setVariable("RIGHT", tt.right)
 
 			expr := &ComparisonExpression{
-				Left:     &VariableReference{Name: "LEFT", Line: 1},
+				Left:     &VariableReference{Name: "LEFT", BaseNode: BaseNode{Line: 1}},
 				Operator: tt.operator,
-				Right:    &VariableReference{Name: "RIGHT", Line: 1},
-				Line:     1,
+				Right:    &VariableReference{Name: "RIGHT", BaseNode: BaseNode{Line: 1}},
+				BaseNode: BaseNode{Line: 1},
 			}
 
 			result, err := expr.Evaluate(mock)
@@ -67,10 +67,10 @@ func TestComparisonExpression_Evaluate_ErrorCases(t *testing.T) {
 		mock.getVariableError = errors.New("variable error")
 
 		expr := &ComparisonExpression{
-			Left:     &VariableReference{Name: "A", Line: 1},
+			Left:     &VariableReference{Name: "A", BaseNode: BaseNode{Line: 1}},
 			Operator: "=",
-			Right:    &NumberLiteral{Value: "5", Line: 1},
-			Line:     1,
+			Right:    &NumberLiteral{Value: "5", BaseNode: BaseNode{Line: 1}},
+			BaseNode: BaseNode{Line: 1},
 		}
 
 		_, err := expr.Evaluate(mock)
@@ -84,10 +84,10 @@ func TestComparisonExpression_Evaluate_ErrorCases(t *testing.T) {
 		mock.setVariable("RIGHT", types.NewStringValue("HELLO"))
 
 		expr := &ComparisonExpression{
-			Left:     &VariableReference{Name: "LEFT", Line: 1},
+			Left:     &VariableReference{Name: "LEFT", BaseNode: BaseNode{Line: 1}},
 			Operator: "<",
-			Right:    &VariableReference{Name: "RIGHT", Line: 1},
-			Line:     1,
+			Right:    &VariableReference{Name: "RIGHT", BaseNode: BaseNode{Line: 1}},
+			BaseNode: BaseNode{Line: 1},
 		}
 
 		_, err := expr.Evaluate(mock)

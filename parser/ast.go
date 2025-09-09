@@ -14,6 +14,13 @@ type Node interface {
 	GetLineNumber() int
 }
 
+// BaseNode provides common functionality for all AST nodes
+type BaseNode struct {
+	Line int // Source line number
+}
+
+func (bn BaseNode) GetLineNumber() int { return bn.Line }
+
 // InterpreterOperations defines what AST nodes can ask the interpreter to do
 // This interface enables double dispatch: AST nodes call back to interpreter
 // operations without directly depending on the interpreter implementation
@@ -73,9 +80,11 @@ type Expression interface {
 
 // Program represents the root of the AST - a complete BASIC program
 type Program struct {
+	BaseNode
 	Lines []*Line
 }
 
+// Program overrides GetLineNumber to return the first line's number
 func (p *Program) GetLineNumber() int {
 	if len(p.Lines) > 0 {
 		return p.Lines[0].SourceLine
@@ -85,25 +94,25 @@ func (p *Program) GetLineNumber() int {
 
 // Line represents a single line in a BASIC program
 type Line struct {
+	BaseNode
 	Number     int         // BASIC line number (10, 20, etc.)
 	Statements []Statement // Statements on this line
 	SourceLine int         // Source line number for error reporting
 }
 
+// Line overrides GetLineNumber to return SourceLine
 func (l *Line) GetLineNumber() int { return l.SourceLine }
 
 // PrintStatement represents a PRINT statement
 type PrintStatement struct {
+	BaseNode
 	// Legacy single expression (used when Items is empty)
 	Expression Expression
 	// Items is a list of expressions to print in sequence (semicolon/comma separated)
 	Items []Expression
 	// If true, suppress the trailing newline (trailing ';' in PRINT)
 	NoNewline bool
-	Line      int // Source line number
 }
-
-func (ps *PrintStatement) GetLineNumber() int { return ps.Line }
 
 func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 	// If multiple items are present, concatenate them into a single output string
@@ -150,11 +159,9 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 
 // StringLiteral represents a string literal expression
 type StringLiteral struct {
+	BaseNode
 	Value string // The string value (without quotes)
-	Line  int    // Source line number
 }
-
-func (sl *StringLiteral) GetLineNumber() int { return sl.Line }
 
 func (sl *StringLiteral) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	return types.NewStringValue(sl.Value), nil
@@ -162,10 +169,8 @@ func (sl *StringLiteral) Evaluate(ops InterpreterOperations) (types.Value, error
 
 // EndStatement represents an END statement
 type EndStatement struct {
-	Line int // Source line number
+	BaseNode
 }
-
-func (es *EndStatement) GetLineNumber() int { return es.Line }
 
 func (es *EndStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestEnd()
@@ -173,12 +178,10 @@ func (es *EndStatement) Execute(ops InterpreterOperations) error {
 
 // LetStatement represents a LET assignment statement
 type LetStatement struct {
+	BaseNode
 	Variable   string     // Variable name
 	Expression Expression // Value to assign
-	Line       int        // Source line number
 }
-
-func (ls *LetStatement) GetLineNumber() int { return ls.Line }
 
 func (ls *LetStatement) Execute(ops InterpreterOperations) error {
 	value, err := ls.Expression.Evaluate(ops)
@@ -190,11 +193,9 @@ func (ls *LetStatement) Execute(ops InterpreterOperations) error {
 
 // VariableReference represents a variable reference in an expression
 type VariableReference struct {
+	BaseNode
 	Name string // Variable name
-	Line int    // Source line number
 }
-
-func (vr *VariableReference) GetLineNumber() int { return vr.Line }
 
 func (vr *VariableReference) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	return ops.GetVariable(vr.Name)
@@ -202,11 +203,9 @@ func (vr *VariableReference) Evaluate(ops InterpreterOperations) (types.Value, e
 
 // NumberLiteral represents a numeric literal expression
 type NumberLiteral struct {
+	BaseNode
 	Value string // The numeric value as string
-	Line  int    // Source line number
 }
-
-func (nl *NumberLiteral) GetLineNumber() int { return nl.Line }
 
 func (nl *NumberLiteral) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	return types.ParseValue(nl.Value)
@@ -214,13 +213,11 @@ func (nl *NumberLiteral) Evaluate(ops InterpreterOperations) (types.Value, error
 
 // BinaryOperation represents a binary arithmetic operation
 type BinaryOperation struct {
+	BaseNode
 	Left     Expression // Left operand
 	Operator string     // Operator (+, -, *, /, ^)
 	Right    Expression // Right operand
-	Line     int        // Source line number
 }
-
-func (bo *BinaryOperation) GetLineNumber() int { return bo.Line }
 
 func (bo *BinaryOperation) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	left, err := bo.Left.Evaluate(ops)
@@ -252,10 +249,8 @@ func (bo *BinaryOperation) Evaluate(ops InterpreterOperations) (types.Value, err
 
 // RunStatement represents a RUN statement
 type RunStatement struct {
-	Line int // Source line number
+	BaseNode
 }
-
-func (rs *RunStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *RunStatement) Execute(ops InterpreterOperations) error {
 	// RUN statement doesn't do anything during normal program execution
@@ -267,10 +262,8 @@ func (rs *RunStatement) Execute(ops InterpreterOperations) error {
 
 // StopStatement represents a STOP statement
 type StopStatement struct {
-	Line int // Source line number
+	BaseNode
 }
-
-func (ss *StopStatement) GetLineNumber() int { return ss.Line }
 
 func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestStop()
@@ -278,12 +271,10 @@ func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 
 // InputStatement represents an INPUT statement
 type InputStatement struct {
+	BaseNode
 	Prompt   string // Optional prompt string (empty for no prompt)
 	Variable string // Variable name to read into
-	Line     int    // Source line number
 }
-
-func (ins *InputStatement) GetLineNumber() int { return ins.Line }
 
 func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 	input, err := ops.ReadInput(ins.Prompt)
@@ -308,11 +299,9 @@ func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 
 // GotoStatement represents a GOTO statement
 type GotoStatement struct {
+	BaseNode
 	TargetLine int // Target line number to jump to
-	Line       int // Source line number
 }
-
-func (gs *GotoStatement) GetLineNumber() int { return gs.Line }
 
 func (gs *GotoStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestGoto(gs.TargetLine)
@@ -320,12 +309,10 @@ func (gs *GotoStatement) Execute(ops InterpreterOperations) error {
 
 // IfStatement represents an IF...THEN statement
 type IfStatement struct {
+	BaseNode
 	Condition Expression // The condition to evaluate
 	ThenStmt  Statement  // The statement to execute if condition is true
-	Line      int        // Source line number
 }
-
-func (is *IfStatement) GetLineNumber() int { return is.Line }
 
 func (is *IfStatement) Execute(ops InterpreterOperations) error {
 	condition, err := is.Condition.Evaluate(ops)
@@ -341,12 +328,10 @@ func (is *IfStatement) Execute(ops InterpreterOperations) error {
 
 // UnaryOperation represents a unary arithmetic operation
 type UnaryOperation struct {
+	BaseNode
 	Operator string     // Operator (-)
 	Right    Expression // Right operand
-	Line     int        // Source line number
 }
-
-func (uo *UnaryOperation) GetLineNumber() int { return uo.Line }
 
 func (uo *UnaryOperation) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	operand, err := uo.Right.Evaluate(ops)
@@ -374,13 +359,11 @@ func (uo *UnaryOperation) Evaluate(ops InterpreterOperations) (types.Value, erro
 
 // ComparisonExpression represents a comparison operation (=, <>, <, >, <=, >=)
 type ComparisonExpression struct {
+	BaseNode
 	Left     Expression // Left operand
 	Operator string     // Comparison operator
 	Right    Expression // Right operand
-	Line     int        // Source line number
 }
-
-func (ce *ComparisonExpression) GetLineNumber() int { return ce.Line }
 
 func (ce *ComparisonExpression) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	left, err := ce.Left.Evaluate(ops)
@@ -409,14 +392,12 @@ func (ce *ComparisonExpression) Evaluate(ops InterpreterOperations) (types.Value
 
 // ForStatement represents a FOR loop statement
 type ForStatement struct {
+	BaseNode
 	Variable   string     // Loop variable name
 	StartValue Expression // Starting value
 	EndValue   Expression // Ending value
 	StepValue  Expression // Optional step value (defaults to 1)
-	Line       int        // Source line number
 }
-
-func (fs *ForStatement) GetLineNumber() int { return fs.Line }
 
 func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 	startVal, err := fs.StartValue.Evaluate(ops)
@@ -456,11 +437,9 @@ func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 
 // NextStatement represents a NEXT statement
 type NextStatement struct {
+	BaseNode
 	Variable string // Optional loop variable name (can be empty)
-	Line     int    // Source line number
 }
-
-func (ns *NextStatement) GetLineNumber() int { return ns.Line }
 
 func (ns *NextStatement) Execute(ops InterpreterOperations) error {
 	// Iterate the FOR loop via interpreter operations
@@ -469,11 +448,9 @@ func (ns *NextStatement) Execute(ops InterpreterOperations) error {
 
 // GosubStatement represents a GOSUB statement
 type GosubStatement struct {
+	BaseNode
 	TargetLine int // Target line number to call
-	Line       int // Source line number
 }
-
-func (gs *GosubStatement) GetLineNumber() int { return gs.Line }
 
 func (gs *GosubStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestGosub(gs.TargetLine)
@@ -481,10 +458,8 @@ func (gs *GosubStatement) Execute(ops InterpreterOperations) error {
 
 // ReturnStatement represents a RETURN statement
 type ReturnStatement struct {
-	Line int // Source line number
+	BaseNode
 }
-
-func (rs *ReturnStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestReturn()
@@ -492,22 +467,18 @@ func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
 
 // DataStatement represents a DATA statement containing a list of constants
 type DataStatement struct {
+	BaseNode
 	Values []Expression // Constants (numbers or strings)
-	Line   int          // Source line number
 }
-
-func (ds *DataStatement) GetLineNumber() int { return ds.Line }
 
 // DATA is processed before execution by the interpreter; at runtime it's a no-op
 func (ds *DataStatement) Execute(ops InterpreterOperations) error { return nil }
 
 // ReadStatement represents a READ statement to read values from DATA
 type ReadStatement struct {
+	BaseNode
 	Variables []string // Variable names to fill
-	Line      int      // Source line number
 }
-
-func (rs *ReadStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
 	for _, vname := range rs.Variables {
@@ -534,21 +505,17 @@ func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
 
 // RemStatement represents a REM (comment) statement; it is a no-op at runtime
 type RemStatement struct {
-	Line int // Source line number
+	BaseNode
 }
-
-func (rs *RemStatement) GetLineNumber() int { return rs.Line }
 
 func (rs *RemStatement) Execute(ops InterpreterOperations) error { return nil }
 
 // FunctionCall represents a function call expression
 type FunctionCall struct {
+	BaseNode
 	FunctionName string       // Function name (LEN, LEFT$, RIGHT$, etc.)
 	Arguments    []Expression // Function arguments
-	Line         int          // Source line number
 }
-
-func (fc *FunctionCall) GetLineNumber() int { return fc.Line }
 
 func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	return ops.EvaluateFunction(fc.FunctionName, fc.Arguments)
@@ -556,12 +523,10 @@ func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error)
 
 // ArrayReference represents access to an array element, e.g., A(5)
 type ArrayReference struct {
+	BaseNode
 	Name  string
 	Index Expression
-	Line  int
 }
-
-func (ar *ArrayReference) GetLineNumber() int { return ar.Line }
 
 func (ar *ArrayReference) Evaluate(ops InterpreterOperations) (types.Value, error) {
 	idxVal, err := ar.Index.Evaluate(ops)
@@ -580,13 +545,11 @@ func (ar *ArrayReference) Evaluate(ops InterpreterOperations) (types.Value, erro
 
 // ArraySetStatement assigns a value to an array element, e.g., A(5) = 42
 type ArraySetStatement struct {
+	BaseNode
 	Name       string
 	Index      Expression
 	Expression Expression
-	Line       int
 }
-
-func (as *ArraySetStatement) GetLineNumber() int { return as.Line }
 
 func (as *ArraySetStatement) Execute(ops InterpreterOperations) error {
 	idxVal, err := as.Index.Evaluate(ops)
@@ -615,11 +578,9 @@ type DimDeclaration struct {
 
 // DimStatement represents a DIM statement declaring one or more arrays
 type DimStatement struct {
+	BaseNode
 	Declarations []DimDeclaration
-	Line         int
 }
-
-func (ds *DimStatement) GetLineNumber() int { return ds.Line }
 
 func (ds *DimStatement) Execute(ops InterpreterOperations) error {
 	for _, d := range ds.Declarations {

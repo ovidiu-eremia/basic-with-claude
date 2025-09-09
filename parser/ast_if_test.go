@@ -26,10 +26,10 @@ func TestIfStatement_Execute(t *testing.T) {
 			mock := newMockOps()
 			mock.setVariable("CONDITION", tt.conditionValue)
 
-			condition := &VariableReference{Name: "CONDITION", Line: 1}
-			thenStmt := &PrintStatement{Expression: &StringLiteral{Value: "EXECUTED", Line: 1}, Line: 1}
+			condition := &VariableReference{BaseNode: BaseNode{Line: 1}, Name: "CONDITION"}
+			thenStmt := &PrintStatement{BaseNode: BaseNode{Line: 1}, Expression: &StringLiteral{BaseNode: BaseNode{Line: 1}, Value: "EXECUTED"}}
 
-			stmt := &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: 1}
+			stmt := &IfStatement{BaseNode: BaseNode{Line: 1}, Condition: condition, ThenStmt: thenStmt}
 
 			err := stmt.Execute(mock)
 			assert.NoError(t, err)
@@ -49,10 +49,10 @@ func TestIfStatement_Execute_ErrorCases(t *testing.T) {
 		mock := newMockOps()
 		mock.getVariableError = errors.New("variable error")
 
-		condition := &VariableReference{Name: "A", Line: 1}
-		thenStmt := &PrintStatement{Expression: &StringLiteral{Value: "TEST", Line: 1}, Line: 1}
+		condition := &VariableReference{BaseNode: BaseNode{Line: 1}, Name: "A"}
+		thenStmt := &PrintStatement{BaseNode: BaseNode{Line: 1}, Expression: &StringLiteral{BaseNode: BaseNode{Line: 1}, Value: "TEST"}}
 
-		stmt := &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: 1}
+		stmt := &IfStatement{BaseNode: BaseNode{Line: 1}, Condition: condition, ThenStmt: thenStmt}
 
 		err := stmt.Execute(mock)
 		assert.Error(t, err)
@@ -63,10 +63,10 @@ func TestIfStatement_Execute_ErrorCases(t *testing.T) {
 		mock.setVariable("A", types.NewNumberValue(1)) // true condition
 		mock.printLineError = errors.New("print error")
 
-		condition := &VariableReference{Name: "A", Line: 1}
-		thenStmt := &PrintStatement{Expression: &StringLiteral{Value: "TEST", Line: 1}, Line: 1}
+		condition := &VariableReference{BaseNode: BaseNode{Line: 1}, Name: "A"}
+		thenStmt := &PrintStatement{BaseNode: BaseNode{Line: 1}, Expression: &StringLiteral{BaseNode: BaseNode{Line: 1}, Value: "TEST"}}
 
-		stmt := &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: 1}
+		stmt := &IfStatement{BaseNode: BaseNode{Line: 1}, Condition: condition, ThenStmt: thenStmt}
 
 		err := stmt.Execute(mock)
 		assert.Error(t, err)

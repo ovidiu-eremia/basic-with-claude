@@ -30,10 +30,10 @@ func TestBinaryOperation_Evaluate(t *testing.T) {
 			mock.setVariable("RIGHT", tt.right)
 
 			expr := &BinaryOperation{
-				Left:     &VariableReference{Name: "LEFT", Line: 1},
+				Left:     &VariableReference{Name: "LEFT", BaseNode: BaseNode{Line: 1}},
 				Operator: tt.operator,
-				Right:    &VariableReference{Name: "RIGHT", Line: 1},
-				Line:     1,
+				Right:    &VariableReference{Name: "RIGHT", BaseNode: BaseNode{Line: 1}},
+				BaseNode: BaseNode{Line: 1},
 			}
 
 			result, err := expr.Evaluate(mock)
@@ -51,10 +51,10 @@ func TestBinaryOperation_Evaluate_StringConcatenation(t *testing.T) {
 	mock.setVariable("RIGHT", types.NewStringValue("WORLD"))
 
 	expr := &BinaryOperation{
-		Left:     &VariableReference{Name: "LEFT", Line: 1},
+		Left:     &VariableReference{Name: "LEFT", BaseNode: BaseNode{Line: 1}},
 		Operator: "+",
-		Right:    &VariableReference{Name: "RIGHT", Line: 1},
-		Line:     1,
+		Right:    &VariableReference{Name: "RIGHT", BaseNode: BaseNode{Line: 1}},
+		BaseNode: BaseNode{Line: 1},
 	}
 
 	result, err := expr.Evaluate(mock)
@@ -79,10 +79,10 @@ func TestBinaryOperation_Evaluate_ErrorCases(t *testing.T) {
 			mock.setVariable("RIGHT", types.NewNumberValue(3))
 
 			expr := &BinaryOperation{
-				Left:     &VariableReference{Name: "LEFT", Line: 1},
+				Left:     &VariableReference{Name: "LEFT", BaseNode: BaseNode{Line: 1}},
 				Operator: tt.operator,
-				Right:    &VariableReference{Name: "RIGHT", Line: 1},
-				Line:     1,
+				Right:    &VariableReference{Name: "RIGHT", BaseNode: BaseNode{Line: 1}},
+				BaseNode: BaseNode{Line: 1},
 			}
 
 			_, err := expr.Evaluate(mock)
@@ -97,10 +97,10 @@ func TestBinaryOperation_Evaluate_LeftEvaluationError(t *testing.T) {
 	mock.getVariableError = errors.New("variable error")
 
 	expr := &BinaryOperation{
-		Left:     &VariableReference{Name: "A", Line: 1},
+		Left:     &VariableReference{Name: "A", BaseNode: BaseNode{Line: 1}},
 		Operator: "+",
-		Right:    &NumberLiteral{Value: "3", Line: 1},
-		Line:     1,
+		Right:    &NumberLiteral{Value: "3", BaseNode: BaseNode{Line: 1}},
+		BaseNode: BaseNode{Line: 1},
 	}
 
 	_, err := expr.Evaluate(mock)

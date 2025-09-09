@@ -214,7 +214,7 @@ func (p *Parser) parseStatement() Statement {
 
 // parseRemStatement parses a REM statement which consumes the rest of the line
 func (p *Parser) parseRemStatement() *RemStatement {
-	stmt := &RemStatement{Line: p.currentToken.Line}
+	stmt := &RemStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	// Consume REM token
 	p.nextToken()
 	// Skip tokens until end of line or EOF, but leave currentToken on last non-NEWLINE token
@@ -227,7 +227,7 @@ func (p *Parser) parseRemStatement() *RemStatement {
 
 // parseDataStatement parses a DATA statement: DATA <const>[, <const>...]
 func (p *Parser) parseDataStatement() *DataStatement {
-	stmt := &DataStatement{Line: p.currentToken.Line}
+	stmt := &DataStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	p.nextToken() // consume DATA
 
 	// Parse zero or more constants until end of line/EOF
@@ -259,7 +259,7 @@ func (p *Parser) parseDataStatement() *DataStatement {
 
 // parseReadStatement parses a READ statement: READ <var>[, <var>...]
 func (p *Parser) parseReadStatement() *ReadStatement {
-	stmt := &ReadStatement{Line: p.currentToken.Line}
+	stmt := &ReadStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	p.nextToken() // consume READ
 
 	// Expect at least one identifier
@@ -283,7 +283,7 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 
 // parseDimStatement parses a DIM statement: DIM A(n)[, B$(m) ...]
 func (p *Parser) parseDimStatement() *DimStatement {
-	stmt := &DimStatement{Line: p.currentToken.Line}
+	stmt := &DimStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	p.nextToken() // consume DIM
 
 	for {
@@ -336,12 +336,12 @@ func (p *Parser) parseDimStatement() *DimStatement {
 
 // parsePrintStatement parses a PRINT statement
 func (p *Parser) parsePrintStatement() *PrintStatement {
-	stmt := &PrintStatement{Line: p.currentToken.Line}
+	stmt := &PrintStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	// Look ahead: if next token ends the statement, this is an empty PRINT
 	if p.peekToken.Type == lexer.NEWLINE || p.peekToken.Type == lexer.EOF || p.peekToken.Type == lexer.COLON {
 		// Empty PRINT -> outputs blank line
-		stmt.Expression = &StringLiteral{Value: "", Line: stmt.Line}
+		stmt.Expression = &StringLiteral{BaseNode: BaseNode{Line: stmt.Line}, Value: ""}
 		return stmt
 	}
 
@@ -419,17 +419,17 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 		// Create appropriate node type based on operator
 		if p.isComparisonOperatorString(operator) {
 			left = &ComparisonExpression{
+				BaseNode: BaseNode{Line: left.GetLineNumber()},
 				Left:     left,
 				Operator: operator,
 				Right:    right,
-				Line:     left.GetLineNumber(),
 			}
 		} else {
 			left = &BinaryOperation{
+				BaseNode: BaseNode{Line: left.GetLineNumber()},
 				Left:     left,
 				Operator: operator,
 				Right:    right,
-				Line:     left.GetLineNumber(),
 			}
 		}
 	}
@@ -478,7 +478,7 @@ func (p *Parser) parsePrimaryExpression() Expression {
 				return nil
 			}
 			// Do not consume ')'; caller will advance
-			return &ArrayReference{Name: nameTok.Literal, Index: idx, Line: nameTok.Line}
+			return &ArrayReference{BaseNode: BaseNode{Line: nameTok.Line}, Name: nameTok.Literal, Index: idx}
 		}
 		return p.parseVariableReference()
 	case lexer.LPAREN:
@@ -497,8 +497,8 @@ func (p *Parser) parsePrimaryExpression() Expression {
 // parseUnaryOperation parses a unary operation
 func (p *Parser) parseUnaryOperation() Expression {
 	stmt := &UnaryOperation{
+		BaseNode: BaseNode{Line: p.currentToken.Line},
 		Operator: p.currentToken.Literal,
-		Line:     p.currentToken.Line,
 	}
 	p.nextToken() // consume operator
 	stmt.Right = p.parseExpressionWithPrecedence(PREFIX)
@@ -526,27 +526,27 @@ func (p *Parser) parseGroupedExpression() Expression {
 // parseEndStatement parses an END statement
 func (p *Parser) parseEndStatement() *EndStatement {
 	return &EndStatement{
-		Line: p.currentToken.Line,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
 	}
 }
 
 // parseRunStatement parses a RUN statement
 func (p *Parser) parseRunStatement() *RunStatement {
 	return &RunStatement{
-		Line: p.currentToken.Line,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
 	}
 }
 
 // parseStopStatement parses a STOP statement
 func (p *Parser) parseStopStatement() *StopStatement {
 	return &StopStatement{
-		Line: p.currentToken.Line,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
 	}
 }
 
 // parseGotoStatement parses a GOTO statement
 func (p *Parser) parseGotoStatement() *GotoStatement {
-	stmt := &GotoStatement{Line: p.currentToken.Line}
+	stmt := &GotoStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	p.nextToken() // consume GOTO
 
@@ -569,7 +569,7 @@ func (p *Parser) parseGotoStatement() *GotoStatement {
 
 // parseGosubStatement parses a GOSUB statement
 func (p *Parser) parseGosubStatement() *GosubStatement {
-	stmt := &GosubStatement{Line: p.currentToken.Line}
+	stmt := &GosubStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	p.nextToken() // consume GOSUB
 
@@ -592,14 +592,14 @@ func (p *Parser) parseGosubStatement() *GosubStatement {
 
 // parseReturnStatement parses a RETURN statement
 func (p *Parser) parseReturnStatement() *ReturnStatement {
-	stmt := &ReturnStatement{Line: p.currentToken.Line}
+	stmt := &ReturnStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	// No need to consume more tokens - RETURN is a simple statement
 	return stmt
 }
 
 // parseIfStatement parses an IF...THEN statement
 func (p *Parser) parseIfStatement() *IfStatement {
-	stmt := &IfStatement{Line: p.currentToken.Line}
+	stmt := &IfStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	p.nextToken() // consume IF
 
@@ -640,7 +640,7 @@ func (p *Parser) parseIfStatement() *IfStatement {
 			p.addErrorf("invalid line number: %s", p.currentToken.Literal)
 			return nil
 		}
-		stmt.ThenStmt = &GotoStatement{TargetLine: targetLine, Line: stmt.Line}
+		stmt.ThenStmt = &GotoStatement{BaseNode: BaseNode{Line: stmt.Line}, TargetLine: targetLine}
 		return stmt
 	}
 
@@ -656,33 +656,33 @@ func (p *Parser) parseIfStatement() *IfStatement {
 // parseStringLiteral parses a string literal
 func (p *Parser) parseStringLiteral() *StringLiteral {
 	return &StringLiteral{
-		Value: p.currentToken.Literal,
-		Line:  p.currentToken.Line,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
+		Value:    p.currentToken.Literal,
 	}
 }
 
 // parseNumberLiteral parses a number literal
 func (p *Parser) parseNumberLiteral() *NumberLiteral {
 	return &NumberLiteral{
-		Value: p.currentToken.Literal,
-		Line:  p.currentToken.Line,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
+		Value:    p.currentToken.Literal,
 	}
 }
 
 // parseVariableReference parses a variable reference
 func (p *Parser) parseVariableReference() *VariableReference {
 	return &VariableReference{
-		Name: p.currentToken.Literal,
-		Line: p.currentToken.Line,
+		Name:     p.currentToken.Literal,
+		BaseNode: BaseNode{Line: p.currentToken.Line},
 	}
 }
 
 // parseFunctionCall parses a function call (identifier followed by parentheses)
 func (p *Parser) parseFunctionCall() *FunctionCall {
 	functionCall := &FunctionCall{
+		BaseNode:     BaseNode{Line: p.currentToken.Line},
 		FunctionName: p.currentToken.Literal,
 		Arguments:    []Expression{}, // Initialize empty slice
-		Line:         p.currentToken.Line,
 	}
 
 	p.nextToken() // consume function name
@@ -783,7 +783,7 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 		if rhs == nil {
 			return nil
 		}
-		return &ArraySetStatement{Name: name, Index: idx, Expression: rhs, Line: line}
+		return &ArraySetStatement{BaseNode: BaseNode{Line: line}, Name: name, Index: idx, Expression: rhs}
 	}
 
 	// Simple variable assignment
@@ -796,12 +796,12 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 	if expr == nil {
 		return nil
 	}
-	return &LetStatement{Variable: name, Expression: expr, Line: line}
+	return &LetStatement{BaseNode: BaseNode{Line: line}, Variable: name, Expression: expr}
 }
 
 // parseInputStatement parses an INPUT statement
 func (p *Parser) parseInputStatement() *InputStatement {
-	stmt := &InputStatement{Line: p.currentToken.Line}
+	stmt := &InputStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 	p.nextToken() // consume INPUT
 
 	// Check if we have a prompt string
@@ -828,7 +828,7 @@ func (p *Parser) parseInputStatement() *InputStatement {
 
 // parseForStatement parses a FOR statement: FOR I = 1 TO 5 [STEP X]
 func (p *Parser) parseForStatement() *ForStatement {
-	stmt := &ForStatement{Line: p.currentToken.Line}
+	stmt := &ForStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	p.nextToken() // consume FOR
 
@@ -893,7 +893,7 @@ func (p *Parser) parseForStatement() *ForStatement {
 
 // parseNextStatement parses a NEXT statement: NEXT I or NEXT
 func (p *Parser) parseNextStatement() *NextStatement {
-	stmt := &NextStatement{Line: p.currentToken.Line}
+	stmt := &NextStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
 
 	p.nextToken() // consume NEXT
 

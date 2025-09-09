@@ -28,10 +28,10 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.StringLiteral{
-									Value: "HELLO WORLD",
-									Line:  1,
+									Value:    "HELLO WORLD",
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -49,10 +49,10 @@ func TestInterpreter_ExecutePrintStatement(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.NumberLiteral{
-									Value: "42",
-									Line:  1,
+									Value:    "42",
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -93,10 +93,10 @@ func TestInterpreter_NumericVariables(t *testing.T) {
 							&parser.LetStatement{
 								Variable: "A",
 								Expression: &parser.NumberLiteral{
-									Value: "42",
-									Line:  1,
+									Value:    "42",
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -106,10 +106,10 @@ func TestInterpreter_NumericVariables(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.VariableReference{
-									Name: "A",
-									Line: 2,
+									Name:     "A",
+									BaseNode: parser.BaseNode{Line: 2},
 								},
-								Line: 2,
+								BaseNode: parser.BaseNode{Line: 2},
 							},
 						},
 						SourceLine: 2,
@@ -150,10 +150,10 @@ func TestInterpreter_StringVariables(t *testing.T) {
 							&parser.LetStatement{
 								Variable: "A$",
 								Expression: &parser.StringLiteral{
-									Value: "HELLO",
-									Line:  1,
+									Value:    "HELLO",
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -163,10 +163,10 @@ func TestInterpreter_StringVariables(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.VariableReference{
-									Name: "A$",
-									Line: 2,
+									Name:     "A$",
+									BaseNode: parser.BaseNode{Line: 2},
 								},
-								Line: 2,
+								BaseNode: parser.BaseNode{Line: 2},
 							},
 						},
 						SourceLine: 2,
@@ -206,12 +206,12 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.NumberLiteral{Value: "2", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "2", BaseNode: parser.BaseNode{Line: 1}},
 									Operator: "+",
-									Right:    &parser.NumberLiteral{Value: "3", Line: 1},
-									Line:     1,
+									Right:    &parser.NumberLiteral{Value: "3", BaseNode: parser.BaseNode{Line: 1}},
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -229,17 +229,17 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.NumberLiteral{Value: "2", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "2", BaseNode: parser.BaseNode{Line: 1}},
 									Operator: "+",
 									Right: &parser.BinaryOperation{
-										Left:     &parser.NumberLiteral{Value: "3", Line: 1},
+										Left:     &parser.NumberLiteral{Value: "3", BaseNode: parser.BaseNode{Line: 1}},
 										Operator: "*",
-										Right:    &parser.NumberLiteral{Value: "4", Line: 1},
-										Line:     1,
+										Right:    &parser.NumberLiteral{Value: "4", BaseNode: parser.BaseNode{Line: 1}},
+										BaseNode: parser.BaseNode{Line: 1},
 									},
-									Line: 1,
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -257,8 +257,8 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.LetStatement{
 								Variable:   "A",
-								Expression: &parser.NumberLiteral{Value: "5", Line: 1},
-								Line:       1,
+								Expression: &parser.NumberLiteral{Value: "5", BaseNode: parser.BaseNode{Line: 1}},
+								BaseNode:   parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -268,8 +268,8 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.LetStatement{
 								Variable:   "B",
-								Expression: &parser.NumberLiteral{Value: "3", Line: 2},
-								Line:       2,
+								Expression: &parser.NumberLiteral{Value: "3", BaseNode: parser.BaseNode{Line: 2}},
+								BaseNode:   parser.BaseNode{Line: 2},
 							},
 						},
 						SourceLine: 2,
@@ -279,17 +279,17 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.VariableReference{Name: "A", Line: 3},
+									Left:     &parser.VariableReference{Name: "A", BaseNode: parser.BaseNode{Line: 3}},
 									Operator: "*",
 									Right: &parser.BinaryOperation{
-										Left:     &parser.VariableReference{Name: "B", Line: 3},
+										Left:     &parser.VariableReference{Name: "B", BaseNode: parser.BaseNode{Line: 3}},
 										Operator: "+",
-										Right:    &parser.NumberLiteral{Value: "1", Line: 3},
-										Line:     3,
+										Right:    &parser.NumberLiteral{Value: "1", BaseNode: parser.BaseNode{Line: 3}},
+										BaseNode: parser.BaseNode{Line: 3},
 									},
-									Line: 3,
+									BaseNode: parser.BaseNode{Line: 3},
 								},
-								Line: 3,
+								BaseNode: parser.BaseNode{Line: 3},
 							},
 						},
 						SourceLine: 3,
@@ -307,12 +307,12 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.NumberLiteral{Value: "10", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "10", BaseNode: parser.BaseNode{Line: 1}},
 									Operator: "/",
-									Right:    &parser.NumberLiteral{Value: "2", Line: 1},
-									Line:     1,
+									Right:    &parser.NumberLiteral{Value: "2", BaseNode: parser.BaseNode{Line: 1}},
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,
@@ -322,12 +322,12 @@ func TestInterpreter_ArithmeticExpressions(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.NumberLiteral{Value: "2", Line: 2},
+									Left:     &parser.NumberLiteral{Value: "2", BaseNode: parser.BaseNode{Line: 2}},
 									Operator: "^",
-									Right:    &parser.NumberLiteral{Value: "3", Line: 2},
-									Line:     2,
+									Right:    &parser.NumberLiteral{Value: "3", BaseNode: parser.BaseNode{Line: 2}},
+									BaseNode: parser.BaseNode{Line: 2},
 								},
-								Line: 2,
+								BaseNode: parser.BaseNode{Line: 2},
 							},
 						},
 						SourceLine: 2,
@@ -367,12 +367,12 @@ func TestInterpreter_ArithmeticErrors(t *testing.T) {
 						Statements: []parser.Statement{
 							&parser.PrintStatement{
 								Expression: &parser.BinaryOperation{
-									Left:     &parser.NumberLiteral{Value: "10", Line: 1},
+									Left:     &parser.NumberLiteral{Value: "10", BaseNode: parser.BaseNode{Line: 1}},
 									Operator: "/",
-									Right:    &parser.NumberLiteral{Value: "0", Line: 1},
-									Line:     1,
+									Right:    &parser.NumberLiteral{Value: "0", BaseNode: parser.BaseNode{Line: 1}},
+									BaseNode: parser.BaseNode{Line: 1},
 								},
-								Line: 1,
+								BaseNode: parser.BaseNode{Line: 1},
 							},
 						},
 						SourceLine: 1,

@@ -12,65 +12,65 @@ func line(num int, sourceLine int, stmts ...Statement) *Line {
 }
 
 func printStmt(expr Expression, line int) *PrintStatement {
-	return &PrintStatement{Expression: expr, Line: line}
+	return &PrintStatement{BaseNode: BaseNode{Line: line}, Expression: expr}
 }
 
 func letStmt(variable string, expr Expression, line int) *LetStatement {
-	return &LetStatement{Variable: variable, Expression: expr, Line: line}
+	return &LetStatement{BaseNode: BaseNode{Line: line}, Variable: variable, Expression: expr}
 }
 
 func endStmt(line int) *EndStatement {
-	return &EndStatement{Line: line}
+	return &EndStatement{BaseNode: BaseNode{Line: line}}
 }
 
 func runStmt(line int) *RunStatement {
-	return &RunStatement{Line: line}
+	return &RunStatement{BaseNode: BaseNode{Line: line}}
 }
 
 func stopStmt(line int) *StopStatement {
-	return &StopStatement{Line: line}
+	return &StopStatement{BaseNode: BaseNode{Line: line}}
 }
 
 func gotoStmt(targetLine int, line int) *GotoStatement {
-	return &GotoStatement{TargetLine: targetLine, Line: line}
+	return &GotoStatement{BaseNode: BaseNode{Line: line}, TargetLine: targetLine}
 }
 
 func gosubStmt(targetLine int, line int) *GosubStatement {
-	return &GosubStatement{TargetLine: targetLine, Line: line}
+	return &GosubStatement{BaseNode: BaseNode{Line: line}, TargetLine: targetLine}
 }
 
 func returnStmt(line int) *ReturnStatement {
-	return &ReturnStatement{Line: line}
+	return &ReturnStatement{BaseNode: BaseNode{Line: line}}
 }
 
 func ifStmt(condition Expression, thenStmt Statement, line int) *IfStatement {
-	return &IfStatement{Condition: condition, ThenStmt: thenStmt, Line: line}
+	return &IfStatement{BaseNode: BaseNode{Line: line}, Condition: condition, ThenStmt: thenStmt}
 }
 
 func inputStmt(prompt string, variable string, line int) *InputStatement {
-	return &InputStatement{Prompt: prompt, Variable: variable, Line: line}
+	return &InputStatement{BaseNode: BaseNode{Line: line}, Prompt: prompt, Variable: variable}
 }
 
 func str(value string, line int) *StringLiteral {
-	return &StringLiteral{Value: value, Line: line}
+	return &StringLiteral{BaseNode: BaseNode{Line: line}, Value: value}
 }
 
 func num(value string, line int) *NumberLiteral {
-	return &NumberLiteral{Value: value, Line: line}
+	return &NumberLiteral{BaseNode: BaseNode{Line: line}, Value: value}
 }
 
 func varRef(name string, line int) *VariableReference {
-	return &VariableReference{Name: name, Line: line}
+	return &VariableReference{BaseNode: BaseNode{Line: line}, Name: name}
 }
 
 func binaryOp(left Expression, operator string, right Expression, line int) *BinaryOperation {
-	return &BinaryOperation{Left: left, Operator: operator, Right: right, Line: line}
+	return &BinaryOperation{BaseNode: BaseNode{Line: line}, Left: left, Operator: operator, Right: right}
 }
 
 func remStmt(line int) *RemStatement {
-	return &RemStatement{Line: line}
+	return &RemStatement{BaseNode: BaseNode{Line: line}}
 }
 
 func funcCall(name string, args []Expression, line int) *FunctionCall {
-	return &FunctionCall{FunctionName: name, Arguments: args, Line: line}
+	return &FunctionCall{BaseNode: BaseNode{Line: line}, FunctionName: name, Arguments: args}
 }

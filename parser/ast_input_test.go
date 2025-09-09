@@ -46,7 +46,7 @@ func TestInputStatement_Execute(t *testing.T) {
 			mock := newMockOps()
 			mock.setInput([]string{tt.input})
 
-			stmt := &InputStatement{Variable: tt.variable, Line: 1}
+			stmt := &InputStatement{Variable: tt.variable, BaseNode: BaseNode{Line: 1}}
 
 			err := stmt.Execute(mock)
 
@@ -74,7 +74,7 @@ func TestInputStatement_Execute_ErrorCases(t *testing.T) {
 		mock := newMockOps()
 		mock.readInputError = errors.New("input error")
 
-		stmt := &InputStatement{Variable: "A", Line: 1}
+		stmt := &InputStatement{Variable: "A", BaseNode: BaseNode{Line: 1}}
 
 		err := stmt.Execute(mock)
 		assert.Error(t, err)
@@ -85,7 +85,7 @@ func TestInputStatement_Execute_ErrorCases(t *testing.T) {
 		mock.setInput([]string{"42"})
 		mock.setVariableError = errors.New("set error")
 
-		stmt := &InputStatement{Variable: "A", Line: 1}
+		stmt := &InputStatement{Variable: "A", BaseNode: BaseNode{Line: 1}}
 
 		err := stmt.Execute(mock)
 		assert.Error(t, err)

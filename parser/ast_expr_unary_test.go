@@ -26,8 +26,8 @@ func TestUnaryOperation_Evaluate(t *testing.T) {
 
 			expr := &UnaryOperation{
 				Operator: tt.operator,
-				Right:    &VariableReference{Name: "OPERAND", Line: 1},
-				Line:     1,
+				Right:    &VariableReference{Name: "OPERAND", BaseNode: BaseNode{Line: 1}},
+				BaseNode: BaseNode{Line: 1},
 			}
 
 			result, err := expr.Evaluate(mock)
@@ -58,8 +58,8 @@ func TestUnaryOperation_Evaluate_ErrorCases(t *testing.T) {
 
 			expr := &UnaryOperation{
 				Operator: tt.operator,
-				Right:    &VariableReference{Name: "OPERAND", Line: 1},
-				Line:     1,
+				Right:    &VariableReference{Name: "OPERAND", BaseNode: BaseNode{Line: 1}},
+				BaseNode: BaseNode{Line: 1},
 			}
 
 			_, err := expr.Evaluate(mock)
