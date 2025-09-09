@@ -103,9 +103,8 @@ func TestParser_NestedFunctionCalls(t *testing.T) {
 			program := p.ParseProgram()
 
 			// Check for parsing errors
-			errors := p.Errors()
-			if len(errors) > 0 {
-				t.Fatalf("parser errors: %v", errors)
+			if p.ParseError() != nil {
+				t.Fatalf("parser error: %v", p.ParseError())
 			}
 
 			require.NotNil(t, program)

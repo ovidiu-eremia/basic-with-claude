@@ -23,7 +23,7 @@ func TestInterpreter_ReadDataBasic(t *testing.T) {
 	l := lexer.New(program)
 	p := parser.New(l)
 	ast := p.ParseProgram()
-	require.Empty(t, p.Errors())
+	require.Nil(t, p.ParseError())
 
 	rt := runtime.NewTestRuntime()
 	interp := NewInterpreter(rt)
@@ -47,7 +47,7 @@ func TestInterpreter_ReadAcrossMultipleDataStatements(t *testing.T) {
 	l := lexer.New(src)
 	p := parser.New(l)
 	ast := p.ParseProgram()
-	require.Empty(t, p.Errors())
+	require.Nil(t, p.ParseError())
 
 	rt := runtime.NewTestRuntime()
 	interp := NewInterpreter(rt)
@@ -64,7 +64,7 @@ func TestInterpreter_ReadOutOfData(t *testing.T) {
 	l := lexer.New(src)
 	p := parser.New(l)
 	ast := p.ParseProgram()
-	require.Empty(t, p.Errors())
+	require.Nil(t, p.ParseError())
 
 	rt := runtime.NewTestRuntime()
 	interp := NewInterpreter(rt)

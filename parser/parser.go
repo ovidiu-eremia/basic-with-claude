@@ -56,15 +56,6 @@ func (p *Parser) nextToken() {
 	p.peekToken = p.lexer.NextToken()
 }
 
-// Errors returns parsing errors
-// Errors returns parsing errors as human-readable strings (kept for compatibility)
-func (p *Parser) Errors() []string {
-	if p.error == nil {
-		return []string{}
-	}
-	return []string{fmt.Sprintf("line %d: %s", p.error.Position.Line, p.error.Message)}
-}
-
 // ParseError returns the parse error if any
 func (p *Parser) ParseError() *ParseError {
 	return p.error

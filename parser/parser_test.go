@@ -180,7 +180,7 @@ func TestParser_StatementParsing(t *testing.T) {
 			program := p.ParseProgram()
 
 			require.NotNil(t, program, "ParseProgram() returned nil")
-			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
+			require.Nil(t, p.ParseError(), "Parser error: %v", p.ParseError())
 
 			assert.Equal(t, tt.expected, program)
 		})
@@ -218,9 +218,9 @@ func TestParser_ParseErrors(t *testing.T) {
 			program := p.ParseProgram()
 
 			if tt.expectError {
-				assert.True(t, len(p.Errors()) > 0, "Expected parsing errors but got none")
+				assert.NotNil(t, p.ParseError(), "Expected parsing error but got none")
 			} else {
-				assert.Empty(t, p.Errors(), "Expected no parsing errors but got: %v", p.Errors())
+				assert.Nil(t, p.ParseError(), "Expected no parsing error but got: %v", p.ParseError())
 				assert.NotNil(t, program)
 			}
 		})
@@ -262,7 +262,7 @@ func TestParser_ArithmeticExpressions(t *testing.T) {
 
 			expr := p.parseExpression()
 
-			require.Empty(t, p.Errors(), "Parser errors: %v", p.Errors())
+			require.Nil(t, p.ParseError(), "Parser error: %v", p.ParseError())
 			assert.Equal(t, tt.expected, expr)
 		})
 	}

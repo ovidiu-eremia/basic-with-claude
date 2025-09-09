@@ -66,9 +66,8 @@ func TestParser_FunctionCall(t *testing.T) {
 			program := p.ParseProgram()
 
 			// Check for parsing errors
-			errors := p.Errors()
-			if len(errors) > 0 {
-				t.Fatalf("parser errors: %v", errors)
+			if p.ParseError() != nil {
+				t.Fatalf("parser error: %v", p.ParseError())
 			}
 
 			require.NotNil(t, program)
@@ -101,11 +100,10 @@ func TestParser_FunctionCallErrors(t *testing.T) {
 			p := New(l)
 			program := p.ParseProgram()
 
-			errors := p.Errors()
 			if tt.expectError {
-				assert.NotEmpty(t, errors, "Expected parsing errors but got none")
+				assert.NotNil(t, p.ParseError(), "Expected parsing error but got none")
 			} else {
-				assert.Empty(t, errors, "Unexpected parsing errors: %v", errors)
+				assert.Nil(t, p.ParseError(), "Unexpected parsing error: %v", p.ParseError())
 				require.NotNil(t, program)
 			}
 		})

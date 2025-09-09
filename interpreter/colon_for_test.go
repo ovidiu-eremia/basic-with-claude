@@ -76,9 +76,8 @@ func TestForLoopWithColonSeparatedStatements(t *testing.T) {
 			program := parser.ParseProgram()
 
 			// Check for parsing errors
-			parseErrors := parser.Errors()
-			if len(parseErrors) > 0 {
-				t.Fatalf("Parser errors: %v", parseErrors)
+			if parser.ParseError() != nil {
+				t.Fatalf("Parser error: %v", parser.ParseError())
 			}
 
 			// Execute the program
@@ -114,8 +113,7 @@ func TestForLoopStatementPositioning(t *testing.T) {
 	parser := parser.New(lexer)
 	parsedProgram := parser.ParseProgram()
 
-	parseErrors := parser.Errors()
-	require.Empty(t, parseErrors, "Should parse without errors")
+	require.Nil(t, parser.ParseError(), "Should parse without errors")
 
 	err := interpreter.Execute(parsedProgram)
 	require.NoError(t, err, "Should execute without errors")
@@ -155,8 +153,7 @@ func TestNestedForLoopsWithColons(t *testing.T) {
 	parser := parser.New(lexer)
 	parsedProgram := parser.ParseProgram()
 
-	parseErrors := parser.Errors()
-	require.Empty(t, parseErrors, "Should parse without errors")
+	require.Nil(t, parser.ParseError(), "Should parse without errors")
 
 	err := interpreter.Execute(parsedProgram)
 	require.NoError(t, err, "Should execute without errors")

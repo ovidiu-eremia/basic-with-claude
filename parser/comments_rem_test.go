@@ -13,7 +13,7 @@ func TestParser_ColonSeparatesStatements(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	got := p.ParseProgram()
-	require.Empty(t, p.Errors())
+	require.Nil(t, p.ParseError())
 
 	expected := program(
 		line(10, 1,
@@ -29,7 +29,7 @@ func TestParser_RemSkipsRestOfLine(t *testing.T) {
 	l := lexer.New(input)
 	p := New(l)
 	got := p.ParseProgram()
-	require.Empty(t, p.Errors())
+	require.Nil(t, p.ParseError())
 
 	expected := program(
 		line(10, 1,

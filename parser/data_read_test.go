@@ -29,7 +29,7 @@ func TestParser_DataAndReadStatements(t *testing.T) {
 			p := New(l)
 			prog := p.ParseProgram()
 			require.NotNil(t, prog)
-			require.Empty(t, p.Errors())
+			require.Nil(t, p.ParseError())
 		})
 	}
 }
