@@ -19,14 +19,14 @@ func TestLetStatement_Execute(t *testing.T) {
 		{
 			name:         "assign number to variable",
 			variable:     "A",
-			expression:   &NumberLiteral{Value: "42", BaseNode: BaseNode{Line: 1}},
+			expression:   &NumberLiteral{Value: "42"},
 			expectedType: types.NumberType,
 			expectedVal:  42.0,
 		},
 		{
 			name:         "assign string to variable",
 			variable:     "A$",
-			expression:   &StringLiteral{Value: "HELLO", BaseNode: BaseNode{Line: 1}},
+			expression:   &StringLiteral{Value: "HELLO"},
 			expectedType: types.StringType,
 			expectedVal:  "HELLO",
 		},
@@ -38,7 +38,6 @@ func TestLetStatement_Execute(t *testing.T) {
 			stmt := &LetStatement{
 				Variable:   tt.variable,
 				Expression: tt.expression,
-				BaseNode:   BaseNode{Line: 1},
 			}
 
 			err := stmt.Execute(mock)
@@ -64,8 +63,7 @@ func TestLetStatement_Execute_ErrorCases(t *testing.T) {
 
 		stmt := &LetStatement{
 			Variable:   "A",
-			Expression: &VariableReference{Name: "B", BaseNode: BaseNode{Line: 1}},
-			BaseNode:   BaseNode{Line: 1},
+			Expression: &VariableReference{Name: "B"},
 		}
 
 		err := stmt.Execute(mock)
@@ -78,8 +76,7 @@ func TestLetStatement_Execute_ErrorCases(t *testing.T) {
 
 		stmt := &LetStatement{
 			Variable:   "A",
-			Expression: &NumberLiteral{Value: "42", BaseNode: BaseNode{Line: 1}},
-			BaseNode:   BaseNode{Line: 1},
+			Expression: &NumberLiteral{Value: "42"},
 		}
 
 		err := stmt.Execute(mock)

@@ -12,28 +12,28 @@ func TestLexer_RemAndColon(t *testing.T) {
 			name:  "REM keyword token",
 			input: "REM",
 			expected: []Token{
-				{Type: REM, Literal: "REM", Line: 1},
-				{Type: EOF, Literal: "", Line: 1},
+				{Type: REM, Literal: "REM"},
+				{Type: EOF, Literal: ""},
 			},
 		},
 		{
 			name:  "colon separator",
 			input: ":",
 			expected: []Token{
-				{Type: COLON, Literal: ":", Line: 1},
-				{Type: EOF, Literal: "", Line: 1},
+				{Type: COLON, Literal: ":"},
+				{Type: EOF, Literal: ""},
 			},
 		},
 		{
 			name:  "print then colon then print",
 			input: "PRINT \"A\" : PRINT \"B\"",
 			expected: []Token{
-				{Type: PRINT, Literal: "PRINT", Line: 1},
-				{Type: STRING, Literal: "A", Line: 1},
-				{Type: COLON, Literal: ":", Line: 1},
-				{Type: PRINT, Literal: "PRINT", Line: 1},
-				{Type: STRING, Literal: "B", Line: 1},
-				{Type: EOF, Literal: "", Line: 1},
+				{Type: PRINT, Literal: "PRINT"},
+				{Type: STRING, Literal: "A"},
+				{Type: COLON, Literal: ":"},
+				{Type: PRINT, Literal: "PRINT"},
+				{Type: STRING, Literal: "B"},
+				{Type: EOF, Literal: ""},
 			},
 		},
 	}

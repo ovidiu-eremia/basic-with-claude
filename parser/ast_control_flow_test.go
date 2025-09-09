@@ -8,7 +8,7 @@ import (
 
 func TestEndStatement_Execute(t *testing.T) {
 	mock := newMockOps()
-	stmt := &EndStatement{BaseNode: BaseNode{Line: 1}}
+	stmt := &EndStatement{}
 
 	err := stmt.Execute(mock)
 
@@ -18,7 +18,7 @@ func TestEndStatement_Execute(t *testing.T) {
 
 func TestStopStatement_Execute(t *testing.T) {
 	mock := newMockOps()
-	stmt := &StopStatement{BaseNode: BaseNode{Line: 1}}
+	stmt := &StopStatement{}
 
 	err := stmt.Execute(mock)
 
@@ -28,7 +28,7 @@ func TestStopStatement_Execute(t *testing.T) {
 
 func TestRunStatement_Execute(t *testing.T) {
 	mock := newMockOps()
-	stmt := &RunStatement{BaseNode: BaseNode{Line: 1}}
+	stmt := &RunStatement{}
 
 	err := stmt.Execute(mock)
 
@@ -37,7 +37,7 @@ func TestRunStatement_Execute(t *testing.T) {
 
 func TestGotoStatement_Execute(t *testing.T) {
 	mock := newMockOps()
-	stmt := &GotoStatement{BaseNode: BaseNode{Line: 1}, TargetLine: 50}
+	stmt := &GotoStatement{TargetLine: 50}
 
 	err := stmt.Execute(mock)
 

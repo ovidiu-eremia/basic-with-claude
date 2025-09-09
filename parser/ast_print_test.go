@@ -17,19 +17,19 @@ func TestPrintStatement_Execute(t *testing.T) {
 	}{
 		{
 			name:           "print string literal",
-			expression:     &StringLiteral{Value: "HELLO", BaseNode: BaseNode{Line: 1}},
+			expression:     &StringLiteral{Value: "HELLO"},
 			expectedOutput: "HELLO",
 			expectError:    false,
 		},
 		{
 			name:           "print number literal",
-			expression:     &NumberLiteral{Value: "42", BaseNode: BaseNode{Line: 1}},
+			expression:     &NumberLiteral{Value: "42"},
 			expectedOutput: "42",
 			expectError:    false,
 		},
 		{
 			name:           "print empty string",
-			expression:     &StringLiteral{Value: "", BaseNode: BaseNode{Line: 1}},
+			expression:     &StringLiteral{Value: ""},
 			expectedOutput: "",
 			expectError:    false,
 		},
@@ -38,7 +38,7 @@ func TestPrintStatement_Execute(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mock := newMockOps()
-			stmt := &PrintStatement{BaseNode: BaseNode{Line: 1}, Expression: tt.expression}
+			stmt := &PrintStatement{Expression: tt.expression}
 
 			err := stmt.Execute(mock)
 
@@ -59,8 +59,7 @@ func TestPrintStatement_Execute_ErrorCases(t *testing.T) {
 		mock.getVariableError = errors.New("variable error")
 
 		stmt := &PrintStatement{
-			Expression: &VariableReference{Name: "A", BaseNode: BaseNode{Line: 1}},
-			BaseNode:   BaseNode{Line: 1},
+			Expression: &VariableReference{Name: "A"},
 		}
 
 		err := stmt.Execute(mock)
@@ -72,8 +71,7 @@ func TestPrintStatement_Execute_ErrorCases(t *testing.T) {
 		mock.printLineError = errors.New("print error")
 
 		stmt := &PrintStatement{
-			Expression: &StringLiteral{Value: "TEST", BaseNode: BaseNode{Line: 1}},
-			BaseNode:   BaseNode{Line: 1},
+			Expression: &StringLiteral{Value: "TEST"},
 		}
 
 		err := stmt.Execute(mock)

@@ -6,9 +6,8 @@ This directory contains the parser implementation for the BASIC interpreter, usi
 
 ### Core Interfaces
 
-The parser defines three key interfaces in `ast.go`:
+The parser defines these key types in `ast.go`:
 
-- **`Node`**: Base interface with `GetLineNumber()` for error reporting
 - **`Statement`**: Executes via `Execute(ops InterpreterOperations)`
 - **`Expression`**: Evaluates to values via `Evaluate(ops InterpreterOperations)`
 - **`InterpreterOperations`**: Enables AST nodes to call back to interpreter without circular dependencies
@@ -32,10 +31,7 @@ Add to `ast.go`:
 // NewStatement represents a NEW statement
 type NewStatement struct {
     SomeField Expression // Required fields
-    Line      int        // Always include source line number
 }
-
-func (ns *NewStatement) GetLineNumber() int { return ns.Line }
 ```
 
 ### 2. Implement Execute or Evaluate
@@ -74,11 +70,9 @@ In `parser.go`, add parsing logic:
 
 ```go
 func (p *Parser) parseNewStatement() Statement {
-    stmt := &NewStatement{Line: p.currentToken.Line}
-    
+    stmt := &NewStatement{}
     // Parse required fields
     // Always advance tokens to avoid infinite loops
-    
     return stmt
 }
 ```
@@ -114,7 +108,7 @@ func TestNewStatement_Execute(t *testing.T) {
     }{
         {
             name:        "basic case",
-            field:       &StringLiteral{Value: "TEST", Line: 1},
+            field:       &StringLiteral{Value: "TEST"},
             expected:    "TEST",
             expectError: false,
         },
@@ -123,7 +117,7 @@ func TestNewStatement_Execute(t *testing.T) {
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             mock := newMockOps()
-            stmt := &NewStatement{SomeField: tt.field, Line: 1}
+            stmt := &NewStatement{SomeField: tt.field}
 
             err := stmt.Execute(mock)
 
@@ -149,10 +143,7 @@ func TestNewStatement_Execute_ErrorCases(t *testing.T) {
         mock := newMockOps()
         mock.getVariableError = errors.New("variable error")
 
-        stmt := &NewStatement{
-            SomeField: &VariableReference{Name: "A", Line: 1},
-            Line:      1,
-        }
+        stmt := &NewStatement{SomeField: &VariableReference{Name: "A"}}
 
         err := stmt.Execute(mock)
         assert.Error(t, err)
@@ -222,8 +213,8 @@ Test both the polymorphic dispatch and the interface callbacks:
 
 ## Common Pitfalls
 
-### 1. Missing Line Numbers
-Always include `Line` field in AST nodes and implement `GetLineNumber()`.
+### 1. Source Line Tracking
+AST nodes do not store source line numbers. The parser tracks source lines during parsing for error reporting; runtime errors use BASIC line numbers from `Line` nodes.
 
 ### 2. Infinite Loops in Parsing
 Ensure `nextToken()` is called in all parser code paths.
@@ -258,6 +249,6 @@ parser/
 3. **Comprehensive Testing**: Test both success and error cases with mocks
 4. **Type Safety**: Always use `types.Value` and check types
 5. **Error Handling**: Return errors, don't panic
-6. **Line Number Preservation**: Carry line numbers through for error reporting
+6. **Accurate Line Reporting**: Parser maintains source line counters; interpreter uses BASIC line numbers
 
 This architecture enables clean, testable, and extensible parser development while maintaining the polymorphic execution model that eliminates complex switch statements.

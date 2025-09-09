@@ -9,6 +9,7 @@ A BASIC language interpreter written in Go that implements a subset of Commodore
 - **Line Format**: `<line_number> <statement(s)>`
 - **Multiple Statements**: Supported using colon (`:`) separator
 - **Execution Mode**: Program mode only (run saved programs with RUN command)
+ - **Source Line Tracking**: Parser tracks source line numbers for parse errors; tokens carry no line metadata
 
 ## Data Types
 
@@ -108,6 +109,8 @@ A BASIC language interpreter written in Go that implements a subset of Commodore
 ## Error Handling
 - Display C64-style error messages (e.g., "?SYNTAX ERROR IN 10")
 - Stop execution at error line
+ - Parse errors report the source line number (1-based in the input text)
+ - Runtime errors report the BASIC line number from the program (`Line` number)
 - Standard error types:
   - SYNTAX ERROR
   - TYPE MISMATCH

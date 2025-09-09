@@ -6,6 +6,14 @@ tests:
     errLine: 1
     errContains: unterminated string
 
+  - name: parser error in third line
+    program: |
+      10 REM OK
+      20 PRINT "FOO"
+      30 PRINT PRINT
+    wantErr: true
+    errLine: 3
+
   - name: parser error - missing THEN in IF
     program: |
           10 IF 1 PRINT "X"

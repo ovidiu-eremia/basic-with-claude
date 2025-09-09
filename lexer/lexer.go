@@ -82,11 +82,10 @@ type Position struct {
 	Column int
 }
 
-// Token represents a single token with its type, literal value, and line number
+// Token represents a single token with its type and literal value
 type Token struct {
 	Type    TokenType
 	Literal string
-	Line    int
 }
 
 // Lexer represents the lexical analyzer
@@ -95,22 +94,20 @@ type Lexer struct {
 	currentPosition int  // current position in input (points to current char)
 	nextPosition    int  // current reading position in input (after current char)
 	currentChar     byte // current char under examination
-	line            int  // current line number
 }
 
 // New creates a new lexer instance
 func New(input string) *Lexer {
 	lexer := &Lexer{
 		input: input,
-		line:  1,
 	}
 	lexer.readChar()
 	return lexer
 }
 
-// createToken creates a token with the current line number
+// createToken creates a token of the given type with the provided literal
 func (l *Lexer) createToken(tokenType TokenType, literal string) Token {
-	return Token{Type: tokenType, Literal: literal, Line: l.line}
+	return Token{Type: tokenType, Literal: literal}
 }
 
 // createSingleCharToken creates a token for single-character operators and advances position
@@ -182,7 +179,6 @@ func (l *Lexer) NextToken() Token {
 		return l.createSingleCharToken(ILLEGAL)
 	case '\n':
 		tok := l.createToken(NEWLINE, string(l.currentChar))
-		l.line++
 		l.readChar()
 		return tok
 	case 0:

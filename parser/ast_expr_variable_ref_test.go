@@ -11,7 +11,7 @@ func TestVariableReference_Evaluate_Error(t *testing.T) {
 	mock := newMockOps()
 	mock.getVariableError = errors.New("variable error")
 
-	expr := &VariableReference{BaseNode: BaseNode{Line: 1}, Name: "A"}
+	expr := &VariableReference{Name: "A"}
 
 	_, err := expr.Evaluate(mock)
 

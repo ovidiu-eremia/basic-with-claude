@@ -30,15 +30,17 @@ type Parser struct {
 	currentToken lexer.Token
 	peekToken    lexer.Token
 
-	error *ParseError
+	error             *ParseError
+	currentSourceLine int
 }
 
 // New creates a new parser instance
 func New(l *lexer.Lexer) *Parser {
 	p := &Parser{
-		lexer:      l,
-		precedence: NewPrecedenceTable(),
-		error:      nil,
+		lexer:             l,
+		precedence:        NewPrecedenceTable(),
+		error:             nil,
+		currentSourceLine: 1,
 	}
 
 	// Read two tokens, so currentToken and peekToken are both set
@@ -71,17 +73,17 @@ func (p *Parser) ParseError() *ParseError {
 // addErrorf adds a formatted error message with current token context
 func (p *Parser) addErrorf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)
-	p.addErrorAt(p.currentToken.Line, msg)
+	p.addErrorAt(p.currentSourceLine, msg)
 }
 
 // addTokenError adds an error message with token type context
 func (p *Parser) addTokenError(expected string, got lexer.TokenType) {
-	p.addErrorAt(p.currentToken.Line, fmt.Sprintf("expected %s, got %s (token %q)", expected, got, p.currentToken.Literal))
+	p.addErrorAt(p.currentSourceLine, fmt.Sprintf("expected %s, got %s (token %q)", expected, got, p.currentToken.Literal))
 }
 
 // addLiteralError adds an error message with token literal context
 func (p *Parser) addLiteralError(prefix string, literal string) {
-	p.addErrorAt(p.currentToken.Line, fmt.Sprintf("%s: %s", prefix, literal))
+	p.addErrorAt(p.currentSourceLine, fmt.Sprintf("%s: %s", prefix, literal))
 }
 
 // addErrorAt sets a ParseError with an explicit line (only if no error exists yet)
@@ -101,13 +103,13 @@ func (p *Parser) addErrorAt(line int, msg string) {
 func (p *Parser) ParseProgram() *Program {
 	program := &Program{}
 	program.Lines = []*Line{}
-	currentLine := 1
+	p.currentSourceLine = 1
 
 	for p.currentToken.Type != lexer.EOF {
 		// Skip newlines
 		if p.currentToken.Type == lexer.NEWLINE {
 			p.nextToken()
-			currentLine++
+			p.currentSourceLine++
 			continue
 		}
 
@@ -118,12 +120,9 @@ func (p *Parser) ParseProgram() *Program {
 
 		// Stop parsing if we encountered any error
 		if p.error != nil {
-			p.error.Position.Line = currentLine
+			p.error.Position.Line = p.currentSourceLine
 			break
 		}
-
-		// Advance line count
-		currentLine++
 	}
 
 	return program
@@ -142,11 +141,7 @@ func (p *Parser) parseLine() *Line {
 		return nil
 	}
 
-	line := &Line{
-		Number:     lineNum,
-		Statements: []Statement{},
-		SourceLine: p.currentToken.Line,
-	}
+	line := &Line{Number: lineNum, Statements: []Statement{}}
 
 	p.nextToken() // consume line number
 
@@ -218,7 +213,7 @@ func (p *Parser) parseStatement() Statement {
 
 // parseRemStatement parses a REM statement which consumes the rest of the line
 func (p *Parser) parseRemStatement() *RemStatement {
-	stmt := &RemStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &RemStatement{}
 	// Consume REM token
 	p.nextToken()
 	// Skip tokens until end of line or EOF, but leave currentToken on last non-NEWLINE token
@@ -231,7 +226,7 @@ func (p *Parser) parseRemStatement() *RemStatement {
 
 // parseDataStatement parses a DATA statement: DATA <const>[, <const>...]
 func (p *Parser) parseDataStatement() *DataStatement {
-	stmt := &DataStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &DataStatement{}
 	p.nextToken() // consume DATA
 
 	// Parse zero or more constants until end of line/EOF
@@ -263,7 +258,7 @@ func (p *Parser) parseDataStatement() *DataStatement {
 
 // parseReadStatement parses a READ statement: READ <var>[, <var>...]
 func (p *Parser) parseReadStatement() *ReadStatement {
-	stmt := &ReadStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &ReadStatement{}
 	p.nextToken() // consume READ
 
 	// Expect at least one identifier
@@ -287,7 +282,7 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 
 // parseDimStatement parses a DIM statement: DIM A(n)[, B$(m) ...]
 func (p *Parser) parseDimStatement() *DimStatement {
-	stmt := &DimStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &DimStatement{}
 	p.nextToken() // consume DIM
 
 	for {
@@ -340,12 +335,12 @@ func (p *Parser) parseDimStatement() *DimStatement {
 
 // parsePrintStatement parses a PRINT statement
 func (p *Parser) parsePrintStatement() *PrintStatement {
-	stmt := &PrintStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &PrintStatement{}
 
 	// Look ahead: if next token ends the statement, this is an empty PRINT
 	if p.peekToken.Type == lexer.NEWLINE || p.peekToken.Type == lexer.EOF || p.peekToken.Type == lexer.COLON {
 		// Empty PRINT -> outputs blank line
-		stmt.Expression = &StringLiteral{BaseNode: BaseNode{Line: stmt.Line}, Value: ""}
+		stmt.Expression = &StringLiteral{Value: ""}
 		return stmt
 	}
 
@@ -422,19 +417,9 @@ func (p *Parser) parseExpressionWithPrecedence(minPrec precedence) Expression {
 
 		// Create appropriate node type based on operator
 		if p.isComparisonOperatorString(operator) {
-			left = &ComparisonExpression{
-				BaseNode: BaseNode{Line: left.GetLineNumber()},
-				Left:     left,
-				Operator: operator,
-				Right:    right,
-			}
+			left = &ComparisonExpression{Left: left, Operator: operator, Right: right}
 		} else {
-			left = &BinaryOperation{
-				BaseNode: BaseNode{Line: left.GetLineNumber()},
-				Left:     left,
-				Operator: operator,
-				Right:    right,
-			}
+			left = &BinaryOperation{Left: left, Operator: operator, Right: right}
 		}
 	}
 
@@ -482,7 +467,7 @@ func (p *Parser) parsePrimaryExpression() Expression {
 				return nil
 			}
 			// Do not consume ')'; caller will advance
-			return &ArrayReference{BaseNode: BaseNode{Line: nameTok.Line}, Name: nameTok.Literal, Index: idx}
+			return &ArrayReference{Name: nameTok.Literal, Index: idx}
 		}
 		return p.parseVariableReference()
 	case lexer.LPAREN:
@@ -500,10 +485,7 @@ func (p *Parser) parsePrimaryExpression() Expression {
 
 // parseUnaryOperation parses a unary operation
 func (p *Parser) parseUnaryOperation() Expression {
-	stmt := &UnaryOperation{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-		Operator: p.currentToken.Literal,
-	}
+	stmt := &UnaryOperation{Operator: p.currentToken.Literal}
 	p.nextToken() // consume operator
 	stmt.Right = p.parseExpressionWithPrecedence(PREFIX)
 	return stmt
@@ -519,7 +501,7 @@ func (p *Parser) parseGroupedExpression() Expression {
 	}
 
 	if p.peekToken.Type != lexer.RPAREN {
-		p.addErrorAt(p.currentToken.Line, "expected ')' after grouped expression")
+		p.addErrorAt(p.currentSourceLine, "expected ')' after grouped expression")
 		return nil
 	}
 
@@ -528,29 +510,17 @@ func (p *Parser) parseGroupedExpression() Expression {
 }
 
 // parseEndStatement parses an END statement
-func (p *Parser) parseEndStatement() *EndStatement {
-	return &EndStatement{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-	}
-}
+func (p *Parser) parseEndStatement() *EndStatement { return &EndStatement{} }
 
 // parseRunStatement parses a RUN statement
-func (p *Parser) parseRunStatement() *RunStatement {
-	return &RunStatement{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-	}
-}
+func (p *Parser) parseRunStatement() *RunStatement { return &RunStatement{} }
 
 // parseStopStatement parses a STOP statement
-func (p *Parser) parseStopStatement() *StopStatement {
-	return &StopStatement{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-	}
-}
+func (p *Parser) parseStopStatement() *StopStatement { return &StopStatement{} }
 
 // parseGotoStatement parses a GOTO statement
 func (p *Parser) parseGotoStatement() *GotoStatement {
-	stmt := &GotoStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &GotoStatement{}
 
 	p.nextToken() // consume GOTO
 
@@ -573,7 +543,7 @@ func (p *Parser) parseGotoStatement() *GotoStatement {
 
 // parseGosubStatement parses a GOSUB statement
 func (p *Parser) parseGosubStatement() *GosubStatement {
-	stmt := &GosubStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &GosubStatement{}
 
 	p.nextToken() // consume GOSUB
 
@@ -596,14 +566,14 @@ func (p *Parser) parseGosubStatement() *GosubStatement {
 
 // parseReturnStatement parses a RETURN statement
 func (p *Parser) parseReturnStatement() *ReturnStatement {
-	stmt := &ReturnStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &ReturnStatement{}
 	// No need to consume more tokens - RETURN is a simple statement
 	return stmt
 }
 
 // parseIfStatement parses an IF...THEN statement
 func (p *Parser) parseIfStatement() *IfStatement {
-	stmt := &IfStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &IfStatement{}
 
 	p.nextToken() // consume IF
 
@@ -644,7 +614,7 @@ func (p *Parser) parseIfStatement() *IfStatement {
 			p.addErrorf("invalid line number: %s", p.currentToken.Literal)
 			return nil
 		}
-		stmt.ThenStmt = &GotoStatement{BaseNode: BaseNode{Line: stmt.Line}, TargetLine: targetLine}
+		stmt.ThenStmt = &GotoStatement{TargetLine: targetLine}
 		return stmt
 	}
 
@@ -659,35 +629,22 @@ func (p *Parser) parseIfStatement() *IfStatement {
 
 // parseStringLiteral parses a string literal
 func (p *Parser) parseStringLiteral() *StringLiteral {
-	return &StringLiteral{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-		Value:    p.currentToken.Literal,
-	}
+	return &StringLiteral{Value: p.currentToken.Literal}
 }
 
 // parseNumberLiteral parses a number literal
 func (p *Parser) parseNumberLiteral() *NumberLiteral {
-	return &NumberLiteral{
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-		Value:    p.currentToken.Literal,
-	}
+	return &NumberLiteral{Value: p.currentToken.Literal}
 }
 
 // parseVariableReference parses a variable reference
 func (p *Parser) parseVariableReference() *VariableReference {
-	return &VariableReference{
-		Name:     p.currentToken.Literal,
-		BaseNode: BaseNode{Line: p.currentToken.Line},
-	}
+	return &VariableReference{Name: p.currentToken.Literal}
 }
 
 // parseFunctionCall parses a function call (identifier followed by parentheses)
 func (p *Parser) parseFunctionCall() *FunctionCall {
-	functionCall := &FunctionCall{
-		BaseNode:     BaseNode{Line: p.currentToken.Line},
-		FunctionName: p.currentToken.Literal,
-		Arguments:    []Expression{}, // Initialize empty slice
-	}
+	functionCall := &FunctionCall{FunctionName: p.currentToken.Literal, Arguments: []Expression{}}
 
 	p.nextToken() // consume function name
 	p.nextToken() // consume '('
@@ -750,8 +707,6 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 		p.nextToken() // consume LET token
 	}
 
-	line := p.currentToken.Line
-
 	if p.currentToken.Type != lexer.IDENT {
 		p.addTokenError("variable or array name", p.currentToken.Type)
 		return nil
@@ -787,7 +742,7 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 		if rhs == nil {
 			return nil
 		}
-		return &ArraySetStatement{BaseNode: BaseNode{Line: line}, Name: name, Index: idx, Expression: rhs}
+		return &ArraySetStatement{Name: name, Index: idx, Expression: rhs}
 	}
 
 	// Simple variable assignment
@@ -800,12 +755,12 @@ func (p *Parser) parseAssignmentOrArraySet(hasLet bool) Statement {
 	if expr == nil {
 		return nil
 	}
-	return &LetStatement{BaseNode: BaseNode{Line: line}, Variable: name, Expression: expr}
+	return &LetStatement{Variable: name, Expression: expr}
 }
 
 // parseInputStatement parses an INPUT statement
 func (p *Parser) parseInputStatement() *InputStatement {
-	stmt := &InputStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &InputStatement{}
 	p.nextToken() // consume INPUT
 
 	// Check if we have a prompt string
@@ -832,7 +787,7 @@ func (p *Parser) parseInputStatement() *InputStatement {
 
 // parseForStatement parses a FOR statement: FOR I = 1 TO 5 [STEP X]
 func (p *Parser) parseForStatement() *ForStatement {
-	stmt := &ForStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &ForStatement{}
 
 	p.nextToken() // consume FOR
 
@@ -897,7 +852,7 @@ func (p *Parser) parseForStatement() *ForStatement {
 
 // parseNextStatement parses a NEXT statement: NEXT I or NEXT
 func (p *Parser) parseNextStatement() *NextStatement {
-	stmt := &NextStatement{BaseNode: BaseNode{Line: p.currentToken.Line}}
+	stmt := &NextStatement{}
 
 	p.nextToken() // consume NEXT
 

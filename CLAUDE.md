@@ -59,7 +59,6 @@ Each milestone follows this pattern:
 - **Consolidate when beneficial**: Refactor multiple similar test functions into comprehensive tabular tests for maintainability
 
 ### Polymorphic Testing
-- **Test both dispatch levels**: For double dispatch patterns, test both the polymorphic method call and the callback operations
 - **Mock interfaces for isolation**: Use mock implementations (e.g., `InterpreterOperations`) to isolate components under test
 - **Error injection testing**: Verify error handling by injecting failures in mock dependencies to test edge cases
 - **Behavioral verification**: Test that AST nodes call the correct interface methods with expected parameters
@@ -71,6 +70,7 @@ Each milestone follows this pattern:
 - **Interface Boundaries**: Clean interfaces between components  
 - **Testability First**: Design for testing from the beginning
 - **No Premature Abstraction**: Build what's needed for current milestone
+- **No Code Left For Compatibility**: Keep the code lean, remove calls to old code
 
 ### Implementation Rules
 - **NEVER implement features beyond current step scope**
@@ -89,13 +89,12 @@ Each milestone follows this pattern:
 #### Parser Safety
 - **Parser loops**: always advance position in loops
 - **Token advancement**: check both `currentToken` and `peekToken` progression
-- **Error recovery**: skip to safe tokens (NEWLINE, EOF) when parsing fails
+- **Parsing errors**: stop immediately at the first error when parsing fails
 
 #### Code Quality
 - **Extract helper methods** for repetitive operations (e.g., `createToken()`)
 - **Consolidate similar parsing methods** with shared logic
 - **Move constants to package level** to avoid recreation
-- **Unified assignment parsing**: handle `LET A = 42` and `A = 42` with shared logic
 - **Clear separation** between parsing and validation logic
 
 #### Method Placement & Architecture
@@ -142,7 +141,7 @@ This interpreter uses a traditional multi-phase architecture with polymorphic ex
 - **Key Features**:
   - Case-insensitive keyword recognition
   - Token types for numbers, strings, identifiers, operators, keywords
-  - Preserve line number information with each token
+  - No per-token line numbers (parser tracks source lines)
   - Handle string literals with quotes
   - Recognize BASIC keywords (PRINT, GOTO, IF, etc.)
   - Distinguish between numeric and string variable names ($ suffix)
@@ -159,7 +158,7 @@ This interpreter uses a traditional multi-phase architecture with polymorphic ex
 - **Statement Parsing**:
   - One or more statements per line (colon-separated)
   - Each statement type has dedicated parsing logic
-  - Maintain line number information in AST nodes
+  - AST nodes do not store source line information; the parser tracks source lines and `Line` nodes carry BASIC line numbers
 - **Polymorphic Interface**:
   - Defines `InterpreterOperations` interface for double dispatch
 - Control flow for GOTO/END/STOP is stateful in the interpreter (no error types)
@@ -169,15 +168,14 @@ This interpreter uses a traditional multi-phase architecture with polymorphic ex
 
 #### Core Structure (Double Dispatch Pattern)
 
-The core interfaces are defined in `parser/ast.go`:
-- `Node`: Base interface with `GetLineNumber()`
-- `Statement`: AST nodes that can execute themselves via `Execute(ops InterpreterOperations)`
+The core types are defined in `parser/ast.go`:
+- `Statement`: AST nodes that execute themselves via `Execute(ops InterpreterOperations)`
 - `Expression`: AST nodes that evaluate to values via `Evaluate(ops InterpreterOperations)`
 - `InterpreterOperations`: Interface enabling double dispatch from AST nodes back to interpreter
 
 #### Node Types
 - **Program**: Root node containing all program lines
-- **Line**: Container for one or more statements on a line
+- **Line**: Container for one or more statements on a BASIC line (includes the BASIC line number)
 - **Statement Nodes**: PrintStatement, GotoStatement, GosubStatement, ReturnStatement, IfStatement, ForStatement, NextStatement, InputStatement, LetStatement, DimStatement, DataStatement, ReadStatement, RestoreStatement, RemStatement, EndStatement, StopStatement, RunStatement
 - **Expression Nodes**: BinaryOperation, UnaryOperation, NumberLiteral, StringLiteral, VariableReference, ArrayReference, FunctionCall
 
@@ -204,7 +202,8 @@ The core interfaces are defined in `parser/ast.go`:
 See `parser/ast.go` for actual implementation examples (e.g., `PrintStatement.Execute`).
 
 #### Node Properties
-- Each node stores its source line number for error reporting and GOTO targets
+- AST nodes do not store source-line metadata; the parser tracks source lines during parsing
+- `Line` nodes store BASIC line numbers for program flow (GOTO/GOSUB) and runtime error reporting
 - Expression nodes evaluate themselves and return `types.Value`
 - Statement nodes execute themselves using interpreter operations
 - Control flow handled via interpreter state for GOTO/END/STOP; FOR/NEXT uses loop stack
@@ -239,7 +238,7 @@ See `parser/ast.go` for actual implementation examples (e.g., `PrintStatement.Ex
 - Modified directly by GOTO, loops, and returns via interpreter ops
 
 ##### Line Number Index
-- Map from line numbers to AST nodes
+- Map from BASIC line numbers to `Line` nodes
 - Enables fast lookup for GOTO/GOSUB targets (efficient GOTO/GOSUB)
 - Built during parsing phase
 
@@ -338,6 +337,7 @@ The Runtime interface is defined in `runtime/runtime.go` and provides methods fo
 - **Propagate errors up through call chain**
 - **Format errors in C64 BASIC style at top level**: "?ERROR_TYPE ERROR IN LINE_NUMBER"
 - **Include line number in error messages**
+- Parse errors report the source line number tracked by the parser; runtime errors use BASIC line numbers from `Line.Number`
 
 #### Error Types
 - **Syntax errors** (caught during parsing)
@@ -362,11 +362,11 @@ See the interpreter implementation for specific functions like `VAL()`, `STR$()`
 ```
 Source File (.bas)
     ↓
-[Lexer] → Tokens (line by line)
+[Lexer] → Tokens (no line metadata)
     ↓
-[Parser] → Self-Executing AST Nodes + InterpreterOperations Interface
+[Parser] → Self-Executing AST Nodes + InterpreterOperations Interface (tracks source line for parse errors)
     ↓
-[Line Index Builder] → Line Number Map
+[Line Index Builder] → BASIC Line Number Map
     ↓
 [Polymorphic Execution Loop]
     ↓
@@ -406,7 +406,7 @@ cmd/basic        (main application)
 8. **Interface + structs for AST**: Flexible, type-safe Go pattern with polymorphic methods
 9. **Recursive descent parsing**: Well-understood, maintainable
 10. **Error returns (not panic)**: Idiomatic Go error handling
-11. **Separate indices for line numbers**: Efficient GOTO/GOSUB
+11. **Separate indices for BASIC line numbers**: Efficient GOTO/GOSUB
 12. **Stack-based call/loop management**: Natural for nested structures
 13. **Runtime environment interface**: Enables testing and I/O abstraction
 
@@ -450,4 +450,3 @@ echo "42" | go run ./cmd/basic -e "10 INPUT X: 20 PRINT X: 30 END"
 
 - find test basic files in the testdata directory in the top folder
 - feel free to write small throwaway test files for testing the interpreter
-

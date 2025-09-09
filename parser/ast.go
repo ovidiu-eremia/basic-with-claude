@@ -10,16 +10,7 @@ import (
 )
 
 // Node represents any node in the AST
-type Node interface {
-	GetLineNumber() int
-}
-
-// BaseNode provides common functionality for all AST nodes
-type BaseNode struct {
-	Line int // Source line number
-}
-
-func (bn BaseNode) GetLineNumber() int { return bn.Line }
+// Note: AST nodes no longer track source line numbers.
 
 // InterpreterOperations defines what AST nodes can ask the interpreter to do
 // This interface enables double dispatch: AST nodes call back to interpreter
@@ -68,44 +59,27 @@ type InterpreterOperations interface {
 
 // Statement represents any statement node
 type Statement interface {
-	Node
 	Execute(ops InterpreterOperations) error
 }
 
 // Expression represents any expression node
 type Expression interface {
-	Node
 	Evaluate(ops InterpreterOperations) (types.Value, error)
 }
 
 // Program represents the root of the AST - a complete BASIC program
 type Program struct {
-	BaseNode
 	Lines []*Line
-}
-
-// Program overrides GetLineNumber to return the first line's number
-func (p *Program) GetLineNumber() int {
-	if len(p.Lines) > 0 {
-		return p.Lines[0].SourceLine
-	}
-	return 0
 }
 
 // Line represents a single line in a BASIC program
 type Line struct {
-	BaseNode
 	Number     int         // BASIC line number (10, 20, etc.)
 	Statements []Statement // Statements on this line
-	SourceLine int         // Source line number for error reporting
 }
-
-// Line overrides GetLineNumber to return SourceLine
-func (l *Line) GetLineNumber() int { return l.SourceLine }
 
 // PrintStatement represents a PRINT statement
 type PrintStatement struct {
-	BaseNode
 	// Legacy single expression (used when Items is empty)
 	Expression Expression
 	// Items is a list of expressions to print in sequence (semicolon/comma separated)
@@ -159,7 +133,6 @@ func (ps *PrintStatement) Execute(ops InterpreterOperations) error {
 
 // StringLiteral represents a string literal expression
 type StringLiteral struct {
-	BaseNode
 	Value string // The string value (without quotes)
 }
 
@@ -168,9 +141,7 @@ func (sl *StringLiteral) Evaluate(ops InterpreterOperations) (types.Value, error
 }
 
 // EndStatement represents an END statement
-type EndStatement struct {
-	BaseNode
-}
+type EndStatement struct{}
 
 func (es *EndStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestEnd()
@@ -178,7 +149,6 @@ func (es *EndStatement) Execute(ops InterpreterOperations) error {
 
 // LetStatement represents a LET assignment statement
 type LetStatement struct {
-	BaseNode
 	Variable   string     // Variable name
 	Expression Expression // Value to assign
 }
@@ -193,7 +163,6 @@ func (ls *LetStatement) Execute(ops InterpreterOperations) error {
 
 // VariableReference represents a variable reference in an expression
 type VariableReference struct {
-	BaseNode
 	Name string // Variable name
 }
 
@@ -203,7 +172,6 @@ func (vr *VariableReference) Evaluate(ops InterpreterOperations) (types.Value, e
 
 // NumberLiteral represents a numeric literal expression
 type NumberLiteral struct {
-	BaseNode
 	Value string // The numeric value as string
 }
 
@@ -213,7 +181,6 @@ func (nl *NumberLiteral) Evaluate(ops InterpreterOperations) (types.Value, error
 
 // BinaryOperation represents a binary arithmetic operation
 type BinaryOperation struct {
-	BaseNode
 	Left     Expression // Left operand
 	Operator string     // Operator (+, -, *, /, ^)
 	Right    Expression // Right operand
@@ -248,9 +215,7 @@ func (bo *BinaryOperation) Evaluate(ops InterpreterOperations) (types.Value, err
 }
 
 // RunStatement represents a RUN statement
-type RunStatement struct {
-	BaseNode
-}
+type RunStatement struct{}
 
 func (rs *RunStatement) Execute(ops InterpreterOperations) error {
 	// RUN statement doesn't do anything during normal program execution
@@ -261,9 +226,7 @@ func (rs *RunStatement) Execute(ops InterpreterOperations) error {
 }
 
 // StopStatement represents a STOP statement
-type StopStatement struct {
-	BaseNode
-}
+type StopStatement struct{}
 
 func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestStop()
@@ -271,7 +234,6 @@ func (ss *StopStatement) Execute(ops InterpreterOperations) error {
 
 // InputStatement represents an INPUT statement
 type InputStatement struct {
-	BaseNode
 	Prompt   string // Optional prompt string (empty for no prompt)
 	Variable string // Variable name to read into
 }
@@ -299,7 +261,6 @@ func (ins *InputStatement) Execute(ops InterpreterOperations) error {
 
 // GotoStatement represents a GOTO statement
 type GotoStatement struct {
-	BaseNode
 	TargetLine int // Target line number to jump to
 }
 
@@ -309,7 +270,6 @@ func (gs *GotoStatement) Execute(ops InterpreterOperations) error {
 
 // IfStatement represents an IF...THEN statement
 type IfStatement struct {
-	BaseNode
 	Condition Expression // The condition to evaluate
 	ThenStmt  Statement  // The statement to execute if condition is true
 }
@@ -328,7 +288,6 @@ func (is *IfStatement) Execute(ops InterpreterOperations) error {
 
 // UnaryOperation represents a unary arithmetic operation
 type UnaryOperation struct {
-	BaseNode
 	Operator string     // Operator (-)
 	Right    Expression // Right operand
 }
@@ -359,7 +318,6 @@ func (uo *UnaryOperation) Evaluate(ops InterpreterOperations) (types.Value, erro
 
 // ComparisonExpression represents a comparison operation (=, <>, <, >, <=, >=)
 type ComparisonExpression struct {
-	BaseNode
 	Left     Expression // Left operand
 	Operator string     // Comparison operator
 	Right    Expression // Right operand
@@ -392,7 +350,6 @@ func (ce *ComparisonExpression) Evaluate(ops InterpreterOperations) (types.Value
 
 // ForStatement represents a FOR loop statement
 type ForStatement struct {
-	BaseNode
 	Variable   string     // Loop variable name
 	StartValue Expression // Starting value
 	EndValue   Expression // Ending value
@@ -437,7 +394,6 @@ func (fs *ForStatement) Execute(ops InterpreterOperations) error {
 
 // NextStatement represents a NEXT statement
 type NextStatement struct {
-	BaseNode
 	Variable string // Optional loop variable name (can be empty)
 }
 
@@ -448,7 +404,6 @@ func (ns *NextStatement) Execute(ops InterpreterOperations) error {
 
 // GosubStatement represents a GOSUB statement
 type GosubStatement struct {
-	BaseNode
 	TargetLine int // Target line number to call
 }
 
@@ -457,9 +412,7 @@ func (gs *GosubStatement) Execute(ops InterpreterOperations) error {
 }
 
 // ReturnStatement represents a RETURN statement
-type ReturnStatement struct {
-	BaseNode
-}
+type ReturnStatement struct{}
 
 func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
 	return ops.RequestReturn()
@@ -467,7 +420,6 @@ func (rs *ReturnStatement) Execute(ops InterpreterOperations) error {
 
 // DataStatement represents a DATA statement containing a list of constants
 type DataStatement struct {
-	BaseNode
 	Values []Expression // Constants (numbers or strings)
 }
 
@@ -476,7 +428,6 @@ func (ds *DataStatement) Execute(ops InterpreterOperations) error { return nil }
 
 // ReadStatement represents a READ statement to read values from DATA
 type ReadStatement struct {
-	BaseNode
 	Variables []string // Variable names to fill
 }
 
@@ -504,15 +455,12 @@ func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
 }
 
 // RemStatement represents a REM (comment) statement; it is a no-op at runtime
-type RemStatement struct {
-	BaseNode
-}
+type RemStatement struct{}
 
 func (rs *RemStatement) Execute(ops InterpreterOperations) error { return nil }
 
 // FunctionCall represents a function call expression
 type FunctionCall struct {
-	BaseNode
 	FunctionName string       // Function name (LEN, LEFT$, RIGHT$, etc.)
 	Arguments    []Expression // Function arguments
 }
@@ -523,7 +471,6 @@ func (fc *FunctionCall) Evaluate(ops InterpreterOperations) (types.Value, error)
 
 // ArrayReference represents access to an array element, e.g., A(5)
 type ArrayReference struct {
-	BaseNode
 	Name  string
 	Index Expression
 }
@@ -545,7 +492,6 @@ func (ar *ArrayReference) Evaluate(ops InterpreterOperations) (types.Value, erro
 
 // ArraySetStatement assigns a value to an array element, e.g., A(5) = 42
 type ArraySetStatement struct {
-	BaseNode
 	Name       string
 	Index      Expression
 	Expression Expression
@@ -578,7 +524,6 @@ type DimDeclaration struct {
 
 // DimStatement represents a DIM statement declaring one or more arrays
 type DimStatement struct {
-	BaseNode
 	Declarations []DimDeclaration
 }
 
