@@ -458,18 +458,48 @@ type DataStatement struct {
 func (ds *DataStatement) Execute(ops InterpreterOperations) error { return nil }
 
 // ReadStatement represents a READ statement to read values from DATA
+type ReadTarget struct {
+	Name    string
+	Indices []Expression // nil or empty means simple variable
+}
+
+// ReadStatement represents a READ statement to read values from DATA
 type ReadStatement struct {
-	Variables []string // Variable names to fill
+	Targets []ReadTarget // Ordered targets
 }
 
 func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
-	for _, vname := range rs.Variables {
+	for _, tgt := range rs.Targets {
 		val, err := ops.GetNextData()
 		if err != nil {
 			return err
 		}
-		// Type check based on variable suffix
-		if strings.HasSuffix(vname, "$") {
+		// If array element
+		if len(tgt.Indices) > 0 {
+			// Arrays cannot be string variables by suffix; element type depends on array declaration
+			// Evaluate indices
+			idxs := make([]int, len(tgt.Indices))
+			for i, e := range tgt.Indices {
+				v, err := e.Evaluate(ops)
+				if err != nil {
+					return err
+				}
+				if v.Type != types.NumberType {
+					return types.ErrTypeMismatch
+				}
+				n := v.Number
+				if n < 0 || float64(int(n)) != n {
+					return fmt.Errorf("?ILLEGAL QUANTITY ERROR")
+				}
+				idxs[i] = int(n)
+			}
+			if err := ops.SetArrayElement(tgt.Name, idxs, val); err != nil {
+				return err
+			}
+			continue
+		}
+		// Simple variable: type check by suffix
+		if strings.HasSuffix(tgt.Name, "$") {
 			if val.Type != types.StringType {
 				return types.ErrTypeMismatch
 			}
@@ -478,7 +508,7 @@ func (rs *ReadStatement) Execute(ops InterpreterOperations) error {
 				return types.ErrTypeMismatch
 			}
 		}
-		if err := ops.SetVariable(vname, val); err != nil {
+		if err := ops.SetVariable(tgt.Name, val); err != nil {
 			return err
 		}
 	}

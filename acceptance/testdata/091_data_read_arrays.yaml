@@ -1,0 +1,25 @@
+tests:
+  - name: "READ into 2D array elements"
+    program: |
+      10 DIM S(1,2)
+      20 READ S(0,0), S(1,2)
+      30 PRINT S(0,0)
+      40 PRINT S(1,2)
+      50 DATA 5, 9
+      60 END
+    expected:
+      - "5\n"
+      - "9\n"
+
+  - name: "READ mixed var and array"
+    program: |
+      10 DIM A(1)
+      20 READ X, A(1)
+      30 PRINT X
+      40 PRINT A(1)
+      50 DATA 3, 4
+      60 END
+    expected:
+      - "3\n"
+      - "4\n"
+

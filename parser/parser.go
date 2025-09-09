@@ -260,11 +260,44 @@ func (p *Parser) parseReadStatement() *ReadStatement {
 		return nil
 	}
 
-	// Parse variables separated by commas until end of line/EOF
 	for p.currentToken.Type == lexer.IDENT {
-		stmt.Variables = append(stmt.Variables, p.currentToken.Literal)
-		if p.peekToken.Type == lexer.COMMA {
-			p.nextToken() // move to COMMA
+		name := p.currentToken.Literal
+		target := ReadTarget{Name: name}
+		// Array element? IDENT '('
+		if p.peekToken.Type == lexer.LPAREN {
+			p.nextToken() // consume IDENT
+			p.nextToken() // consume '('
+			// Parse indices
+			idx := p.parseExpression()
+			if idx == nil {
+				return nil
+			}
+			target.Indices = append(target.Indices, idx)
+			for p.peekToken.Type == lexer.COMMA {
+				p.nextToken() // to comma
+				p.nextToken() // to next expr
+				idx = p.parseExpression()
+				if idx == nil {
+					return nil
+				}
+				target.Indices = append(target.Indices, idx)
+			}
+			if p.currentToken.Type != lexer.RPAREN {
+				if p.peekToken.Type == lexer.RPAREN {
+					p.nextToken()
+				}
+			}
+			if p.currentToken.Type != lexer.RPAREN {
+				p.addTokenError("')' after array index", p.currentToken.Type)
+				return nil
+			}
+		}
+		// If we didn't have '(', leave IDENT as currentToken so caller/commas can advance
+		stmt.Targets = append(stmt.Targets, target)
+		if p.currentToken.Type == lexer.COMMA || p.peekToken.Type == lexer.COMMA {
+			if p.currentToken.Type != lexer.COMMA {
+				p.nextToken()
+			}
 			p.nextToken() // move to next IDENT
 			continue
 		}

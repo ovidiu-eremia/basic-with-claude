@@ -48,6 +48,7 @@ const (
 	NEXT      TokenType = "NEXT"
 	STEP      TokenType = "STEP"
 	GOSUB     TokenType = "GOSUB"
+	ON        TokenType = "ON"
 	RETURN    TokenType = "RETURN"
 	REM       TokenType = "REM"
 	DIM       TokenType = "DIM"
@@ -75,6 +76,7 @@ var keywords = map[string]TokenType{
 	"NEXT":   NEXT,
 	"STEP":   STEP,
 	"GOSUB":  GOSUB,
+	"ON":     ON,
 	"RETURN": RETURN,
 	"REM":    REM,
 	"DIM":    DIM,
